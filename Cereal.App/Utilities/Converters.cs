@@ -1,4 +1,5 @@
 using Avalonia.Data.Converters;
+using Avalonia.Media;
 using System;
 using System.Globalization;
 
@@ -53,6 +54,24 @@ namespace Cereal.App
     public static class BoolConverters
     {
         public static IValueConverter ToObject { get; } = new BoolToObjectConverter();
+        public static IValueConverter IsSearchHighlighted { get; } = new BoolToBrushConverter(
+            new SolidColorBrush(Color.FromArgb(0x14, 0xff, 0xff, 0xff)),
+            Brushes.Transparent);
+    }
+
+    internal sealed class BoolToBrushConverter : IValueConverter
+    {
+        private readonly IBrush _trueBrush;
+        private readonly IBrush _falseBrush;
+        public BoolToBrushConverter(IBrush trueBrush, IBrush falseBrush)
+        {
+            _trueBrush = trueBrush;
+            _falseBrush = falseBrush;
+        }
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => value is true ? _trueBrush : _falseBrush;
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => throw new NotSupportedException();
     }
 
     internal sealed class BoolToObjectConverter : IValueConverter

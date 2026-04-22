@@ -2,8 +2,8 @@ using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using AvaloniaWebView;
-using Cereal.App.Models;
 using Cereal.App.Services;
+using Cereal.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -42,10 +42,14 @@ public partial class OrbitView : UserControl
                 await PushGamesAsync();
             };
 
+            _webView.WebMessageReceived += OnWebMessageReceived;
+
             var host = this.FindControl<ContentControl>("WebViewHost");
             if (host is not null) host.Content = _webView;
 
-            _webView.HtmlContent = OrbitHtml.Build();
+            var density = App.Services.GetRequiredService<SettingsService>().Get().StarDensity;
+            var starCount = density switch { "low" => 300, "high" => 1500, _ => 800 };
+            _webView.HtmlContent = OrbitHtml.Build(starCount);
         }
         catch (Exception ex)
         {
@@ -84,6 +88,31 @@ public partial class OrbitView : UserControl
         }
     }
 
+    private void OnWebMessageReceived(object? sender, WebViewCore.Events.WebViewMessageReceivedEventArgs e)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(e.Message);
+            var root = doc.RootElement;
+            var type = root.GetProperty("type").GetString();
+            var id   = root.GetProperty("id").GetString();
+            if (string.IsNullOrEmpty(id)) return;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (DataContext is not MainViewModel vm) return;
+                if (type == "select")
+                    vm.SelectGameByIdCommand.Execute(id);
+                else if (type == "launch")
+                    vm.LaunchGameByIdCommand.Execute(id);
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[orbit] Bad web message");
+        }
+    }
+
     private void ShowError(string message)
     {
         Dispatcher.UIThread.Post(() =>
@@ -102,7 +131,10 @@ public partial class OrbitView : UserControl
 
 internal static class OrbitHtml
 {
-    public static string Build() => """
+    public static string Build(int starCount = 800) =>
+        BuildTemplate().Replace("__STAR_COUNT__", starCount.ToString());
+
+    private static string BuildTemplate() => """
 <!DOCTYPE html>
 <html>
 <head>
@@ -184,6 +216,11 @@ body{background:#080818;overflow:hidden;font-family:system-ui,sans-serif;color:#
 }
 @keyframes coronaPulse{0%{opacity:.3;transform:translate(-50%,-50%) scale(1)}100%{opacity:.5;transform:translate(-50%,-50%) scale(1.12)}}
 @keyframes twinkle{0%,100%{opacity:.7}50%{opacity:.2}}
+.shooting-star{
+  position:absolute;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.8),rgba(255,255,255,0));
+  border-radius:1px;opacity:0;
+}
 </style>
 </head>
 <body>
@@ -249,11 +286,17 @@ function fitAll() {
 
 // ── Drag / pan ────────────────────────────────────────────────────────────────
 let drag = null;
+let dragMoved = false;
 viewport.addEventListener('mousedown', e => {
-  drag = { sx:e.clientX - cam.x, sy:e.clientY - cam.y };
+  drag = { sx:e.clientX - cam.x, sy:e.clientY - cam.y, ox:e.clientX, oy:e.clientY };
+  dragMoved = false;
 });
 window.addEventListener('mousemove', e => {
-  if (drag) { cam.x = e.clientX - drag.sx; cam.y = e.clientY - drag.sy; applyTransform(false); }
+  if (drag) {
+    const dx = e.clientX - drag.ox, dy = e.clientY - drag.oy;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragMoved = true;
+    cam.x = e.clientX - drag.sx; cam.y = e.clientY - drag.sy; applyTransform(false);
+  }
   updateTooltip(e);
 });
 window.addEventListener('mouseup', () => { drag = null; });
@@ -275,7 +318,7 @@ viewport.addEventListener('dblclick', fitAll);
 
 // ── Background stars ──────────────────────────────────────────────────────────
 function buildStars() {
-  const N = 800;
+  const N = __STAR_COUNT__;
   for (let i = 0; i < N; i++) {
     const s = document.createElement('div');
     s.className = 'star';
@@ -406,6 +449,16 @@ function placeOrb(game, idx, totalForPlatform) {
     tooltip.textContent = game.name + (game.platform ? ' · ' + (PLATFORM_LABELS[game.platform] || game.platform) : '') + (game.playtime ? ' · ' + Math.round(game.playtime / 60) + 'h' : '');
   });
   body.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  body.addEventListener('click', () => {
+    if (dragMoved) return;
+    if (window.chrome?.webview)
+      window.chrome.webview.postMessage(JSON.stringify({type:'select', id: game.id}));
+  });
+  body.addEventListener('dblclick', e => {
+    e.stopPropagation();
+    if (window.chrome?.webview)
+      window.chrome.webview.postMessage(JSON.stringify({type:'launch', id: game.id}));
+  });
 }
 
 function showFallback(body, game, size) {
@@ -448,6 +501,31 @@ window.loadGames = function(games) {
     platGames.forEach((g, i) => placeOrb(g, i, platGames.length));
   });
 };
+
+// ── Shooting stars ────────────────────────────────────────────────────────────
+function spawnShootingStar() {
+  const el = document.createElement('div');
+  el.className = 'shooting-star';
+  const len  = 80 + Math.random() * 120;
+  const angle = -15 + Math.random() * 30; // degrees, mostly horizontal
+  const x = Math.random() * GALAXY_W;
+  const y = Math.random() * GALAXY_H;
+  const dur = 0.6 + Math.random() * 0.5;
+  el.style.cssText = `left:${x}px;top:${y}px;width:${len}px;transform:rotate(${angle}deg);transform-origin:left center`;
+  canvas.appendChild(el);
+  el.animate(
+    [{opacity:0,transform:`rotate(${angle}deg) translateX(0)`},
+     {opacity:1,transform:`rotate(${angle}deg) translateX(${len*0.3}px)`},
+     {opacity:0,transform:`rotate(${angle}deg) translateX(${len}px)`}],
+    {duration: dur * 1000, easing:'ease-in'}
+  ).finished.then(() => el.remove());
+}
+
+function scheduleShootingStar() {
+  const delay = 4000 + Math.random() * 8000;
+  setTimeout(() => { spawnShootingStar(); scheduleShootingStar(); }, delay);
+}
+scheduleShootingStar();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildStars();

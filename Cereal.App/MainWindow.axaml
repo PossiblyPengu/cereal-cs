@@ -117,13 +117,16 @@
       <panels:FocusPanel IsVisible="{Binding ShowFocus}"/>
 
       <!-- ── Stream overlay bar ── -->
-      <Border VerticalAlignment="Top"
+      <Border x:Name="StreamBarBorder"
+              VerticalAlignment="Top"
               IsVisible="{Binding IsStreaming}"
               Background="#f0101018"
               BorderBrush="#1affffff"
               BorderThickness="0,0,0,1"
-              ZIndex="60">
-        <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="16,0" Height="38">
+              ZIndex="60"
+              PointerEntered="StreamBar_PointerEntered"
+              PointerExited="StreamBar_PointerExited">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="16,0" Height="38">
           <!-- Dot + title -->
           <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
                       VerticalAlignment="Center">
@@ -146,8 +149,19 @@
             <TextBlock Text="{Binding ActiveStreamTab.State}"
                        FontSize="11" Foreground="#50b0aaa0" VerticalAlignment="Center"/>
           </StackPanel>
+          <!-- Fullscreen toggle -->
+          <Button Grid.Column="2" x:Name="FullscreenBtn"
+                  Width="30" Height="30" Margin="4,0,0,0"
+                  VerticalAlignment="Center"
+                  Background="Transparent" Foreground="#50b0aaa0"
+                  BorderThickness="0" CornerRadius="6" Padding="0"
+                  FontSize="12" Cursor="Hand"
+                  Click="ToggleFullscreen_Click"
+                  ToolTip.Tip="Toggle fullscreen">
+            <TextBlock Text="⛶" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Button>
           <!-- Stop button -->
-          <Button Grid.Column="3" Content="Stop" Margin="8,0,0,0"
+          <Button Grid.Column="4" Content="Stop" Margin="8,0,0,0"
                   VerticalAlignment="Center"
                   Background="#33ff4444" Foreground="#ff7070"
                   BorderThickness="0" CornerRadius="6" Padding="12,4"
@@ -155,6 +169,79 @@
                   Command="{Binding CloseStreamTabCommand}"
                   CommandParameter="{Binding ActiveStreamTab.GameId}"/>
         </Grid>
+      </Border>
+
+      <!-- ── Stream connecting spinner ── -->
+      <Panel IsVisible="{Binding IsStreamConnecting}"
+             IsHitTestVisible="False"
+             ZIndex="55">
+        <Border Background="#cc07070d"/>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+          <Border Width="40" Height="40" CornerRadius="20"
+                  BorderBrush="#1affffff" BorderThickness="2"
+                  HorizontalAlignment="Center">
+            <Border.RenderTransform>
+              <RotateTransform/>
+            </Border.RenderTransform>
+            <Border.Transitions>
+              <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.8"
+                                               Easing="LinearEasing"/>
+              </Transitions>
+            </Border.Transitions>
+          </Border>
+          <TextBlock Text="{Binding ActiveStreamTab.State,
+                           StringFormat='Connecting — {0}…'}"
+                     FontSize="11" Foreground="#50b0aaa0"
+                     LetterSpacing="1" HorizontalAlignment="Center"/>
+        </StackPanel>
+      </Panel>
+
+      <!-- ── Media player widget (bottom-center) ── -->
+      <Border HorizontalAlignment="Center" VerticalAlignment="Bottom"
+              Margin="0,0,0,20"
+              IsVisible="{Binding Media.HasMedia}"
+              CornerRadius="20"
+              Background="#e8101018"
+              BorderBrush="#1affffff"
+              BorderThickness="1"
+              ZIndex="40">
+        <StackPanel Orientation="Horizontal" Spacing="0" Margin="6,5">
+          <Button Width="30" Height="30" Content="⏮"
+                  Background="Transparent" Foreground="#40b0aaa0"
+                  BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
+                  Command="{Binding Media.PrevCommand}"/>
+          <StackPanel VerticalAlignment="Center" Spacing="1"
+                      MinWidth="80" MaxWidth="200" Margin="8,0">
+            <TextBlock Text="{Binding Media.Title}"
+                       FontSize="11" FontWeight="Medium" Foreground="#e8e4de"
+                       TextTrimming="CharacterEllipsis"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding Media.Artist}"
+                       FontSize="10" Foreground="#706b63"
+                       TextTrimming="CharacterEllipsis"
+                       HorizontalAlignment="Center"
+                       IsVisible="{Binding Media.Artist,
+                         Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
+          </StackPanel>
+          <Button Width="30" Height="30"
+                  Background="Transparent" Foreground="#b0aaa0"
+                  BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
+                  Command="{Binding Media.PlayPauseCommand}">
+            <Panel>
+              <TextBlock Text="▶" FontSize="13"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                         IsVisible="{Binding !Media.IsPlaying}"/>
+              <TextBlock Text="⏸" FontSize="13"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                         IsVisible="{Binding Media.IsPlaying}"/>
+            </Panel>
+          </Button>
+          <Button Width="30" Height="30" Content="⏭"
+                  Background="Transparent" Foreground="#40b0aaa0"
+                  BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
+                  Command="{Binding Media.NextCommand}"/>
+        </StackPanel>
       </Border>
 
       <!-- ── Continue banner (bottom-left) ── -->
@@ -283,10 +370,12 @@
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:GameCardViewModel">
                     <Border Padding="16,10" Cursor="Hand"
-                            PointerPressed="SearchResult_PointerPressed">
+                            PointerPressed="SearchResult_PointerPressed"
+                            Background="{Binding IsSearchHighlighted,
+                              Converter={x:Static conv:BoolConverters.IsSearchHighlighted}}">
                       <Border.Styles>
                         <Style Selector="Border:pointerover">
-                          <Setter Property="Background" Value="#08ffffff"/>
+                          <Setter Property="Background" Value="#0cffffff"/>
                         </Style>
                       </Border.Styles>
                       <Grid ColumnDefinitions="44,*,Auto">

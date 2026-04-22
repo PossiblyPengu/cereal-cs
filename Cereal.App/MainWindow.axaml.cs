@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
 using Cereal.App.ViewModels;
@@ -10,6 +11,9 @@ namespace Cereal.App;
 
 public partial class MainWindow : Window
 {
+    private DispatcherTimer? _streamBarTimer;
+    private bool _streamBarPinned; // stays visible while pointer is inside
+
     public MainWindow()
     {
         InitializeComponent();
@@ -19,7 +23,8 @@ public partial class MainWindow : Window
             App.Services.GetRequiredService<SettingsService>(),
             App.Services.GetRequiredService<CoverService>(),
             App.Services.GetRequiredService<ChiakiService>(),
-            App.Services.GetRequiredService<XcloudService>());
+            App.Services.GetRequiredService<XcloudService>(),
+            App.Services.GetRequiredService<SmtcService>());
 
         DataContext = vm;
 
@@ -41,6 +46,7 @@ public partial class MainWindow : Window
         PositionChanged += OnPositionChanged;
         PropertyChanged += OnPropertyChanged;
         KeyDown += OnKeyDown;
+        PointerMoved += OnPointerMoved;
     }
 
     private void TrySetIcon()
@@ -89,6 +95,54 @@ public partial class MainWindow : Window
         App.Services.GetRequiredService<SettingsService>().Save(settings);
     }
 
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (DataContext is not MainViewModel { IsStreaming: true }) return;
+        var y = e.GetPosition(this).Y - 40; // subtract title bar height
+        if (y <= 60)
+            ShowStreamBar();
+    }
+
+    private void ShowStreamBar()
+    {
+        if (StreamBarBorder is { } bar)
+            bar.Opacity = 1;
+        _streamBarTimer?.Stop();
+        if (_streamBarPinned) return;
+        _streamBarTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _streamBarTimer.Tick -= StreamBarTimerTick;
+        _streamBarTimer.Tick += StreamBarTimerTick;
+        _streamBarTimer.Start();
+    }
+
+    private void StreamBarTimerTick(object? sender, EventArgs e)
+    {
+        _streamBarTimer?.Stop();
+        if (StreamBarBorder is { } bar)
+            bar.Opacity = 0;
+    }
+
+    private void StreamBar_PointerEntered(object? sender, PointerEventArgs e)
+    {
+        _streamBarPinned = true;
+        _streamBarTimer?.Stop();
+        if (StreamBarBorder is { } bar)
+            bar.Opacity = 1;
+    }
+
+    private void StreamBar_PointerExited(object? sender, PointerEventArgs e)
+    {
+        _streamBarPinned = false;
+        ShowStreamBar(); // restart the hide timer
+    }
+
+    private void ToggleFullscreen_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.FullScreen
+            ? WindowState.Normal
+            : WindowState.FullScreen;
+    }
+
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
@@ -130,6 +184,29 @@ public partial class MainWindow : Window
             e.Handled = true;
             vm.EscapePressed();
             return;
+        }
+
+        // Search overlay keyboard navigation
+        if (vm.ShowSearch)
+        {
+            if (e.Key == Key.Down)
+            {
+                e.Handled = true;
+                vm.SearchMoveSelection(1);
+                return;
+            }
+            if (e.Key == Key.Up)
+            {
+                e.Handled = true;
+                vm.SearchMoveSelection(-1);
+                return;
+            }
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                vm.SearchConfirm(launch: e.KeyModifiers == KeyModifiers.Control);
+                return;
+            }
         }
 
         // Ctrl+K — open search overlay

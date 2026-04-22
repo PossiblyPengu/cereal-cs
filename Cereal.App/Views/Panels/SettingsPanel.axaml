@@ -26,9 +26,34 @@
   <ScrollViewer>
     <StackPanel Margin="32,24" MaxWidth="600">
 
-      <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Foreground="#e8e4de" Margin="0,0,0,24"/>
+      <!-- ── Stats header ── -->
+      <Border CornerRadius="10" Background="#08ffffff" BorderBrush="#0fffffff"
+              BorderThickness="1" Padding="16,12" Margin="0,0,0,24">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Spacing="2">
+            <TextBlock Text="CEREAL" FontSize="8" FontWeight="Bold"
+                       LetterSpacing="2" Foreground="#40b0aaa0"/>
+            <TextBlock Text="{Binding AppVersion}" FontSize="13" FontWeight="SemiBold"
+                       Foreground="#e8e4de"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
+            <StackPanel HorizontalAlignment="Center" Spacing="2">
+              <TextBlock Text="{Binding GameCount}" FontSize="18" FontWeight="Bold"
+                         Foreground="#d4a853" HorizontalAlignment="Center"/>
+              <TextBlock Text="Games" FontSize="9" Foreground="#40b0aaa0"
+                         HorizontalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Center" Spacing="2">
+              <TextBlock Text="{Binding TotalPlaytimeLabel}" FontSize="18" FontWeight="Bold"
+                         Foreground="#d4a853" HorizontalAlignment="Center"/>
+              <TextBlock Text="Played" FontSize="9" Foreground="#40b0aaa0"
+                         HorizontalAlignment="Center"/>
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+      </Border>
 
-      <!-- Appearance -->
+      <!-- ── Appearance ── -->
       <TextBlock Text="APPEARANCE" FontSize="9" FontWeight="Bold"
                  LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,8"/>
       <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
@@ -44,7 +69,7 @@
         </ComboBox.ItemTemplate>
       </ComboBox>
 
-      <!-- General -->
+      <!-- ── General ── -->
       <TextBlock Text="GENERAL" FontSize="9" FontWeight="Bold"
                  LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,20,0,8"/>
       <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
@@ -54,15 +79,30 @@
                 SelectedItem="{Binding DefaultView}"
                 Background="#08ffffff" Foreground="#e8e4de"/>
 
-      <ToggleSwitch Content="Show animations" IsChecked="{Binding ShowAnimations}" Margin="0,8,0,0"/>
+      <TextBlock Classes="label" Text="Nav pill position"/>
+      <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.NavPositions}"
+                SelectedItem="{Binding NavPosition}"
+                Background="#08ffffff" Foreground="#e8e4de"/>
+
+      <TextBlock Classes="label" Text="UI scale"/>
+      <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.UiScaleOptions}"
+                SelectedItem="{Binding UiScale}"
+                Background="#08ffffff" Foreground="#e8e4de"/>
+
+      <TextBlock Classes="label" Text="Orbit star density"/>
+      <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.StarDensities}"
+                SelectedItem="{Binding StarDensity}"
+                Background="#08ffffff" Foreground="#e8e4de"/>
+
+      <ToggleSwitch Content="Show animations"          IsChecked="{Binding ShowAnimations}"          Margin="0,8,0,0"/>
       <ToggleSwitch Content="Minimize to tray on launch" IsChecked="{Binding MinimizeOnLaunch}"/>
-      <ToggleSwitch Content="Close to tray" IsChecked="{Binding CloseToTray}"/>
+      <ToggleSwitch Content="Close to tray"             IsChecked="{Binding CloseToTray}"/>
       <ToggleSwitch Content="Remember window size and position" IsChecked="{Binding RememberWindowBounds}"/>
-      <ToggleSwitch Content="Discord Rich Presence" IsChecked="{Binding DiscordPresence}"/>
-      <ToggleSwitch Content="Auto-sync playtime" IsChecked="{Binding AutoSyncPlaytime}"/>
+      <ToggleSwitch Content="Discord Rich Presence"     IsChecked="{Binding DiscordPresence}"/>
+      <ToggleSwitch Content="Auto-sync playtime"        IsChecked="{Binding AutoSyncPlaytime}"/>
       <ToggleSwitch Content="Hide Steam software/tools" IsChecked="{Binding FilterHideSteamSoftware}"/>
 
-      <!-- Artwork -->
+      <!-- ── Artwork ── -->
       <TextBlock Text="ARTWORK" FontSize="9" FontWeight="Bold"
                  LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,20,0,8"/>
       <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
@@ -84,7 +124,7 @@
              IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
              Margin="0,4,0,0"/>
 
-      <!-- Platform paths -->
+      <!-- ── Platform paths ── -->
       <TextBlock Text="PLATFORM PATHS" FontSize="9" FontWeight="Bold"
                  LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,20,0,8"/>
       <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
@@ -112,7 +152,55 @@
                 BorderBrush="#10ffffff" Cursor="Hand"/>
       </StackPanel>
 
-      <!-- Action buttons -->
+      <!-- ── Updates ── -->
+      <TextBlock Text="UPDATES" FontSize="9" FontWeight="Bold"
+                 LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,20,0,8"/>
+      <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
+
+      <Border CornerRadius="8" Background="#08ffffff" BorderBrush="#0fffffff"
+              BorderThickness="1" Padding="14,12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+            <TextBlock Text="Cereal" FontSize="12" FontWeight="SemiBold" Foreground="#e8e4de"/>
+            <TextBlock FontSize="11" Foreground="#50b0aaa0">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="Current: {0}">
+                  <Binding Path="AppVersion"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <TextBlock Text="{Binding UpdateVersion, StringFormat='New version available: {0}'}"
+                       FontSize="11" Foreground="#d4a853"
+                       IsVisible="{Binding UpdateAvailable}"/>
+            <TextBlock Text="{Binding UpdateProgress, StringFormat='Downloading… {0}%'}"
+                       FontSize="11" Foreground="#d4a853"
+                       IsVisible="{Binding UpdateDownloading}"/>
+            <TextBlock Text="Update downloaded — restart to apply"
+                       FontSize="11" Foreground="#22c55e"
+                       IsVisible="{Binding UpdateReady}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+            <Button Content="Check for updates"
+                    Command="{Binding CheckForUpdateCommand}"
+                    IsVisible="{Binding !UpdateAvailable}"
+                    Background="#14ffffff" Foreground="#b0aaa0"
+                    CornerRadius="6" Padding="12,6" BorderThickness="1"
+                    BorderBrush="#10ffffff" Cursor="Hand"/>
+            <Button Content="Download update"
+                    Command="{Binding DownloadUpdateCommand}"
+                    IsVisible="{Binding UpdateAvailable}"
+                    Background="#d4a853" Foreground="#07070d"
+                    CornerRadius="6" Padding="12,6" BorderThickness="0" Cursor="Hand"/>
+            <Button Content="Restart to apply"
+                    Command="{Binding InstallUpdateCommand}"
+                    IsVisible="{Binding UpdateReady}"
+                    Background="#22c55e" Foreground="#07070d"
+                    CornerRadius="6" Padding="12,6" BorderThickness="0" Cursor="Hand"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- ── Action buttons ── -->
       <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,24,0,0">
         <Button Content="Save settings"
                 Command="{Binding SaveCommand}"
@@ -124,18 +212,103 @@
                 CornerRadius="6" Padding="16,8" BorderThickness="1" BorderBrush="#10ffffff"/>
       </StackPanel>
 
-      <!-- About -->
+      <!-- ── About ── -->
       <TextBlock Text="ABOUT" FontSize="9" FontWeight="Bold"
                  LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,32,0,8"/>
       <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
       <TextBlock Text="{Binding AppVersion}" FontSize="12" Foreground="#706b63"/>
       <TextBlock Text="{Binding DataPath}" FontSize="11" Foreground="#50b0aaa0"
                  TextWrapping="Wrap" Margin="0,4,0,0"/>
-      <Button Content="Open data folder" Margin="0,8,0,0"
-              Command="{Binding OpenDataFolderCommand}"
-              Background="#14ffffff" Foreground="#b0aaa0"
-              CornerRadius="6" Padding="12,7" BorderThickness="1"
-              BorderBrush="#10ffffff" Cursor="Hand"/>
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+        <Button Content="Open data folder"
+                Command="{Binding OpenDataFolderCommand}"
+                Background="#14ffffff" Foreground="#b0aaa0"
+                CornerRadius="6" Padding="12,7" BorderThickness="1"
+                BorderBrush="#10ffffff" Cursor="Hand"/>
+        <Button Content="Export library"
+                Click="ExportLibrary_Click"
+                Background="#14ffffff" Foreground="#b0aaa0"
+                CornerRadius="6" Padding="12,7" BorderThickness="1"
+                BorderBrush="#10ffffff" Cursor="Hand"/>
+        <Button Content="Import library"
+                Click="ImportLibrary_Click"
+                Background="#14ffffff" Foreground="#b0aaa0"
+                CornerRadius="6" Padding="12,7" BorderThickness="1"
+                BorderBrush="#10ffffff" Cursor="Hand"/>
+      </StackPanel>
+
+      <!-- ── Danger zone ── -->
+      <TextBlock Text="DANGER ZONE" FontSize="9" FontWeight="Bold"
+                 LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,32,0,8"/>
+      <Border Height="1" Background="#1fff4444" Margin="0,0,0,12"/>
+
+      <!-- Clear covers -->
+      <Border CornerRadius="8" Background="#05ff4444" BorderBrush="#0fff4444"
+              BorderThickness="1" Padding="14,12" Margin="0,0,0,8">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="Clear cover art" FontSize="12" FontWeight="SemiBold" Foreground="#e8e4de"/>
+            <TextBlock Text="Deletes all locally downloaded cover and header images."
+                       FontSize="11" Foreground="#50b0aaa0" TextWrapping="Wrap"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button Content="Cancel"
+                    Command="{Binding CancelClearCoversCommand}"
+                    IsVisible="{Binding ConfirmingClearCovers}"
+                    Background="#14ffffff" Foreground="#b0aaa0"
+                    CornerRadius="6" Padding="10,6" BorderThickness="1" BorderBrush="#10ffffff" Cursor="Hand"/>
+            <Button Command="{Binding ClearCoversCommand}"
+                    CornerRadius="6" Padding="10,6" BorderThickness="0" Cursor="Hand">
+              <Button.Content>
+                <Panel>
+                  <TextBlock Text="Clear covers" IsVisible="{Binding !ConfirmingClearCovers}"
+                             FontSize="12" Foreground="#ff7070"/>
+                  <TextBlock Text="Confirm?" IsVisible="{Binding ConfirmingClearCovers}"
+                             FontSize="12" Foreground="White"/>
+                </Panel>
+              </Button.Content>
+              <Button.Background>
+                <SolidColorBrush Color="#33ff4444"/>
+              </Button.Background>
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Clear all games -->
+      <Border CornerRadius="8" Background="#05ff4444" BorderBrush="#0fff4444"
+              BorderThickness="1" Padding="14,12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="Clear library" FontSize="12" FontWeight="SemiBold" Foreground="#e8e4de"/>
+            <TextBlock Text="Permanently removes all games from your library. Cannot be undone."
+                       FontSize="11" Foreground="#50b0aaa0" TextWrapping="Wrap"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button Content="Cancel"
+                    Command="{Binding CancelClearGamesCommand}"
+                    IsVisible="{Binding ConfirmingClearGames}"
+                    Background="#14ffffff" Foreground="#b0aaa0"
+                    CornerRadius="6" Padding="10,6" BorderThickness="1" BorderBrush="#10ffffff" Cursor="Hand"/>
+            <Button Command="{Binding ClearAllGamesCommand}"
+                    CornerRadius="6" Padding="10,6" BorderThickness="0" Cursor="Hand">
+              <Button.Content>
+                <Panel>
+                  <TextBlock Text="Clear all games" IsVisible="{Binding !ConfirmingClearGames}"
+                             FontSize="12" Foreground="#ff7070"/>
+                  <TextBlock Text="Confirm?" IsVisible="{Binding ConfirmingClearGames}"
+                             FontSize="12" Foreground="White"/>
+                </Panel>
+              </Button.Content>
+              <Button.Background>
+                <SolidColorBrush Color="#33ff4444"/>
+              </Button.Background>
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Height="32"/>
 
     </StackPanel>
   </ScrollViewer>

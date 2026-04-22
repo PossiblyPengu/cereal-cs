@@ -52,6 +52,7 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private string? _headerPath;
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _isHidden;
+    [ObservableProperty] private bool _isSearchHighlighted;
 
     public string PlaytimeLabel
     {

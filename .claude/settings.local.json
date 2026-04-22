@@ -39,7 +39,23 @@
       "PowerShell(& \"D:\\\\CODE\\\\important files sdk folders\\\\dotnet.exe\" build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj --no-restore 2>&1)",
       "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj --no-restore 2>&1)",
       "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj 2>&1)",
-      "Bash(xargs basename *)"
+      "Bash(xargs basename *)",
+      "Bash(\"D:/CODE/important files/dotnet-sdk-9.0.306-win-x64/dotnet.exe\" script)",
+      "Bash(\"D:/CODE/important files/dotnet-sdk-9.0.306-win-x64/dotnet.exe\" build Cereal.App/Cereal.App.csproj -c Release --no-restore)",
+      "Bash(xargs ls *)",
+      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')",
+      "Bash(xargs -I {} basename {})",
+      "Bash(cmd /c \"dotnet build Cereal.App/Cereal.App.csproj -c Release --no-restore 2>&1\")",
+      "PowerShell(dotnet build \"Cereal.App/Cereal.App.csproj\" -c Release --no-restore 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Release --no-restore 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --list-sdks)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --version)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --info 2>&1)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\dotnet\\\\\" -Name | Select-Object -First 20; Get-ChildItem \"${env:ProgramFiles\\(x86\\)}\\\\dotnet\\\\\" -Name -ErrorAction SilentlyContinue | Select-Object -First 10)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1 | Where-Object { $_ -match \"error|Error|warning CS|Build succeeded|Build FAILED\" } | Select-Object -Last 20)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1 | Where-Object { $_ -match \"error CS|Build succeeded|Build FAILED|AVLN\" } | Select-Object -Last 15)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1 | Where-Object { $_ -match \"error CS|Build succeeded|Build FAILED\" } | Select-Object -Last 10)"
     ]
   }
 }

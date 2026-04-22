@@ -17,6 +17,8 @@ public partial class MainViewModel : ObservableObject
     private readonly ChiakiService _chiaki;
     private readonly XcloudService _xcloud;
 
+    public MediaViewModel Media { get; }
+
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private string _activeNav = "library";
     [ObservableProperty] private string _viewMode = "cards";
@@ -85,19 +87,23 @@ public partial class MainViewModel : ObservableObject
     public StreamTabViewModel? ActiveStreamTab =>
         StreamTabs.FirstOrDefault(t => t.State is "streaming" or "connecting" or "launching" or "gui");
     public bool IsStreaming => ActiveStreamTab is not null;
+    public bool IsStreamConnecting =>
+        ActiveStreamTab?.State is "connecting" or "launching";
 
     public MainViewModel(
         GameService games,
         SettingsService settings,
         CoverService covers,
         ChiakiService chiaki,
-        XcloudService xcloud)
+        XcloudService xcloud,
+        SmtcService smtc)
     {
         _games = games;
         _settings = settings;
         _covers = covers;
         _chiaki = chiaki;
         _xcloud = xcloud;
+        Media = new MediaViewModel(smtc);
 
         ViewMode = settings.Get().DefaultView ?? "cards";
 
@@ -109,6 +115,7 @@ public partial class MainViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(ActiveStreamTab));
             OnPropertyChanged(nameof(IsStreaming));
+            OnPropertyChanged(nameof(IsStreamConnecting));
         };
 
         Refresh();
@@ -181,9 +188,12 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(AllCategories));
     }
 
+    private int _searchSelectedIndex = -1;
+
     partial void OnSearchQueryChanged(string value)
     {
         SearchPlatformFilter = null;
+        _searchSelectedIndex = -1;
         OnPropertyChanged(nameof(SearchResults));
         OnPropertyChanged(nameof(SearchActivePlatforms));
         OnPropertyChanged(nameof(HasNoSearchResults));
@@ -251,6 +261,33 @@ public partial class MainViewModel : ObservableObject
     private void SetSearchPlatformFilter(string? platform) =>
         SearchPlatformFilter = SearchPlatformFilter == platform ? null : platform;
 
+    public void SearchMoveSelection(int delta)
+    {
+        var results = SearchResults.ToList();
+        if (results.Count == 0) return;
+        if (_searchSelectedIndex >= 0 && _searchSelectedIndex < results.Count)
+            results[_searchSelectedIndex].IsSearchHighlighted = false;
+        _searchSelectedIndex = Math.Clamp(_searchSelectedIndex + delta, 0, results.Count - 1);
+        results[_searchSelectedIndex].IsSearchHighlighted = true;
+    }
+
+    public void SearchConfirm(bool launch)
+    {
+        var results = SearchResults.ToList();
+        var card = _searchSelectedIndex >= 0 && _searchSelectedIndex < results.Count
+            ? results[_searchSelectedIndex]
+            : results.FirstOrDefault();
+        if (card is null) return;
+        if (launch) _ = SearchLaunchAsync(card);
+        else SearchSelect(card);
+    }
+
+    private async Task SearchLaunchAsync(GameCardViewModel card)
+    {
+        CloseSearch();
+        await LaunchGame(card);
+    }
+
     // ── Continue banner ───────────────────────────────────────────────────────
 
     [RelayCommand]
@@ -305,6 +342,26 @@ public partial class MainViewModel : ObservableObject
         var launch = App.Services.GetRequiredService<LaunchService>();
         var result = await launch.LaunchAsync(card.Game);
         StatusMessage = result.Success ? null : $"Failed to launch: {result.Error}";
+    }
+
+    [RelayCommand]
+    private void SelectGameById(string id)
+    {
+        var game = _games.GetAll().FirstOrDefault(g => g.Id == id);
+        if (game is null) return;
+        var card = VisibleGames.FirstOrDefault(c => c.Id == id)
+                   ?? new GameCardViewModel(game, _games);
+        SelectGame(card);
+    }
+
+    [RelayCommand]
+    private async Task LaunchGameById(string id)
+    {
+        var game = _games.GetAll().FirstOrDefault(g => g.Id == id);
+        if (game is null) return;
+        var card = VisibleGames.FirstOrDefault(c => c.Id == id)
+                   ?? new GameCardViewModel(game, _games);
+        await LaunchGame(card);
     }
 
     [RelayCommand]
@@ -437,6 +494,7 @@ public partial class MainViewModel : ObservableObject
                     tab.State = stateStr;
                     OnPropertyChanged(nameof(ActiveStreamTab));
                     OnPropertyChanged(nameof(IsStreaming));
+            OnPropertyChanged(nameof(IsStreamConnecting));
                 }
             }
             else if (stateStr == "disconnected" && tab is not null)
@@ -456,6 +514,7 @@ public partial class MainViewModel : ObservableObject
                 tab.State = s?.ToString() ?? "";
                 OnPropertyChanged(nameof(ActiveStreamTab));
                 OnPropertyChanged(nameof(IsStreaming));
+            OnPropertyChanged(nameof(IsStreamConnecting));
             }
         }
         else if (e.Type == "disconnected" && tab is not null)
