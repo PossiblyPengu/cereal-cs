@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # ── Windows build ──────────────────────────────────────────────────────────
+  build-windows:
+    name: Build Windows (win-x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # vpk CLI requires .NET 9 ASP.NET Core runtime (pre-installed on windows-latest)
+      - name: Setup .NET 9 (for vpk)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk
+
+      - name: Restore
+        run: dotnet restore Cereal.App/Cereal.App.csproj
+
+      - name: Publish win-x64
+        run: |
+          dotnet publish Cereal.App/Cereal.App.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained `
+            -o publish/win
+
+      - name: Extract version (strip v prefix)
+        id: ver
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Pack with vpk
+        shell: bash
+        run: |
+          vpk pack \
+            --packId Cereal \
+            --packVersion ${{ steps.ver.outputs.version }} \
+            --packDir publish/win \
+            --mainExe Cereal.App.exe \
+            --outputDir artifacts/win \
+            --icon Cereal.App/Assets/icon.ico
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: artifacts/win/
+          retention-days: 5
+
+  # ── Linux build ───────────────────────────────────────────────────────────
+  build-linux:
+    name: Build Linux (linux-x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup .NET 9 (for vpk)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk
+
+      - name: Restore
+        run: dotnet restore Cereal.App/Cereal.App.csproj
+
+      - name: Publish linux-x64
+        run: |
+          dotnet publish Cereal.App/Cereal.App.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained \
+            -o publish/linux
+
+      - name: Extract version (strip v prefix)
+        id: ver
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Pack with vpk
+        run: |
+          vpk pack \
+            --packId Cereal \
+            --packVersion ${{ steps.ver.outputs.version }} \
+            --packDir publish/linux \
+            --mainExe Cereal.App \
+            --outputDir artifacts/linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: artifacts/linux/
+          retention-days: 5
+
+  # ── GitHub Release ────────────────────────────────────────────────────────
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: release/windows/
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: release/linux/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Cereal ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release/windows/**
+            release/linux/**

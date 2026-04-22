@@ -1,0 +1,122 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cereal.App.ViewModels"
+        xmlns:views="using:Cereal.App.Views"
+        xmlns:panels="using:Cereal.App.Views.Panels"
+        xmlns:conv="using:Cereal.App"
+        x:Class="Cereal.App.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Cereal"
+        Width="1280" Height="800"
+        MinWidth="900" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="#07070d">
+
+  <Window.Styles>
+    <!-- Stream tab close button -->
+    <Style Selector="Button.tab-close">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="3,0"/>
+      <Setter Property="Foreground" Value="#5ab0aaa0"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.tab-close:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#22ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="40,*">
+
+    <!-- ── Tab bar (title bar region, chrome-extended) ── -->
+    <Border Grid.Row="0"
+            Background="#cc07070d"
+            BorderBrush="#0fffffff"
+            BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+
+        <!-- Left: logo -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="0"
+                    VerticalAlignment="Center" Margin="12,0,0,0">
+          <TextBlock Text="⬡" FontSize="18" Foreground="#d4a853"
+                     VerticalAlignment="Center" Margin="0,0,6,0"/>
+          <TextBlock Text="CEREAL" FontSize="10" FontWeight="Light"
+                     LetterSpacing="4" VerticalAlignment="Center"
+                     Foreground="#80b0aaa0"/>
+        </StackPanel>
+
+        <!-- Center: stream session tabs -->
+        <ItemsControl Grid.Column="1" ItemsSource="{Binding StreamTabs}"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                      Margin="8,0">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="3"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:StreamTabViewModel">
+              <Border CornerRadius="6" Padding="8,0,4,0" Height="30"
+                      Background="#1affffff">
+                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Title}" Foreground="#e8e4de"
+                             FontSize="11" FontWeight="Medium" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding State}" Foreground="#50b0aaa0"
+                             FontSize="10" VerticalAlignment="Center"/>
+                  <Button Classes="tab-close" Content="×"
+                          Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
+                          CommandParameter="{Binding GameId}"/>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Right: spacer for OS window controls -->
+        <Border Grid.Column="2" Width="140" IsHitTestVisible="False"/>
+      </Grid>
+    </Border>
+
+    <!-- ── Content: main view + overlay panels ── -->
+    <Panel Grid.Row="1">
+
+      <!-- Main library view (always visible) -->
+      <views:MainView/>
+
+      <!-- Overlay backdrop (blocks clicks, dims background) -->
+      <Border IsVisible="{Binding AnyPanelOpen}"
+              Background="#cc07070d"
+              IsHitTestVisible="True">
+        <Border.GestureRecognizers>
+          <TapGestureRecognizer Command="{Binding CloseAllPanelsCommand}"/>
+        </Border.GestureRecognizers>
+      </Border>
+
+      <!-- Settings panel — slides in from right -->
+      <panels:SettingsPanel HorizontalAlignment="Right"
+                            Width="480"
+                            IsVisible="{Binding ShowSettings}"/>
+
+      <!-- Detect panel -->
+      <panels:DetectPanel HorizontalAlignment="Right"
+                          Width="520"
+                          IsVisible="{Binding ShowDetect}"/>
+
+      <!-- Chiaki panel -->
+      <panels:ChiakiPanel HorizontalAlignment="Right"
+                          Width="480"
+                          IsVisible="{Binding ShowChiaki}"/>
+
+      <!-- Xbox Cloud — full screen -->
+      <panels:XcloudPanel IsVisible="{Binding ShowXcloud}"/>
+
+    </Panel>
+
+  </Grid>
+</Window>

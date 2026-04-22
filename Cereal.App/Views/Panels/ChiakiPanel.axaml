@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:services="using:Cereal.App.Services.Integrations"
+             xmlns:local="using:Cereal.App.Views.Panels"
+             x:Class="Cereal.App.Views.Panels.ChiakiPanel"
+             x:DataType="local:ChiakiPanel"
+             Background="Transparent">
+
+  <Grid RowDefinitions="Auto,Auto,*" Margin="12">
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="Discover consoles" Click="Discover_Click" />
+      <Button Content="Open Chiaki GUI" Click="OpenGui_Click"/>
+    </StackPanel>
+
+    <Border Grid.Row="1" x:Name="EmbedHost" Height="360" Background="#001122" CornerRadius="6" Margin="0,12,0,0">
+      <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#66ccccff" Text="Chiaki embed area"/>
+    </Border>
+
+    <ListBox Grid.Row="2" ItemsSource="{Binding Consoles}" Margin="0,12,0,0">
+      <ListBox.ItemTemplate>
+        <DataTemplate DataType="services:DiscoveredConsole">
+          <Border Padding="8" Margin="0,4" Background="#111122" CornerRadius="6">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+              <StackPanel Grid.Column="0">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Host}" Foreground="#88ccccff"/>
+                <TextBlock Text="{Binding State}" Foreground="#66ccccff"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                <Button Content="Start" Click="Start_Click" />
+                <Button Content="Wake" Click="Wake_Click"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Grid>
+</UserControl>

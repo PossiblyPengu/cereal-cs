@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cereal.App.ViewModels"
+             xmlns:models="using:Cereal.App.Models"
+             xmlns:conv="using:Cereal.App"
+             x:Class="Cereal.App.Views.Panels.SettingsPanel"
+             x:DataType="vm:SettingsViewModel"
+             Background="Transparent">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="#88ccccff"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Margin" Value="0,12,0,4"/>
+    </Style>
+    <Style Selector="TextBox.field">
+      <Setter Property="Background" Value="#1a1a3a"/>
+      <Setter Property="BorderBrush" Value="#33aaaaff"/>
+      <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector="ToggleSwitch">
+      <Setter Property="Foreground" Value="#ccccff"/>
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer>
+    <StackPanel Margin="32,24" MaxWidth="600">
+
+      <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,24"/>
+
+      <!-- Appearance -->
+      <TextBlock Text="APPEARANCE" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2"/>
+      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+
+      <TextBlock Classes="label" Text="Theme"/>
+      <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ThemeOptions}"
+                SelectedItem="{Binding SelectedTheme}"
+                Background="#1a1a3a" Foreground="White">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="models:AppTheme">
+            <TextBlock Text="{Binding Label}"/>
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <!-- General -->
+      <TextBlock Text="GENERAL" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2" Margin="0,20,0,0"/>
+      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+
+      <TextBlock Classes="label" Text="Default view"/>
+      <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ViewOptions}"
+                SelectedItem="{Binding DefaultView}"
+                Background="#1a1a3a" Foreground="White"/>
+
+      <ToggleSwitch Content="Show animations" IsChecked="{Binding ShowAnimations}" Margin="0,8,0,0"/>
+      <ToggleSwitch Content="Minimize to tray on launch" IsChecked="{Binding MinimizeOnLaunch}"/>
+      <ToggleSwitch Content="Close to tray" IsChecked="{Binding CloseToTray}"/>
+      <ToggleSwitch Content="Remember window size and position" IsChecked="{Binding RememberWindowBounds}"/>
+      <ToggleSwitch Content="Discord Rich Presence" IsChecked="{Binding DiscordPresence}"/>
+      <ToggleSwitch Content="Auto-sync playtime" IsChecked="{Binding AutoSyncPlaytime}"/>
+      <ToggleSwitch Content="Hide Steam software/tools" IsChecked="{Binding FilterHideSteamSoftware}"/>
+
+      <!-- Artwork -->
+      <TextBlock Text="ARTWORK" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2" Margin="0,20,0,0"/>
+      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+
+      <TextBlock Classes="label" Text="SteamGridDB API key"/>
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <TextBox Grid.Column="0" Classes="field" Text="{Binding SteamGridDbKey}" PasswordChar="•"/>
+        <Button Grid.Column="1" Content="Validate" Margin="8,0,0,0"
+                Command="{Binding ValidateSteamGridDbKeyCommand}"
+                IsEnabled="{Binding !IsValidatingKey}"
+                Background="#33aaaaff" Foreground="White" CornerRadius="4" Padding="10,6" BorderThickness="0"/>
+        <Button Grid.Column="2" Content="Save" Margin="6,0,0,0"
+                Command="{Binding SaveSteamGridDbKeyCommand}"
+                Background="#7c6af7" Foreground="White" CornerRadius="4" Padding="10,6" BorderThickness="0"/>
+      </Grid>
+      <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#88ccccff"
+             IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+             Margin="0,4,0,0"/>
+
+      <!-- Platform paths -->
+      <TextBlock Text="PLATFORM PATHS" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2" Margin="0,20,0,0"/>
+      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+
+      <TextBlock Classes="label" Text="Steam path (optional)"/>
+      <TextBox Classes="field" Text="{Binding SteamPath}" Watermark="Auto-detected"/>
+      <TextBlock Classes="label" Text="Epic Games path (optional)"/>
+      <TextBox Classes="field" Text="{Binding EpicPath}" Watermark="Auto-detected"/>
+      <TextBlock Classes="label" Text="GOG Galaxy path (optional)"/>
+      <TextBox Classes="field" Text="{Binding GogPath}" Watermark="Auto-detected"/>
+      <TextBlock Classes="label" Text="Chiaki-ng executable path (optional)"/>
+      <TextBox Classes="field" Text="{Binding ChiakiPath}" Watermark="Auto-detected"/>
+
+      <!-- Action buttons -->
+      <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,24,0,0">
+        <Button Content="Save settings"
+                Command="{Binding SaveCommand}"
+                Background="#7c6af7" Foreground="White"
+                CornerRadius="6" Padding="16,8" BorderThickness="0"/>
+        <Button Content="Reset to defaults"
+                Command="{Binding ResetCommand}"
+                Background="#33ffffff" Foreground="White"
+                CornerRadius="6" Padding="16,8" BorderThickness="0"/>
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

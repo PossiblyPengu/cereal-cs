@@ -1,0 +1,41 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Cereal.App"
+             x:Class="Cereal.App.App"
+             RequestedThemeVariant="Dark">
+
+  <Application.Styles>
+    <FluentTheme/>
+  </Application.Styles>
+
+  <!-- Theme color resources — updated at runtime by ThemeService -->
+  <Application.Resources>
+    <Color x:Key="ThemeVoidColor">#07070d</Color>
+    <Color x:Key="ThemeSurfaceColor">#0d0d16</Color>
+    <Color x:Key="ThemeCardColor">#101018</Color>
+    <Color x:Key="ThemeAccentColor">#d4a853</Color>
+    <Color x:Key="ThemeTextColor">#e8e4de</Color>
+    <Color x:Key="ThemeText2Color">#b0aaa0</Color>
+    <SolidColorBrush x:Key="ThemeVoid"   Color="{DynamicResource ThemeVoidColor}"/>
+    <SolidColorBrush x:Key="ThemeSurface" Color="{DynamicResource ThemeSurfaceColor}"/>
+    <SolidColorBrush x:Key="ThemeCard"   Color="{DynamicResource ThemeCardColor}"/>
+    <SolidColorBrush x:Key="ThemeAccent" Color="{DynamicResource ThemeAccentColor}"/>
+    <SolidColorBrush x:Key="ThemeText"   Color="{DynamicResource ThemeTextColor}"/>
+    <SolidColorBrush x:Key="ThemeText2"  Color="{DynamicResource ThemeText2Color}"/>
+  </Application.Resources>
+
+  <TrayIcon.Icons>
+    <TrayIcons>
+      <TrayIcon ToolTipText="Cereal Launcher" Command="{x:Static local:App.ShowWindowCommand}">
+        <TrayIcon.Menu>
+          <NativeMenu>
+            <NativeMenuItem Header="Open Cereal" Command="{x:Static local:App.ShowWindowCommand}"/>
+            <NativeMenuItemSeparator/>
+            <NativeMenuItem Header="Quit" Command="{x:Static local:App.QuitCommand}"/>
+          </NativeMenu>
+        </TrayIcon.Menu>
+      </TrayIcon>
+    </TrayIcons>
+  </TrayIcon.Icons>
+
+</Application>

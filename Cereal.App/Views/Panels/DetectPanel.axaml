@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cereal.App.ViewModels"
+             xmlns:conv="using:Cereal.App"
+             x:Class="Cereal.App.Views.Panels.DetectPanel"
+             x:DataType="vm:DetectViewModel"
+             Background="Transparent">
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="32,24">
+
+    <!-- Header -->
+    <StackPanel Grid.Row="0" Margin="0,0,0,20">
+      <TextBlock Text="Detect Games" FontSize="24" FontWeight="Bold" Foreground="White"/>
+      <TextBlock Text="Scan your installed platforms and import games into your library."
+                 FontSize="14" Foreground="#66ccccff" Margin="0,4,0,0"/>
+    </StackPanel>
+
+    <!-- Main content: provider toggles + results -->
+    <Grid Grid.Row="1" ColumnDefinitions="220,*">
+
+      <!-- Provider list -->
+      <StackPanel Grid.Column="0" Spacing="4">
+        <TextBlock Text="PLATFORMS" Foreground="#55ccccff" FontSize="11" FontWeight="Bold"
+                   LetterSpacing="2" Margin="0,0,0,8"/>
+        <ItemsControl ItemsSource="{Binding Providers}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ProviderToggle">
+              <CheckBox Content="{Binding PlatformId}"
+                        IsChecked="{Binding Enabled}"
+                        Foreground="#ccccff" Margin="0,2"/>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Button Content="Scan installed games"
+                Command="{Binding ScanCommand}"
+                IsEnabled="{Binding !IsScanning}"
+                Background="#7c6af7" Foreground="White"
+                CornerRadius="6" Padding="14,8" BorderThickness="0"
+                HorizontalAlignment="Left" Margin="0,16,0,0"/>
+      </StackPanel>
+
+      <!-- Results -->
+      <Grid Grid.Column="1" RowDefinitions="Auto,*" Margin="24,0,0,0">
+
+        <!-- Column header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,100,80" Margin="0,0,0,4">
+          <TextBlock Grid.Column="0" Text="Game" Foreground="#55ccccff" FontSize="12" FontWeight="SemiBold"/>
+          <TextBlock Grid.Column="1" Text="Platform" Foreground="#55ccccff" FontSize="12" FontWeight="SemiBold"/>
+          <CheckBox Grid.Column="2" Content="Add" Foreground="#55ccccff" FontSize="12"/>
+        </Grid>
+        <Separator Grid.Row="0" Background="#22aaaaff" VerticalAlignment="Bottom"/>
+
+        <ScrollViewer Grid.Row="1">
+          <ItemsControl ItemsSource="{Binding Results}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DetectedGameRow">
+                <Grid ColumnDefinitions="*,100,80" Margin="0,4">
+                  <TextBlock Grid.Column="0" Text="{Binding Name}"
+                             Foreground="{Binding IsImported, Converter={x:Static conv:BoolConverters.ToObject},
+                               ConverterParameter='#55ccccff,White'}"
+                             VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Platform}"
+                             Foreground="#88ccccff" VerticalAlignment="Center" FontSize="12"/>
+                  <CheckBox Grid.Column="2" IsChecked="{Binding IsSelected}"
+                            IsEnabled="{Binding !IsImported}"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
+
+    </Grid>
+
+    <!-- Footer -->
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" Margin="0,16,0,0">
+      <TextBlock VerticalAlignment="Center" Foreground="#66ccccff" FontSize="13">
+        <TextBlock.Text>
+          <MultiBinding StringFormat="{}{0} found  ·  {1} added">
+            <Binding Path="FoundCount"/>
+            <Binding Path="AddedCount"/>
+          </MultiBinding>
+        </TextBlock.Text>
+      </TextBlock>
+      <Button Content="Import selected"
+              Command="{Binding ImportSelectedCommand}"
+              Background="#33aaaaff" Foreground="White"
+              CornerRadius="6" Padding="14,8" BorderThickness="0"/>
+      <Button Content="Import all"
+              Command="{Binding ImportAllCommand}"
+              Background="#22aaaaff" Foreground="#ccccff"
+              CornerRadius="6" Padding="14,8" BorderThickness="0"/>
+      <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"
+             Foreground="#88ccccff" FontSize="12"
+             IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+    </StackPanel>
+
+  </Grid>
+</UserControl>

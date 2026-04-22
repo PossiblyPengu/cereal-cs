@@ -1,0 +1,426 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cereal.App.ViewModels"
+             xmlns:conv="using:Cereal.App"
+             xmlns:views="using:Cereal.App.Views"
+             x:Class="Cereal.App.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             Background="Transparent">
+
+  <UserControl.Styles>
+
+    <!-- ── Nav pill chip ── -->
+    <Style Selector="Button.chip">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#706b63"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="CornerRadius" Value="14"/>
+      <Setter Property="Padding" Value="10,4"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.chip:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+    </Style>
+    <Style Selector="Button.chip.active">
+      <Setter Property="Background" Value="#1fd4a853"/>
+      <Setter Property="BorderBrush" Value="#4dd4a853"/>
+      <Setter Property="Foreground" Value="#d4a853"/>
+    </Style>
+
+    <!-- ── Nav pill icon button ── -->
+    <Style Selector="Button.nav-btn">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#706b63"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Width" Value="30"/>
+      <Setter Property="Height" Value="30"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.nav-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+    </Style>
+
+    <!-- ── View toggle button ── -->
+    <Style Selector="Button.view-btn">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#3d3a35"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Width" Value="26"/>
+      <Setter Property="Height" Value="26"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.view-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+    </Style>
+    <Style Selector="Button.view-btn.active">
+      <Setter Property="Background" Value="#1fd4a853"/>
+      <Setter Property="Foreground" Value="#d4a853"/>
+    </Style>
+
+    <!-- ── Game card ── -->
+    <Style Selector="Border.game-card">
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Background" Value="#101018"/>
+      <Setter Property="BorderBrush" Value="#0fffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="ClipToBounds" Value="True"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="RenderTransform" Value="scale(1) translateY(0px)"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18"/>
+          <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18"/>
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.game-card:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1.02) translateY(-4px)"/>
+      <Setter Property="BoxShadow" Value="0 12 32 0 #660a0a14"/>
+      <Setter Property="BorderBrush" Value="#1affffff"/>
+    </Style>
+
+    <!-- Hover actions: hidden by default, visible on card hover -->
+    <Style Selector="Border.game-card Panel Border.hover-actions">
+      <Setter Property="Opacity" Value="0"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.18"/>
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.game-card:pointerover Panel Border.hover-actions">
+      <Setter Property="Opacity" Value="1"/>
+    </Style>
+
+    <!-- Search box -->
+    <Style Selector="TextBox.search">
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="BorderBrush" Value="#0fffffff"/>
+      <Setter Property="Foreground" Value="#e8e4de"/>
+      <Setter Property="CaretBrush" Value="#d4a853"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="MinWidth" Value="160"/>
+    </Style>
+    <Style Selector="TextBox.search:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="#4dd4a853"/>
+    </Style>
+
+    <!-- Play / ghost hover buttons -->
+    <Style Selector="Button.btn-play-hover">
+      <Setter Property="Background" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="#07070d"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.btn-ghost-hover">
+      <Setter Property="Background" Value="#14ffffff"/>
+      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="BorderBrush" Value="#14ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+  </UserControl.Styles>
+
+  <!-- Root panel — content + floating nav pill -->
+  <Panel>
+
+    <!-- ── Card grid (scroll area) ── -->
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
+      <StackPanel Margin="32,60,32,40">
+
+        <!-- Empty state -->
+        <StackPanel IsVisible="{Binding !GameGroups.Count}"
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Margin="0,80,0,0" Spacing="12">
+          <TextBlock Text="⬡" FontSize="48" Foreground="#1de8e4de"
+                     HorizontalAlignment="Center"/>
+          <TextBlock Text="No games found" FontSize="16" FontWeight="SemiBold"
+                     Foreground="#706b63" HorizontalAlignment="Center"/>
+          <TextBlock Text="Use Detect to scan your installed platforms."
+                     FontSize="13" Foreground="#3d3a35"
+                     HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Platform groups -->
+        <ItemsControl ItemsSource="{Binding GameGroups}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PlatformGroupViewModel">
+              <StackPanel Margin="0,0,0,28">
+
+                <!-- Section header -->
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="2,0,0,14"
+                            VerticalAlignment="Center">
+                  <Ellipse Width="8" Height="8" Fill="{Binding PlatformColor}"
+                           VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding PlatformLabel}"
+                             FontSize="13" FontWeight="SemiBold" Foreground="#b0aaa0"
+                             LetterSpacing="0.5" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding CountLabel}"
+                             FontSize="11" Foreground="#3d3a35" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Cards wrap panel -->
+                <ItemsControl ItemsSource="{Binding Games}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel Orientation="Horizontal" ItemWidth="150"/>
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:GameCardViewModel">
+                      <Border Classes="game-card" Width="150" Margin="0,0,14,14">
+                        <!-- Card layout: cover (225px 2:3) + info -->
+                        <Grid RowDefinitions="225,Auto">
+
+                          <!-- Cover image area -->
+                          <Panel Grid.Row="0">
+                            <!-- Fallback background -->
+                            <Border Background="#16161f">
+                              <TextBlock Text="{Binding Initial}"
+                                         FontSize="48" FontWeight="Light"
+                                         Foreground="#1de8e4de"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Cover image (if loaded) -->
+                            <Image Source="{Binding CoverPath}"
+                                   Stretch="UniformToFill"
+                                   IsVisible="{Binding HasCover}"/>
+
+                            <!-- Bottom gradient overlay -->
+                            <Border VerticalAlignment="Bottom" Height="80"
+                                    IsHitTestVisible="False">
+                              <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                  <GradientStop Color="Transparent" Offset="0"/>
+                                  <GradientStop Color="#b207070d" Offset="1"/>
+                                </LinearGradientBrush>
+                              </Border.Background>
+                            </Border>
+
+                            <!-- Platform badge top-left -->
+                            <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+                                    Margin="6" CornerRadius="3" Padding="5,2"
+                                    Background="#88000000">
+                              <TextBlock Text="{Binding PlatformLabel}"
+                                         FontSize="9" FontWeight="Bold"
+                                         Foreground="White"/>
+                            </Border>
+
+                            <!-- Favorite star top-right -->
+                            <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="6" Width="22" Height="22"
+                                    CornerRadius="11"
+                                    Background="#e6d4a853"
+                                    IsVisible="{Binding IsFavorite}">
+                              <TextBlock Text="★" FontSize="9" Foreground="#07070d"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Hover action buttons (bottom) -->
+                            <Border Classes="hover-actions"
+                                    VerticalAlignment="Bottom"
+                                    IsHitTestVisible="False">
+                              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                          Spacing="6" Margin="8,8">
+                                <Button Classes="btn-play-hover" Content="Play"
+                                        IsHitTestVisible="True"/>
+                                <Button Classes="btn-ghost-hover" Content="Info"
+                                        IsHitTestVisible="True"/>
+                              </StackPanel>
+                            </Border>
+                          </Panel>
+
+                          <!-- Card info -->
+                          <Border Grid.Row="1" Padding="10,8,10,10">
+                            <StackPanel Spacing="2">
+                              <TextBlock Text="{Binding Name}"
+                                         FontSize="12" FontWeight="SemiBold"
+                                         Foreground="#e8e4de"
+                                         TextTrimming="CharacterEllipsis"/>
+                              <TextBlock Text="{Binding PlaytimeLabel}"
+                                         FontSize="10" Foreground="#706b63"/>
+                            </StackPanel>
+                          </Border>
+
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- ── Orbit mode ── -->
+    <views:OrbitView x:Name="OrbitViewControl"
+                     IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
+                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+    <!-- ── Floating nav pill ── -->
+    <Border VerticalAlignment="Top" HorizontalAlignment="Center"
+            Margin="0,8,0,0"
+            CornerRadius="22"
+            Background="#d20d0d16"
+            BorderBrush="#17ffffff"
+            BorderThickness="1"
+            Padding="8,4">
+      <!-- BoxShadow only works on Border with a brush set -->
+      <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+
+        <!-- Brand -->
+        <TextBlock Text="CEREAL" FontSize="10" FontWeight="Light"
+                   LetterSpacing="4" Foreground="#80d4a853"
+                   VerticalAlignment="Center" Margin="6,0,10,0"/>
+
+        <!-- Separator -->
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="2,0"/>
+
+        <!-- "All" chip -->
+        <Button Classes="chip" Content="All"
+                Command="{Binding ClearFiltersCommand}"/>
+
+        <!-- Platform chips -->
+        <ItemsControl ItemsSource="{Binding PlatformChips}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="1"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PlatformChipViewModel">
+              <Button Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).TogglePlatformFilterCommand}"
+                      CommandParameter="{Binding Id}"
+                      Padding="10,4" CornerRadius="14" FontSize="10" FontWeight="Medium"
+                      Cursor="Hand" BorderThickness="1">
+                <Button.Styles>
+                  <Style Selector="Button">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="#706b63"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                  </Style>
+                  <Style Selector="Button:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="#08ffffff"/>
+                    <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+                  </Style>
+                </Button.Styles>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding Count}" FontSize="9" Foreground="#3d3a35"
+                             VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Separator -->
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
+
+        <!-- View toggle: cards icon -->
+        <Border Padding="2" CornerRadius="8" Background="#08ffffff" Margin="2,0">
+          <StackPanel Orientation="Horizontal" Spacing="1">
+            <Button Classes="view-btn"
+                    Command="{Binding ToggleViewModeCommand}"
+                    ToolTip.Tip="Card view">
+              <Button.Styles>
+                <Style Selector="Button.view-btn">
+                  <Setter Property="Background" Value="Transparent"/>
+                  <Setter Property="Foreground" Value="#3d3a35"/>
+                </Style>
+              </Button.Styles>
+              <TextBlock Text="⊞" FontSize="13"/>
+            </Button>
+            <Button Classes="view-btn"
+                    Command="{Binding ToggleViewModeCommand}"
+                    ToolTip.Tip="Orbit view">
+              <TextBlock Text="◉" FontSize="13"/>
+            </Button>
+          </StackPanel>
+        </Border>
+
+        <!-- Separator -->
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
+
+        <!-- Add game -->
+        <Button Classes="nav-btn" ToolTip.Tip="Add game"
+                Command="{Binding ShowAddGameCommand}">
+          <TextBlock Text="＋" FontSize="15" VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+        </Button>
+
+        <!-- Search -->
+        <TextBox Classes="search" Text="{Binding SearchText}"
+                 Watermark="Search…" Margin="2,0"/>
+
+        <!-- Settings -->
+        <Button Classes="nav-btn" ToolTip.Tip="Settings"
+                Command="{Binding OpenSettingsCommand}">
+          <TextBlock Text="⚙" FontSize="14" VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+        </Button>
+
+        <!-- Detect / scan -->
+        <Button Classes="nav-btn" ToolTip.Tip="Scan for games"
+                Command="{Binding OpenDetectCommand}">
+          <TextBlock Text="⊕" FontSize="14" VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+        </Button>
+
+        <!-- PlayStation (Chiaki) -->
+        <Button Classes="nav-btn" ToolTip.Tip="PlayStation (Chiaki)"
+                Command="{Binding OpenChiakiCommand}">
+          <TextBlock Text="🎮" FontSize="13" VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+        </Button>
+
+        <!-- Xbox Cloud -->
+        <Button Classes="nav-btn" ToolTip.Tip="Xbox Cloud Gaming"
+                Command="{Binding OpenXcloudCommand}">
+          <TextBlock Text="☁" FontSize="14" VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+        </Button>
+
+      </StackPanel>
+    </Border>
+
+    <!-- ── Status bar (cover download progress) ── -->
+    <Border VerticalAlignment="Bottom" HorizontalAlignment="Center"
+            Margin="0,0,0,20"
+            CornerRadius="20" Padding="14,6"
+            Background="#d20d0d16"
+            IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+      <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="#706b63"/>
+    </Border>
+
+  </Panel>
+
+</UserControl>

@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"D:\\\\CODE\\\\important files\\\\dotnet-sdk-8.0.404-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" --no-restore)",
+      "Bash(\"D:\\\\CODE\\\\important files\\\\dotnet-sdk-8.0.404-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\")",
+      "Bash(\"D:\\\\CODE\\\\important files\\\\dotnet-sdk-8.0.404-win-x64\\\\dotnet.exe\" add \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" package System.Security.Cryptography.ProtectedData)",
+      "Bash(\"D:/CODE/important files/dotnet-sdk-8.0.404-win-x64/dotnet.exe\" build Cereal.App/Cereal.App.csproj)",
+      "Read(//d/CODE/**)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet package *)",
+      "Bash(curl -s \"https://api.nuget.org/v3/registration5-gz-semver2/webview.avalonia/index.json\")",
+      "Bash(python3 -c \"import sys,json,gzip; data=json.load\\(sys.stdin\\); [print\\(p.get\\('catalogEntry',{}\\).get\\('version','?'\\), p.get\\('catalogEntry',{}\\).get\\('description',''\\)[:100]\\) for item in data.get\\('items',[]\\) for p in item.get\\('items',[]\\)]\")",
+      "Bash(dotnet add *)",
+      "Bash(dotnet script *)",
+      "Bash(dotnet csi *)",
+      "Bash(powershell -command 'Add-Type -Path '\\\\''C:/Users/andre/.nuget/packages/webview.avalonia/11.0.0.1/lib/netstandard2.0/WebView.Avalonia.dll'\\\\''; [System.AppDomain]::CurrentDomain.GetAssemblies\\(\\) | Where-Object { $_.GetName\\(\\).Name -like '\\\\''*WebView*'\\\\'' -or $_.GetName\\(\\).Name -like '\\\\''*Avalonia.Web*'\\\\'' } | ForEach-Object { $_.GetExportedTypes\\(\\) | Select-Object FullName }')",
+      "Bash(powershell -command ' *)",
+      "Bash(dotnet run *)",
+      "Bash(cat)",
+      "Bash(dotnet tool *)",
+      "Bash(vpk --help)",
+      "Bash(~/.dotnet/tools/vpk.exe --help)",
+      "Bash(dotnet publish *)",
+      "Bash(wait)",
+      "Bash(cp \"E:/CODE/cereal-launcher-vite/build/icon.ico\" \"e:/CODE/cereal-cs/Cereal.App/Assets/icon.ico\")",
+      "Bash(cp \"E:/CODE/cereal-launcher-vite/build/icon.png\" \"e:/CODE/cereal-cs/Cereal.App/Assets/icon.png\")",
+      "Bash(cp \"E:/CODE/cereal-launcher-vite/build/icon.svg\" \"e:/CODE/cereal-cs/Cereal.App/Assets/icon.svg\")",
+      "Bash(\"D:/CODE/important files/dotnet-sdk-8.0.404-win-x64/dotnet.exe\" build -c Release --no-restore)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-8.0.404-win-x64\\\\dotnet.exe\" build \"e:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Release 2>&1)",
+      "PowerShell(Get-Command dotnet -ErrorAction SilentlyContinue)",
+      "PowerShell(dotnet build \"e:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Release 2>&1)"
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Cereal.App.Models;
+using Cereal.App.Services;
+using Cereal.App.Utilities;
+
+namespace Cereal.App.ViewModels;
+
+public partial class GameCardViewModel : ObservableObject
+{
+    private readonly GameService _games;
+    public Game Game { get; }
+
+    public string Id => Game.Id;
+    public string Name => Game.Name;
+    public string Platform => Game.Platform;
+    public string? PlatformId => Game.PlatformId;
+    public string PlatformLabel => PlatformInfo.GetLabel(Game.Platform);
+    public string PlatformColor => PlatformInfo.GetColor(Game.Platform);
+    public string Initial => string.IsNullOrEmpty(Game.Name) ? "?" : Game.Name[0].ToString().ToUpperInvariant();
+    public bool HasCover => !string.IsNullOrEmpty(CoverPath);
+
+    [ObservableProperty] private string? _coverPath;
+    [ObservableProperty] private string? _headerPath;
+    [ObservableProperty] private bool _isFavorite;
+    [ObservableProperty] private bool _isHidden;
+
+    public string PlaytimeLabel
+    {
+        get
+        {
+            var mins = Game.PlaytimeMinutes ?? 0;
+            if (mins < 60) return mins > 0 ? $"{mins}m" : "";
+            return $"{mins / 60}h {mins % 60:00}m";
+        }
+    }
+
+    public string LastPlayedLabel
+    {
+        get
+        {
+            if (Game.LastPlayed is null) return "Never";
+            if (DateTime.TryParse(Game.LastPlayed, out var dt))
+            {
+                var ago = DateTime.UtcNow - dt.ToUniversalTime();
+                if (ago.TotalMinutes < 2) return "Just now";
+                if (ago.TotalHours < 1) return $"{(int)ago.TotalMinutes}m ago";
+                if (ago.TotalDays < 1) return $"{(int)ago.TotalHours}h ago";
+                if (ago.TotalDays < 30) return $"{(int)ago.TotalDays}d ago";
+                return dt.ToString("MMM d, yyyy");
+            }
+            return "";
+        }
+    }
+
+    public GameCardViewModel(Game game, GameService games)
+    {
+        Game = game;
+        _games = games;
+        _isFavorite = game.Favorite ?? false;
+        _isHidden = game.Hidden ?? false;
+        _coverPath = game.LocalCoverPath;
+        _headerPath = game.LocalHeaderPath;
+    }
+
+    public void Refresh()
+    {
+        CoverPath = Game.LocalCoverPath;
+        HeaderPath = Game.LocalHeaderPath;
+        IsFavorite = Game.Favorite ?? false;
+        IsHidden = Game.Hidden ?? false;
+        OnPropertyChanged(nameof(PlaytimeLabel));
+        OnPropertyChanged(nameof(LastPlayedLabel));
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(HasCover));
+    }
+
+    [RelayCommand]
+    private void ToggleFavorite()
+    {
+        _games.SetFavorite(Game.Id, !IsFavorite);
+        IsFavorite = Game.Favorite ?? false;
+    }
+
+    [RelayCommand]
+    private void ToggleHidden()
+    {
+        _games.SetHidden(Game.Id, !IsHidden);
+        IsHidden = Game.Hidden ?? false;
+    }
+}

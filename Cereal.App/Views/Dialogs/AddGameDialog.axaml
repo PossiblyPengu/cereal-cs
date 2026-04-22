@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Cereal.App.Views.Dialogs.AddGameDialog"
+        Title="Add Game"
+        Width="480" Height="520"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#12122a"
+        ExtendClientAreaToDecorationsHint="False">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="#88ccccff"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Margin" Value="0,12,0,4"/>
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="#1a1a3a"/>
+      <Setter Property="BorderBrush" Value="#33aaaaff"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="8,6"/>
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="Background" Value="#1a1a3a"/>
+      <Setter Property="BorderBrush" Value="#33aaaaff"/>
+      <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector="Button.action">
+      <Setter Property="Background" Value="#33aaaaff"/>
+      <Setter Property="Foreground" Value="#ccccff"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="14,8"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.action:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#55aaaaff"/>
+    </Style>
+    <Style Selector="Button.secondary">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#88ccccff"/>
+      <Setter Property="BorderBrush" Value="#33aaaaff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="14,8"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="*,Auto" Margin="28,20">
+
+    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="0">
+
+        <TextBlock Text="Add Custom Game" FontSize="18" FontWeight="SemiBold"
+                   Foreground="White" Margin="0,0,0,16"/>
+
+        <TextBlock Classes="label" Text="Game name *"/>
+        <TextBox x:Name="NameBox" Watermark="e.g. Hollow Knight"/>
+
+        <TextBlock Classes="label" Text="Platform"/>
+        <ComboBox x:Name="PlatformBox" HorizontalAlignment="Stretch">
+          <ComboBoxItem Content="custom" IsSelected="True"/>
+          <ComboBoxItem Content="steam"/>
+          <ComboBoxItem Content="epic"/>
+          <ComboBoxItem Content="gog"/>
+          <ComboBoxItem Content="battlenet"/>
+          <ComboBoxItem Content="ea"/>
+          <ComboBoxItem Content="ubisoft"/>
+          <ComboBoxItem Content="itchio"/>
+          <ComboBoxItem Content="xbox"/>
+          <ComboBoxItem Content="psn"/>
+        </ComboBox>
+
+        <TextBlock Classes="label" Text="Executable path"/>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Grid.Column="0" x:Name="ExeBox" Watermark="C:\Games\game.exe"/>
+          <Button Grid.Column="1" Content="Browse…" Classes="secondary"
+                  Margin="8,0,0,0" Click="BrowseExe_Click"/>
+        </Grid>
+
+        <TextBlock Classes="label" Text="Cover image URL (or pick from SteamGridDB)"/>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Grid.Column="0" x:Name="CoverBox" Watermark="https://…"/>
+          <Button Grid.Column="1" Content="Search art…" Classes="secondary"
+                  Margin="8,0,0,0" Click="PickArt_Click"/>
+        </Grid>
+
+        <!-- Cover preview -->
+        <Border Margin="0,12,0,0" Height="160" Background="#0d0d22"
+                CornerRadius="6" ClipToBounds="True">
+          <Image x:Name="CoverPreview" Stretch="Uniform"/>
+        </Border>
+
+        <TextBlock Classes="label" Text="Steam App ID (optional, for artwork lookup)"/>
+        <TextBox x:Name="SteamIdBox" Watermark="e.g. 367520"/>
+
+        <TextBlock x:Name="ErrorText" Foreground="#cc6666" FontSize="12"
+                   Margin="0,12,0,0" IsVisible="False"/>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Action buttons -->
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="10" Margin="0,16,0,0">
+      <Button Classes="secondary" Content="Cancel" Click="Cancel_Click"/>
+      <Button Classes="action" Content="Add Game" Click="Add_Click"/>
+    </StackPanel>
+
+  </Grid>
+</Window>

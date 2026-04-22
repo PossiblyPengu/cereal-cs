@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#130f22"/>
+      <stop offset="100%" stop-color="#07050e"/>
+    </linearGradient>
+
+    <!-- C arc gradient: purple top → gold bottom -->
+    <linearGradient id="arcGrad" gradientUnits="userSpaceOnUse" x1="345" y1="129" x2="345" y2="383">
+      <stop offset="0%" stop-color="#b060ff"/>
+      <stop offset="45%" stop-color="#8b3dff"/>
+      <stop offset="100%" stop-color="#d4a853"/>
+    </linearGradient>
+
+    <!-- Border gradient -->
+    <linearGradient id="borderGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#8b3dff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#d4a853" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <!-- Big ambient glow behind the C -->
+    <filter id="ambientGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="28" result="blur"/>
+    </filter>
+
+    <!-- Glow on the main arc (bloom) -->
+    <filter id="arcGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Small sparkle glow -->
+    <filter id="sparkGlow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Tight glow for sharp sparkle stars -->
+    <filter id="starGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+
+  <!-- Subtle gradient border -->
+  <rect x="5" y="5" width="502" height="502" rx="93"
+        fill="none" stroke="url(#borderGrad)" stroke-width="1.5"/>
+
+  <!-- Ambient glow (sits behind the C arc) -->
+  <path d="M 345 129 A 155 155 0 1 0 345 383"
+        fill="none" stroke="#7b2cff" stroke-width="120" stroke-linecap="round"
+        opacity="0.32" filter="url(#ambientGlow)"/>
+
+  <!-- Main C arc -->
+  <path d="M 345 129 A 155 155 0 1 0 345 383"
+        fill="none" stroke="url(#arcGrad)" stroke-width="76" stroke-linecap="round"
+        filter="url(#arcGlow)"/>
+
+  <!-- Inner highlight shimmer on C -->
+  <path d="M 345 129 A 155 155 0 1 0 345 383"
+        fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- ── Sparkle stars ── -->
+
+  <!-- Large gold 4-pt star — near C opening (top-right) -->
+  <g transform="translate(408,114)" filter="url(#starGlow)">
+    <path d="M0,-13 Q1.7,-1.7 13,0 Q1.7,1.7 0,13 Q-1.7,1.7 -13,0 Q-1.7,-1.7 0,-13 Z" fill="#d4a853"/>
+  </g>
+
+  <!-- Medium purple 4-pt star — bottom-left -->
+  <g transform="translate(104,398)" filter="url(#starGlow)">
+    <path d="M0,-10 Q1.3,-1.3 10,0 Q1.3,1.3 0,10 Q-1.3,1.3 -10,0 Q-1.3,-1.3 0,-10 Z" fill="#9b5cff"/>
+  </g>
+
+  <!-- Medium white 4-pt star — upper right corner -->
+  <g transform="translate(447,171)" filter="url(#starGlow)">
+    <path d="M0,-7 Q0.9,-0.9 7,0 Q0.9,0.9 0,7 Q-0.9,0.9 -7,0 Q-0.9,-0.9 0,-7 Z" fill="#ffffff" opacity="0.65"/>
+  </g>
+
+  <!-- Medium purple 4-pt star — left edge -->
+  <g transform="translate(80,198)" filter="url(#starGlow)">
+    <path d="M0,-8 Q1.1,-1.1 8,0 Q1.1,1.1 0,8 Q-1.1,1.1 -8,0 Q-1.1,-1.1 0,-8 Z" fill="#9b5cff" opacity="0.8"/>
+  </g>
+
+  <!-- Small gold 4-pt star — below C, bottom right -->
+  <g transform="translate(368,430)" filter="url(#starGlow)">
+    <path d="M0,-6 Q0.8,-0.8 6,0 Q0.8,0.8 0,6 Q-0.8,0.8 -6,0 Q-0.8,-0.8 0,-6 Z" fill="#d4a853" opacity="0.75"/>
+  </g>
+
+  <!-- Tiny background pinpoint dots -->
+  <circle cx="72"  cy="322" r="2"   fill="#c49240" opacity="0.45"/>
+  <circle cx="164" cy="76"  r="1.8" fill="#d4a853" opacity="0.35"/>
+  <circle cx="432" cy="292" r="1.8" fill="#9b5cff" opacity="0.4"/>
+  <circle cx="194" cy="448" r="1.5" fill="#8b3dff" opacity="0.3"/>
+</svg>
