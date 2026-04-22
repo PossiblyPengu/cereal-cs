@@ -92,11 +92,8 @@
       <!-- Overlay backdrop (blocks clicks, dims background) -->
       <Border IsVisible="{Binding AnyPanelOpen}"
               Background="#cc07070d"
-              IsHitTestVisible="True">
-        <Border.GestureRecognizers>
-          <TapGestureRecognizer Command="{Binding CloseAllPanelsCommand}"/>
-        </Border.GestureRecognizers>
-      </Border>
+              IsHitTestVisible="True"
+              PointerPressed="Backdrop_PointerPressed"/>
 
       <!-- Settings panel — slides in from right -->
       <panels:SettingsPanel HorizontalAlignment="Right"
@@ -115,6 +112,239 @@
 
       <!-- Xbox Cloud — full screen -->
       <panels:XcloudPanel IsVisible="{Binding ShowXcloud}"/>
+
+      <!-- Focus panel — full screen game detail (topmost) -->
+      <panels:FocusPanel IsVisible="{Binding ShowFocus}"/>
+
+      <!-- ── Stream overlay bar ── -->
+      <Border VerticalAlignment="Top"
+              IsVisible="{Binding IsStreaming}"
+              Background="#f0101018"
+              BorderBrush="#1affffff"
+              BorderThickness="0,0,0,1"
+              ZIndex="60">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="16,0" Height="38">
+          <!-- Dot + title -->
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                      VerticalAlignment="Center">
+            <Ellipse Width="7" Height="7" VerticalAlignment="Center">
+              <Ellipse.Fill>
+                <SolidColorBrush Color="#22c55e"/>
+              </Ellipse.Fill>
+            </Ellipse>
+            <TextBlock Text="{Binding ActiveStreamTab.Title}"
+                       FontSize="12" FontWeight="SemiBold"
+                       Foreground="#e8e4de" VerticalAlignment="Center"/>
+          </StackPanel>
+          <!-- Platform + state -->
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                      VerticalAlignment="Center" Margin="12,0">
+            <Border CornerRadius="4" Padding="6,2" Background="#18ffffff">
+              <TextBlock Text="{Binding ActiveStreamTab.Platform}"
+                         FontSize="10" FontWeight="Bold" Foreground="#b0aaa0"/>
+            </Border>
+            <TextBlock Text="{Binding ActiveStreamTab.State}"
+                       FontSize="11" Foreground="#50b0aaa0" VerticalAlignment="Center"/>
+          </StackPanel>
+          <!-- Stop button -->
+          <Button Grid.Column="3" Content="Stop" Margin="8,0,0,0"
+                  VerticalAlignment="Center"
+                  Background="#33ff4444" Foreground="#ff7070"
+                  BorderThickness="0" CornerRadius="6" Padding="12,4"
+                  FontSize="11" Cursor="Hand"
+                  Command="{Binding CloseStreamTabCommand}"
+                  CommandParameter="{Binding ActiveStreamTab.GameId}"/>
+        </Grid>
+      </Border>
+
+      <!-- ── Continue banner (bottom-left) ── -->
+      <Border VerticalAlignment="Bottom" HorizontalAlignment="Left"
+              Margin="20,0,0,20"
+              IsVisible="{Binding ShowContinueBanner}"
+              CornerRadius="12"
+              Background="#e8101018"
+              BorderBrush="#1affffff"
+              BorderThickness="1"
+              ZIndex="50">
+        <StackPanel Orientation="Horizontal" Spacing="12" Margin="14,10">
+          <StackPanel Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="CONTINUE" FontSize="8" FontWeight="Bold"
+                       LetterSpacing="1.5" Foreground="#40b0aaa0"/>
+            <TextBlock Text="{Binding ContinueGame.Name}"
+                       FontSize="13" FontWeight="SemiBold"
+                       Foreground="#e8e4de" MaxWidth="200"
+                       TextTrimming="CharacterEllipsis"/>
+          </StackPanel>
+          <Button Content="▶  Play" VerticalAlignment="Center"
+                  Background="#d4a853" Foreground="#07070d"
+                  FontSize="11" FontWeight="Bold"
+                  CornerRadius="8" Padding="14,7" BorderThickness="0" Cursor="Hand"
+                  Command="{Binding LaunchGameCommand}"
+                  CommandParameter="{Binding ContinueGame}"/>
+          <Button Content="×" VerticalAlignment="Center"
+                  Background="Transparent" Foreground="#50b0aaa0"
+                  FontSize="16" Width="28" Height="28"
+                  CornerRadius="14" Padding="0" BorderThickness="0" Cursor="Hand"
+                  Command="{Binding DismissContinueBannerCommand}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- ── Toast stack (bottom-right) ── -->
+      <ItemsControl ItemsSource="{Binding Toasts}"
+                    VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                    Margin="0,0,20,20"
+                    ZIndex="200">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="8"/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:ToastViewModel">
+            <Border CornerRadius="10" Padding="14,9"
+                    Background="#e8101018"
+                    BorderBrush="#1affffff"
+                    BorderThickness="1">
+              <TextBlock Text="{Binding Message}"
+                         FontSize="12" Foreground="#b0aaa0"
+                         MaxWidth="300" TextWrapping="Wrap"/>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- ── Search overlay (Ctrl+K) ── -->
+      <Panel IsVisible="{Binding ShowSearch}" ZIndex="300">
+        <!-- Backdrop -->
+        <Border Background="#cc07070d"
+                PointerPressed="SearchBackdrop_PointerPressed"/>
+        <!-- Card -->
+        <Border HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="0,80,0,0" Width="640" MaxHeight="540"
+                CornerRadius="14"
+                Background="#e8101018"
+                BorderBrush="#1affffff"
+                BorderThickness="1"
+                ClipToBounds="True"
+                PointerPressed="ContentCard_PointerPressedNoop">
+          <StackPanel>
+            <!-- Search input -->
+            <Border Padding="16,12" BorderBrush="#0fffffff" BorderThickness="0,0,0,1">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Column="0" Text="⌕" FontSize="18"
+                           Foreground="#40b0aaa0" VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                <TextBox Grid.Column="1"
+                         Text="{Binding SearchQuery}"
+                         Watermark="Search games…"
+                         BorderThickness="0" Background="Transparent"
+                         Foreground="#e8e4de" CaretBrush="#d4a853"
+                         FontSize="14" Padding="0"
+                         AttachedToVisualTree="SearchBox_AttachedToVisualTree"/>
+                <TextBlock Grid.Column="2" Text="ESC" FontSize="10"
+                           Foreground="#28b0aaa0" VerticalAlignment="Center"
+                           Margin="10,0,0,0"/>
+              </Grid>
+            </Border>
+
+            <!-- Platform chips (when results span multiple platforms) -->
+            <ItemsControl ItemsSource="{Binding SearchActivePlatforms}"
+                          Margin="16,10,16,0"
+                          IsVisible="{Binding SearchActivePlatforms,
+                            Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Button Content="{Binding}" Margin="0,0,6,0" Padding="8,3"
+                          FontSize="10" CornerRadius="10" BorderThickness="1"
+                          Cursor="Hand"
+                          Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SetSearchPlatformFilterCommand}"
+                          CommandParameter="{Binding}">
+                    <Button.Styles>
+                      <Style Selector="Button">
+                        <Setter Property="Background" Value="#10ffffff"/>
+                        <Setter Property="Foreground" Value="#b0aaa0"/>
+                        <Setter Property="BorderBrush" Value="#10ffffff"/>
+                      </Style>
+                    </Button.Styles>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Results -->
+            <ScrollViewer MaxHeight="400" Margin="0,8,0,0"
+                          VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding SearchResults}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:GameCardViewModel">
+                    <Border Padding="16,10" Cursor="Hand"
+                            PointerPressed="SearchResult_PointerPressed">
+                      <Border.Styles>
+                        <Style Selector="Border:pointerover">
+                          <Setter Property="Background" Value="#08ffffff"/>
+                        </Style>
+                      </Border.Styles>
+                      <Grid ColumnDefinitions="44,*,Auto">
+                        <!-- Cover thumb -->
+                        <Border Grid.Column="0" Width="36" Height="50"
+                                CornerRadius="4" ClipToBounds="True"
+                                Background="#16161f" VerticalAlignment="Center">
+                          <Panel>
+                            <TextBlock Text="{Binding Initial}"
+                                       FontSize="18" Foreground="#1de8e4de"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Image Source="{Binding CoverPath}"
+                                   IsVisible="{Binding HasCover}"
+                                   Stretch="UniformToFill"/>
+                          </Panel>
+                        </Border>
+                        <!-- Name + meta -->
+                        <StackPanel Grid.Column="1" Spacing="3"
+                                    VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Name}"
+                                     FontSize="13" FontWeight="SemiBold"
+                                     Foreground="#e8e4de"
+                                     TextTrimming="CharacterEllipsis"/>
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="{Binding PlatformLabel}"
+                                       FontSize="11" Foreground="#50b0aaa0"/>
+                            <TextBlock Text="{Binding PlaytimeLabel}"
+                                       FontSize="11" Foreground="#3d3a35"
+                                       IsVisible="{Binding PlaytimeLabel,
+                                         Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
+                          </StackPanel>
+                        </StackPanel>
+                        <!-- Launch button -->
+                        <Button Grid.Column="2" Content="▶"
+                                VerticalAlignment="Center"
+                                Background="#d4a853" Foreground="#07070d"
+                                FontSize="11" FontWeight="Bold"
+                                CornerRadius="6" Padding="10,6"
+                                BorderThickness="0" Cursor="Hand"
+                                Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SearchLaunchCommand}"
+                                CommandParameter="{Binding}"/>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Empty state -->
+            <TextBlock IsVisible="{Binding HasNoSearchResults}"
+                       Text="No matches"
+                       FontSize="13" Foreground="#3d3a35"
+                       HorizontalAlignment="Center"
+                       Margin="0,20"/>
+          </StackPanel>
+        </Border>
+      </Panel>
 
     </Panel>
 

@@ -28,7 +28,18 @@
       "Bash(\"D:/CODE/important files/dotnet-sdk-8.0.404-win-x64/dotnet.exe\" build -c Release --no-restore)",
       "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-8.0.404-win-x64\\\\dotnet.exe\" build \"e:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Release 2>&1)",
       "PowerShell(Get-Command dotnet -ErrorAction SilentlyContinue)",
-      "PowerShell(dotnet build \"e:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Release 2>&1)"
+      "PowerShell(dotnet build \"e:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Release 2>&1)",
+      "Bash(python3 -c \" import sys, json lines = sys.stdin.readlines\\(\\) for line in lines[-20:]: try: obj = json.loads\\(line\\) role = obj.get\\('role', ''\\) content = obj.get\\('content', ''\\) if isinstance\\(content, list\\): for c in content: if isinstance\\(c, dict\\) and c.get\\('type'\\) == 'text': print\\(f'[{role}]: {c[\\\\\"text\\\\\"][:300]}'\\) elif isinstance\\(content, str\\): print\\(f'[{role}]: {content[:300]}'\\) except: pass \")",
+      "Bash(powershell -Command ' *)",
+      "Bash(cmd.exe /c \"dir D:\\\\CODE\\\\cereal-launcher-vite\\\\src\\\\renderer\\\\src\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'D:\\\\CODE\\\\cereal-launcher-vite\\\\src\\\\renderer\\\\src' | Select-Object Name\")",
+      "Bash(\"/c/Program Files/dotnet/dotnet\" build /d/CODE/cereal-cs/Cereal.App/Cereal.App.csproj --no-restore)",
+      "PowerShell(dotnet build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj --no-restore 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj --no-restore 2>&1)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files sdk folders\\\\dotnet.exe\" build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj --no-restore 2>&1)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj --no-restore 2>&1)",
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj 2>&1)",
+      "Bash(xargs basename *)"
     ]
   }
 }

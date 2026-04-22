@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
+using Cereal.App.Services.Providers;
 using Cereal.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,8 @@ public partial class SettingsPanel : UserControl
             App.Services.GetRequiredService<DiscordService>(),
             App.Services.GetRequiredService<CoverService>(),
             App.Services.GetRequiredService<CredentialService>(),
-            App.Services.GetRequiredService<ThemeService>());
+            App.Services.GetRequiredService<ThemeService>(),
+            App.Services.GetRequiredService<GameService>(),
+            App.Services.GetRequiredService<IEnumerable<IProvider>>());
     }
 }

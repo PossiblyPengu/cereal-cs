@@ -121,4 +121,29 @@ public class Game
 
     [JsonPropertyName("type")]
     public string? Type { get; set; }
+
+    // Metadata (filled from web sources)
+    [JsonPropertyName("metacritic")]
+    public int? Metacritic { get; set; }
+
+    [JsonPropertyName("developer")]
+    public string? Developer { get; set; }
+
+    [JsonPropertyName("publisher")]
+    public string? Publisher { get; set; }
+
+    [JsonPropertyName("releaseDate")]
+    public string? ReleaseDate { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("notes")]
+    public string? Notes { get; set; }
+
+    [JsonPropertyName("screenshots")]
+    public List<string>? Screenshots { get; set; }
+
+    [JsonPropertyName("website")]
+    public string? Website { get; set; }
 }

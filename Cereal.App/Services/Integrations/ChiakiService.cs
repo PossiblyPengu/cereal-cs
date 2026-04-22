@@ -242,6 +242,14 @@ public sealed class ChiakiService : IDisposable
         p?.Dispose();
     }
 
+    public ChiakiConfig GetConfig() => _db.Db.ChiakiConfig;
+
+    public void SaveConfig(ChiakiConfig config)
+    {
+        _db.Db.ChiakiConfig = config;
+        _db.Save();
+    }
+
     public IReadOnlyDictionary<string, ChiakiSessionInfo> GetSessions() =>
         _sessions.ToDictionary(kv => kv.Key, kv => new ChiakiSessionInfo
         {

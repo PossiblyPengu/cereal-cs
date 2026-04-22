@@ -9,33 +9,34 @@
 
   <UserControl.Styles>
     <Style Selector="TextBlock.label">
-      <Setter Property="Foreground" Value="#88ccccff"/>
+      <Setter Property="Foreground" Value="#50b0aaa0"/>
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="Margin" Value="0,12,0,4"/>
     </Style>
     <Style Selector="TextBox.field">
-      <Setter Property="Background" Value="#1a1a3a"/>
-      <Setter Property="BorderBrush" Value="#33aaaaff"/>
-      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="BorderBrush" Value="#14ffffff"/>
+      <Setter Property="Foreground" Value="#e8e4de"/>
     </Style>
     <Style Selector="ToggleSwitch">
-      <Setter Property="Foreground" Value="#ccccff"/>
+      <Setter Property="Foreground" Value="#b0aaa0"/>
     </Style>
   </UserControl.Styles>
 
   <ScrollViewer>
     <StackPanel Margin="32,24" MaxWidth="600">
 
-      <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,24"/>
+      <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Foreground="#e8e4de" Margin="0,0,0,24"/>
 
       <!-- Appearance -->
-      <TextBlock Text="APPEARANCE" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2"/>
-      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+      <TextBlock Text="APPEARANCE" FontSize="9" FontWeight="Bold"
+                 LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,8"/>
+      <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
 
       <TextBlock Classes="label" Text="Theme"/>
       <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ThemeOptions}"
                 SelectedItem="{Binding SelectedTheme}"
-                Background="#1a1a3a" Foreground="White">
+                Background="#08ffffff" Foreground="#e8e4de">
         <ComboBox.ItemTemplate>
           <DataTemplate x:DataType="models:AppTheme">
             <TextBlock Text="{Binding Label}"/>
@@ -44,13 +45,14 @@
       </ComboBox>
 
       <!-- General -->
-      <TextBlock Text="GENERAL" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2" Margin="0,20,0,0"/>
-      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+      <TextBlock Text="GENERAL" FontSize="9" FontWeight="Bold"
+                 LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,20,0,8"/>
+      <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
 
       <TextBlock Classes="label" Text="Default view"/>
       <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ViewOptions}"
                 SelectedItem="{Binding DefaultView}"
-                Background="#1a1a3a" Foreground="White"/>
+                Background="#08ffffff" Foreground="#e8e4de"/>
 
       <ToggleSwitch Content="Show animations" IsChecked="{Binding ShowAnimations}" Margin="0,8,0,0"/>
       <ToggleSwitch Content="Minimize to tray on launch" IsChecked="{Binding MinimizeOnLaunch}"/>
@@ -61,8 +63,9 @@
       <ToggleSwitch Content="Hide Steam software/tools" IsChecked="{Binding FilterHideSteamSoftware}"/>
 
       <!-- Artwork -->
-      <TextBlock Text="ARTWORK" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2" Margin="0,20,0,0"/>
-      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+      <TextBlock Text="ARTWORK" FontSize="9" FontWeight="Bold"
+                 LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,20,0,8"/>
+      <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
 
       <TextBlock Classes="label" Text="SteamGridDB API key"/>
       <Grid ColumnDefinitions="*,Auto,Auto">
@@ -70,18 +73,21 @@
         <Button Grid.Column="1" Content="Validate" Margin="8,0,0,0"
                 Command="{Binding ValidateSteamGridDbKeyCommand}"
                 IsEnabled="{Binding !IsValidatingKey}"
-                Background="#33aaaaff" Foreground="White" CornerRadius="4" Padding="10,6" BorderThickness="0"/>
+                Background="#14ffffff" Foreground="#b0aaa0"
+                CornerRadius="6" Padding="10,6" BorderThickness="1" BorderBrush="#10ffffff"/>
         <Button Grid.Column="2" Content="Save" Margin="6,0,0,0"
                 Command="{Binding SaveSteamGridDbKeyCommand}"
-                Background="#7c6af7" Foreground="White" CornerRadius="4" Padding="10,6" BorderThickness="0"/>
+                Background="#d4a853" Foreground="#07070d"
+                CornerRadius="6" Padding="10,6" BorderThickness="0"/>
       </Grid>
-      <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#88ccccff"
+      <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#50b0aaa0"
              IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
              Margin="0,4,0,0"/>
 
       <!-- Platform paths -->
-      <TextBlock Text="PLATFORM PATHS" Foreground="#55ccccff" FontSize="11" FontWeight="Bold" LetterSpacing="2" Margin="0,20,0,0"/>
-      <Separator Background="#22aaaaff" Margin="0,4,0,0"/>
+      <TextBlock Text="PLATFORM PATHS" FontSize="9" FontWeight="Bold"
+                 LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,20,0,8"/>
+      <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
 
       <TextBlock Classes="label" Text="Steam path (optional)"/>
       <TextBox Classes="field" Text="{Binding SteamPath}" Watermark="Auto-detected"/>
@@ -92,17 +98,44 @@
       <TextBlock Classes="label" Text="Chiaki-ng executable path (optional)"/>
       <TextBox Classes="field" Text="{Binding ChiakiPath}" Watermark="Auto-detected"/>
 
+      <!-- System actions -->
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
+        <Button Content="Fetch All Artwork"
+                Command="{Binding FetchAllArtworkCommand}"
+                Background="#14ffffff" Foreground="#b0aaa0"
+                CornerRadius="6" Padding="12,7" BorderThickness="1"
+                BorderBrush="#10ffffff" Cursor="Hand"/>
+        <Button Content="Rescan All Platforms"
+                Command="{Binding RescanAllCommand}"
+                Background="#14ffffff" Foreground="#b0aaa0"
+                CornerRadius="6" Padding="12,7" BorderThickness="1"
+                BorderBrush="#10ffffff" Cursor="Hand"/>
+      </StackPanel>
+
       <!-- Action buttons -->
       <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,24,0,0">
         <Button Content="Save settings"
                 Command="{Binding SaveCommand}"
-                Background="#7c6af7" Foreground="White"
+                Background="#d4a853" Foreground="#07070d"
                 CornerRadius="6" Padding="16,8" BorderThickness="0"/>
         <Button Content="Reset to defaults"
                 Command="{Binding ResetCommand}"
-                Background="#33ffffff" Foreground="White"
-                CornerRadius="6" Padding="16,8" BorderThickness="0"/>
+                Background="#14ffffff" Foreground="#b0aaa0"
+                CornerRadius="6" Padding="16,8" BorderThickness="1" BorderBrush="#10ffffff"/>
       </StackPanel>
+
+      <!-- About -->
+      <TextBlock Text="ABOUT" FontSize="9" FontWeight="Bold"
+                 LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,32,0,8"/>
+      <Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
+      <TextBlock Text="{Binding AppVersion}" FontSize="12" Foreground="#706b63"/>
+      <TextBlock Text="{Binding DataPath}" FontSize="11" Foreground="#50b0aaa0"
+                 TextWrapping="Wrap" Margin="0,4,0,0"/>
+      <Button Content="Open data folder" Margin="0,8,0,0"
+              Command="{Binding OpenDataFolderCommand}"
+              Background="#14ffffff" Foreground="#b0aaa0"
+              CornerRadius="6" Padding="12,7" BorderThickness="1"
+              BorderBrush="#10ffffff" Cursor="Hand"/>
 
     </StackPanel>
   </ScrollViewer>

@@ -88,6 +88,14 @@
       <Setter Property="BorderBrush" Value="#1affffff"/>
     </Style>
 
+    <!-- Not-installed: dimmed -->
+    <Style Selector="Border.game-card.not-installed">
+      <Setter Property="Opacity" Value="0.55"/>
+    </Style>
+    <Style Selector="Border.game-card.not-installed:pointerover">
+      <Setter Property="Opacity" Value="0.85"/>
+    </Style>
+
     <!-- Hover actions: hidden by default, visible on card hover -->
     <Style Selector="Border.game-card Panel Border.hover-actions">
       <Setter Property="Opacity" Value="0"/>
@@ -189,7 +197,10 @@
                   </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:GameCardViewModel">
-                      <Border Classes="game-card" Width="150" Margin="0,0,14,14">
+                      <Border Classes="game-card" Width="150" Margin="0,0,14,14"
+                              Classes.not-installed="{Binding IsNotInstalled}"
+                              Tapped="Card_Tapped"
+                              DoubleTapped="Card_DoubleTapped">
                         <!-- Card layout: cover (225px 2:3) + info -->
                         <Grid RowDefinitions="225,Auto">
 
@@ -220,13 +231,13 @@
                               </Border.Background>
                             </Border>
 
-                            <!-- Platform badge top-left -->
+                            <!-- Platform badge top-left: colored letter -->
                             <Border HorizontalAlignment="Left" VerticalAlignment="Top"
                                     Margin="6" CornerRadius="3" Padding="5,2"
                                     Background="#88000000">
-                              <TextBlock Text="{Binding PlatformLabel}"
+                              <TextBlock Text="{Binding PlatformLetter}"
                                          FontSize="9" FontWeight="Bold"
-                                         Foreground="White"/>
+                                         Foreground="{Binding PlatformColor}"/>
                             </Border>
 
                             <!-- Favorite star top-right -->
@@ -240,6 +251,18 @@
                                          VerticalAlignment="Center"/>
                             </Border>
 
+                            <!-- Not-installed badge bottom-right -->
+                            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                    Margin="6" Width="22" Height="22"
+                                    CornerRadius="11"
+                                    Background="#bb000000"
+                                    BorderBrush="#26ffffff" BorderThickness="1"
+                                    IsVisible="{Binding IsNotInstalled}">
+                              <TextBlock Text="↓" FontSize="10" Foreground="#99ffffff"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"/>
+                            </Border>
+
                             <!-- Hover action buttons (bottom) -->
                             <Border Classes="hover-actions"
                                     VerticalAlignment="Bottom"
@@ -247,9 +270,12 @@
                               <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                           Spacing="6" Margin="8,8">
                                 <Button Classes="btn-play-hover" Content="Play"
-                                        IsHitTestVisible="True"/>
-                                <Button Classes="btn-ghost-hover" Content="Info"
-                                        IsHitTestVisible="True"/>
+                                        IsHitTestVisible="True"
+                                        Click="PlayBtn_Click"/>
+                                <Button Classes="btn-ghost-hover"
+                                        Content="{Binding FavoriteLabel}"
+                                        IsHitTestVisible="True"
+                                        Click="FavBtn_Click"/>
                               </StackPanel>
                             </Border>
                           </Panel>
@@ -304,9 +330,19 @@
         <!-- Separator -->
         <Border Width="1" Height="16" Background="#0fffffff" Margin="2,0"/>
 
-        <!-- "All" chip -->
+        <!-- Quick-filter chips -->
         <Button Classes="chip" Content="All"
-                Command="{Binding ClearFiltersCommand}"/>
+                Classes.active="{Binding QuickFilter, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=all}"
+                Command="{Binding SetQuickFilterCommand}"
+                CommandParameter="all"/>
+        <Button Classes="chip" Content="Favs"
+                Classes.active="{Binding QuickFilter, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=favorites}"
+                Command="{Binding SetQuickFilterCommand}"
+                CommandParameter="favorites"/>
+        <Button Classes="chip" Content="Recent"
+                Classes.active="{Binding QuickFilter, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=recent}"
+                Command="{Binding SetQuickFilterCommand}"
+                CommandParameter="recent"/>
 
         <!-- Platform chips -->
         <ItemsControl ItemsSource="{Binding PlatformChips}">
@@ -341,6 +377,134 @@
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+        <!-- Separator -->
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
+
+        <!-- Sort / Filter flyout -->
+        <Button Classes="nav-btn" ToolTip.Tip="Sort &amp; Filter">
+          <Button.Flyout>
+            <Flyout Placement="Bottom">
+              <Border Background="#1a1a24" BorderBrush="#1affffff" BorderThickness="1"
+                      CornerRadius="10" Padding="16,14" MinWidth="220">
+                <StackPanel Spacing="12">
+
+                  <!-- Sort section -->
+                  <TextBlock Text="SORT BY" FontSize="9" FontWeight="Bold"
+                             LetterSpacing="1.5" Foreground="#40b0aaa0"/>
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Content="Name" Margin="0,0,4,4" Padding="8,4" FontSize="10"
+                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                            Command="{Binding SetSortCommand}" CommandParameter="name">
+                      <Button.Styles>
+                        <Style Selector="Button">
+                          <Setter Property="Background" Value="#10ffffff"/>
+                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="BorderBrush" Value="#10ffffff"/>
+                        </Style>
+                      </Button.Styles>
+                    </Button>
+                    <Button Content="Most Played" Margin="0,0,4,4" Padding="8,4" FontSize="10"
+                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                            Command="{Binding SetSortCommand}" CommandParameter="played">
+                      <Button.Styles>
+                        <Style Selector="Button">
+                          <Setter Property="Background" Value="#10ffffff"/>
+                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="BorderBrush" Value="#10ffffff"/>
+                        </Style>
+                      </Button.Styles>
+                    </Button>
+                    <Button Content="Recent" Margin="0,0,4,4" Padding="8,4" FontSize="10"
+                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                            Command="{Binding SetSortCommand}" CommandParameter="recent">
+                      <Button.Styles>
+                        <Style Selector="Button">
+                          <Setter Property="Background" Value="#10ffffff"/>
+                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="BorderBrush" Value="#10ffffff"/>
+                        </Style>
+                      </Button.Styles>
+                    </Button>
+                    <Button Content="Added" Margin="0,0,4,4" Padding="8,4" FontSize="10"
+                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                            Command="{Binding SetSortCommand}" CommandParameter="added">
+                      <Button.Styles>
+                        <Style Selector="Button">
+                          <Setter Property="Background" Value="#10ffffff"/>
+                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="BorderBrush" Value="#10ffffff"/>
+                        </Style>
+                      </Button.Styles>
+                    </Button>
+                  </WrapPanel>
+
+                  <!-- Divider -->
+                  <Border Height="1" Background="#0fffffff"/>
+
+                  <!-- Show hidden toggle -->
+                  <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <CheckBox IsChecked="{Binding ShowHidden}" Foreground="#b0aaa0"/>
+                    <TextBlock Text="Show hidden games" FontSize="12" Foreground="#b0aaa0"
+                               VerticalAlignment="Center"/>
+                  </StackPanel>
+
+                  <!-- Installed only -->
+                  <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <CheckBox IsChecked="{Binding ShowInstalledOnly}" Foreground="#b0aaa0"/>
+                    <TextBlock Text="Installed only" FontSize="12" Foreground="#b0aaa0"
+                               VerticalAlignment="Center"/>
+                  </StackPanel>
+
+                  <!-- Category chips -->
+                  <TextBlock Text="CATEGORIES" FontSize="9" FontWeight="Bold"
+                             LetterSpacing="1.5" Foreground="#40b0aaa0"
+                             IsVisible="{Binding AllCategories, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+                  <ItemsControl ItemsSource="{Binding AllCategories}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Button Content="{Binding}" Margin="0,0,4,4" Padding="8,4" FontSize="10"
+                                CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                                Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).ToggleCategoryFilterCommand}"
+                                CommandParameter="{Binding}">
+                          <Button.Styles>
+                            <Style Selector="Button">
+                              <Setter Property="Background" Value="#10ffffff"/>
+                              <Setter Property="Foreground" Value="#b0aaa0"/>
+                              <Setter Property="BorderBrush" Value="#10ffffff"/>
+                            </Style>
+                          </Button.Styles>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <!-- Reset -->
+                  <Button Content="Reset filters" FontSize="11" Padding="8,4"
+                          CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                          HorizontalAlignment="Right"
+                          Command="{Binding ClearFiltersCommand}">
+                    <Button.Styles>
+                      <Style Selector="Button">
+                        <Setter Property="Background" Value="#10ffffff"/>
+                        <Setter Property="Foreground" Value="#706b63"/>
+                        <Setter Property="BorderBrush" Value="#10ffffff"/>
+                      </Style>
+                    </Button.Styles>
+                  </Button>
+
+                </StackPanel>
+              </Border>
+            </Flyout>
+          </Button.Flyout>
+          <TextBlock Text="⚏" FontSize="14" VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+        </Button>
 
         <!-- Separator -->
         <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>

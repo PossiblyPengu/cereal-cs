@@ -1,66 +1,106 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Cereal.App.Views.Dialogs.AddGameDialog"
         Title="Add Game"
-        Width="480" Height="520"
+        Width="520" Height="660"
+        MinHeight="500"
         WindowStartupLocation="CenterOwner"
-        CanResize="False"
-        Background="#12122a"
+        CanResize="True"
+        Background="#0d0d1a"
         ExtendClientAreaToDecorationsHint="False">
 
   <Window.Styles>
     <Style Selector="TextBlock.label">
-      <Setter Property="Foreground" Value="#88ccccff"/>
-      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Foreground" Value="#80b0aaa0"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="LetterSpacing" Value="0.5"/>
       <Setter Property="Margin" Value="0,12,0,4"/>
     </Style>
     <Style Selector="TextBox">
-      <Setter Property="Background" Value="#1a1a3a"/>
-      <Setter Property="BorderBrush" Value="#33aaaaff"/>
-      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="BorderBrush" Value="#18ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Foreground" Value="#e8e4de"/>
+      <Setter Property="CaretBrush" Value="#d4a853"/>
       <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="8,6"/>
+      <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="FontSize" Value="13"/>
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="#4dd4a853"/>
     </Style>
     <Style Selector="ComboBox">
-      <Setter Property="Background" Value="#1a1a3a"/>
-      <Setter Property="BorderBrush" Value="#33aaaaff"/>
-      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="BorderBrush" Value="#18ffffff"/>
+      <Setter Property="Foreground" Value="#e8e4de"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
     </Style>
     <Style Selector="Button.action">
-      <Setter Property="Background" Value="#33aaaaff"/>
-      <Setter Property="Foreground" Value="#ccccff"/>
-      <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="14,8"/>
+      <Setter Property="Background" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="#07070d"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="20,9"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.action:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#55aaaaff"/>
+      <Setter Property="Background" Value="#e8b85e"/>
     </Style>
     <Style Selector="Button.secondary">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#88ccccff"/>
-      <Setter Property="BorderBrush" Value="#33aaaaff"/>
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="BorderBrush" Value="#18ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="14,8"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
+    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#18ffffff"/>
+    </Style>
+    <Style Selector="Button.sm">
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="BorderBrush" Value="#18ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="TextBox.multiline">
+      <Setter Property="MinHeight" Value="60"/>
+      <Setter Property="AcceptsReturn" Value="True"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="Expander">
+      <Setter Property="Foreground" Value="#80b0aaa0"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Margin" Value="0,8,0,0"/>
+    </Style>
   </Window.Styles>
 
-  <Grid RowDefinitions="*,Auto" Margin="28,20">
+  <Grid RowDefinitions="*,Auto" Margin="24,20">
 
     <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
       <StackPanel Spacing="0">
 
-        <TextBlock Text="Add Custom Game" FontSize="18" FontWeight="SemiBold"
-                   Foreground="White" Margin="0,0,0,16"/>
+        <!-- Title -->
+        <TextBlock x:Name="DialogTitle" Text="Add Game"
+                   FontSize="20" FontWeight="Bold"
+                   Foreground="#e8e4de" Margin="0,0,0,16"/>
 
-        <TextBlock Classes="label" Text="Game name *"/>
-        <TextBox x:Name="NameBox" Watermark="e.g. Hollow Knight"/>
+        <!-- Name -->
+        <TextBlock Classes="label" Text="GAME NAME"/>
+        <TextBox x:Name="NameBox" Watermark="Game title"/>
 
-        <TextBlock Classes="label" Text="Platform"/>
-        <ComboBox x:Name="PlatformBox" HorizontalAlignment="Stretch">
+        <!-- Platform -->
+        <TextBlock Classes="label" Text="PLATFORM"/>
+        <ComboBox x:Name="PlatformBox" SelectionChanged="PlatformBox_SelectionChanged">
           <ComboBoxItem Content="custom" IsSelected="True"/>
           <ComboBoxItem Content="steam"/>
           <ComboBoxItem Content="epic"/>
@@ -73,28 +113,89 @@
           <ComboBoxItem Content="psn"/>
         </ComboBox>
 
-        <TextBlock Classes="label" Text="Executable path"/>
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBox Grid.Column="0" x:Name="ExeBox" Watermark="C:\Games\game.exe"/>
-          <Button Grid.Column="1" Content="Browse…" Classes="secondary"
-                  Margin="8,0,0,0" Click="BrowseExe_Click"/>
-        </Grid>
+        <!-- Platform ID (for steam/epic/gog) -->
+        <StackPanel x:Name="PlatformIdSection" IsVisible="False">
+          <TextBlock Classes="label" Text="PLATFORM ID"/>
+          <TextBox x:Name="PlatformIdBox" Watermark="App ID / Game ID"/>
+        </StackPanel>
 
-        <TextBlock Classes="label" Text="Cover image URL (or pick from SteamGridDB)"/>
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBox Grid.Column="0" x:Name="CoverBox" Watermark="https://…"/>
-          <Button Grid.Column="1" Content="Search art…" Classes="secondary"
-                  Margin="8,0,0,0" Click="PickArt_Click"/>
+        <!-- Executable (for custom) -->
+        <StackPanel x:Name="ExeSection">
+          <TextBlock Classes="label" Text="EXECUTABLE"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Grid.Column="0" x:Name="ExeBox" Watermark="Path to .exe"/>
+            <Button Grid.Column="1" Classes="sm" Content="Browse"
+                    Margin="8,0,0,0" Click="BrowseExe_Click"/>
+          </Grid>
+        </StackPanel>
+
+        <!-- Cover image -->
+        <TextBlock Classes="label" Text="COVER IMAGE"/>
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBox Grid.Column="0" x:Name="CoverBox" Watermark="URL or file path"
+                   TextChanged="CoverBox_TextChanged"/>
+          <Button Grid.Column="1" Classes="sm" Content="File"
+                  Margin="8,0,4,0" Click="BrowseCover_Click"/>
+          <Button Grid.Column="2" Classes="sm" Content="Search"
+                  Click="PickArt_Click"/>
         </Grid>
 
         <!-- Cover preview -->
-        <Border Margin="0,12,0,0" Height="160" Background="#0d0d22"
-                CornerRadius="6" ClipToBounds="True">
-          <Image x:Name="CoverPreview" Stretch="Uniform"/>
+        <Border Margin="0,8,0,0" Height="140" Background="#08ffffff"
+                CornerRadius="6" ClipToBounds="True"
+                IsVisible="{Binding ElementName=CoverPreview, Path=IsVisible}">
+          <Image x:Name="CoverPreview" Stretch="Uniform" IsVisible="False"/>
         </Border>
 
-        <TextBlock Classes="label" Text="Steam App ID (optional, for artwork lookup)"/>
-        <TextBox x:Name="SteamIdBox" Watermark="e.g. 367520"/>
+        <!-- Notes -->
+        <TextBlock Classes="label" Text="NOTES"/>
+        <TextBox x:Name="NotesBox" Classes="multiline"
+                 Watermark="Personal notes about this game..." MinHeight="52"/>
+
+        <!-- Metadata section (expandable) -->
+        <Expander x:Name="MetaExpander" Header="▸  METADATA — Auto-fill from web"
+                  IsExpanded="False" Margin="0,12,0,0">
+          <StackPanel Spacing="0" Margin="0,4,0,0">
+
+            <TextBlock Classes="label" Text="DESCRIPTION"/>
+            <TextBox x:Name="DescBox" Classes="multiline" Watermark="Game description"/>
+
+            <Grid ColumnDefinitions="*,*" Margin="0,0,0,0">
+              <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                <TextBlock Classes="label" Text="DEVELOPER"/>
+                <TextBox x:Name="DevBox" Watermark="Studio"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Classes="label" Text="PUBLISHER"/>
+                <TextBox x:Name="PubBox" Watermark="Publisher"/>
+              </StackPanel>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*">
+              <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                <TextBlock Classes="label" Text="RELEASE DATE"/>
+                <TextBox x:Name="ReleaseDateBox" Watermark="e.g. Dec 10, 2020"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Classes="label" Text="METACRITIC"/>
+                <TextBox x:Name="MetacriticBox" Watermark="0–100"/>
+              </StackPanel>
+            </Grid>
+
+            <TextBlock Classes="label" Text="HEADER IMAGE"/>
+            <Grid ColumnDefinitions="*,Auto,Auto">
+              <TextBox Grid.Column="0" x:Name="HeaderBox" Watermark="Wide banner URL"/>
+              <Button Grid.Column="1" Classes="sm" Content="File"
+                      Margin="8,0,4,0" Click="BrowseHeader_Click"/>
+              <Button Grid.Column="2" Classes="sm" Content="Search"
+                      Click="PickHeaderArt_Click"/>
+            </Grid>
+
+            <TextBlock Classes="label" Text="WEBSITE"/>
+            <TextBox x:Name="WebsiteBox" Watermark="https://..."/>
+
+          </StackPanel>
+        </Expander>
 
         <TextBlock x:Name="ErrorText" Foreground="#cc6666" FontSize="12"
                    Margin="0,12,0,0" IsVisible="False"/>
@@ -106,7 +207,7 @@
     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="10" Margin="0,16,0,0">
       <Button Classes="secondary" Content="Cancel" Click="Cancel_Click"/>
-      <Button Classes="action" Content="Add Game" Click="Add_Click"/>
+      <Button x:Name="SaveBtn" Classes="action" Content="Add Game" Click="Save_Click"/>
     </StackPanel>
 
   </Grid>

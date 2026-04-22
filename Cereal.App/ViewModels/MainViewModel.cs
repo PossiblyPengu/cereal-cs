@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cereal.App.Models;
@@ -17,40 +17,74 @@ public partial class MainViewModel : ObservableObject
     private readonly ChiakiService _chiaki;
     private readonly XcloudService _xcloud;
 
-    // ─── Observable state ────────────────────────────────────────────────────
-
     [ObservableProperty] private string _searchText = "";
-    [ObservableProperty] private string _activeNav = "library";   // library | settings | detect | chiaki
-    [ObservableProperty] private string _viewMode = "cards";      // cards | orbit
+    [ObservableProperty] private string _activeNav = "library";
+    [ObservableProperty] private string _viewMode = "cards";
     [ObservableProperty] private GameCardViewModel? _selectedGame;
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _statusMessage;
 
-    // Active filter chips
     [ObservableProperty] private ObservableCollection<string> _activePlatformFilters = [];
     [ObservableProperty] private ObservableCollection<string> _activeCategoryFilters = [];
     [ObservableProperty] private bool _showHidden;
+    [ObservableProperty] private bool _showInstalledOnly;
+    [ObservableProperty] private string _sortOrder = "name";
+    [ObservableProperty] private string _quickFilter = "all";
 
-    // Flat filtered view (for orbit)
+    public IEnumerable<string> AllCategories =>
+        _games.GetAll()
+              .SelectMany(g => g.Categories ?? Enumerable.Empty<string>())
+              .Distinct()
+              .OrderBy(c => c);
+
     public ObservableCollection<GameCardViewModel> VisibleGames { get; } = [];
-
-    // Grouped by platform (for card grid)
     public ObservableCollection<PlatformGroupViewModel> GameGroups { get; } = [];
-
-    // Platform filter chips in nav pill
     public ObservableCollection<PlatformChipViewModel> PlatformChips { get; } = [];
 
-    // Overlay panel visibility
     [ObservableProperty] private bool _showSettings;
     [ObservableProperty] private bool _showDetect;
     [ObservableProperty] private bool _showChiaki;
     [ObservableProperty] private bool _showXcloud;
+    [ObservableProperty] private bool _showFocus;
+    [ObservableProperty] private bool _showSearch;
+    [ObservableProperty] private string? _zoomScreenshotUrl;
+    [ObservableProperty] private string _searchQuery = "";
+    [ObservableProperty] private string? _searchPlatformFilter;
     public bool AnyPanelOpen => ShowSettings || ShowDetect || ShowChiaki || ShowXcloud;
 
-    // Tab bar sessions (chiaki / xcloud streams)
+    // Continue banner
+    [ObservableProperty] private bool _showContinueBanner;
+    public GameCardViewModel? ContinueGame { get; private set; }
+
+    // Toasts
+    public ObservableCollection<ToastViewModel> Toasts { get; } = [];
+
+    // Search results
+    public IEnumerable<GameCardViewModel> SearchResults =>
+        string.IsNullOrEmpty(SearchQuery)
+            ? []
+            : VisibleGames
+                .Where(g => g.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+                .Where(g => SearchPlatformFilter == null || g.Platform == SearchPlatformFilter)
+                .Take(12);
+
+    public IEnumerable<string> SearchActivePlatforms =>
+        string.IsNullOrEmpty(SearchQuery)
+            ? []
+            : VisibleGames
+                .Where(g => g.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+                .Select(g => g.Platform)
+                .Distinct();
+
+    public bool HasNoSearchResults =>
+        !string.IsNullOrEmpty(SearchQuery) && !SearchResults.Any();
+
     public ObservableCollection<StreamTabViewModel> StreamTabs { get; } = [];
 
-    // ─── Constructor ─────────────────────────────────────────────────────────
+    // Active stream (first tab that is not disconnected)
+    public StreamTabViewModel? ActiveStreamTab =>
+        StreamTabs.FirstOrDefault(t => t.State is "streaming" or "connecting" or "launching" or "gui");
+    public bool IsStreaming => ActiveStreamTab is not null;
 
     public MainViewModel(
         GameService games,
@@ -65,76 +99,186 @@ public partial class MainViewModel : ObservableObject
         _chiaki = chiaki;
         _xcloud = xcloud;
 
-        // Apply saved default view
         ViewMode = settings.Get().DefaultView ?? "cards";
 
-        // Subscribe to cover/chiaki events
         covers.ProgressChanged += OnCoverProgress;
         chiaki.SessionEvent += OnChiakiEvent;
         chiaki.GamesRefreshed += (_, _) => Refresh();
         xcloud.SessionEvent += OnXcloudEvent;
+        StreamTabs.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(ActiveStreamTab));
+            OnPropertyChanged(nameof(IsStreaming));
+        };
 
         Refresh();
-    }
 
-    // ─── Library refresh ─────────────────────────────────────────────────────
+        // Continue banner: most recently played game
+        var latest = _games.GetAll()
+            .Where(g => g.LastPlayed != null && g.Hidden != true)
+            .OrderByDescending(g => g.LastPlayed)
+            .FirstOrDefault();
+        if (latest is not null)
+        {
+            ContinueGame = new GameCardViewModel(latest, _games);
+            ShowContinueBanner = true;
+        }
+    }
 
     public void Refresh()
     {
         var all = _games.GetAll();
 
-        // Rebuild platform chips from all games (not filtered)
         var platformCounts = all.GroupBy(g => g.Platform ?? "custom")
             .ToDictionary(g => g.Key, g => g.Count());
         PlatformChips.Clear();
         foreach (var (plat, count) in platformCounts.OrderBy(kv => kv.Key))
             PlatformChips.Add(new PlatformChipViewModel(plat, count, ActivePlatformFilters.Contains(plat)));
 
-        // Apply filters
-        var filtered = all
+        var preFilter = all
             .Where(g => ShowHidden || g.Hidden != true)
+            .Where(g => !ShowInstalledOnly || g.Installed != false)
             .Where(g => ActivePlatformFilters.Count == 0 || ActivePlatformFilters.Contains(g.Platform))
             .Where(g => ActiveCategoryFilters.Count == 0 ||
                         (g.Categories?.Any(c => ActiveCategoryFilters.Contains(c)) ?? false))
+            .Where(g => QuickFilter != "favorites" || (g.Favorite ?? false))
+            .Where(g => QuickFilter != "recent" || g.LastPlayed != null)
             .Where(g => string.IsNullOrEmpty(SearchText) ||
-                        g.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
+                        g.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+        var sorted = (QuickFilter == "recent")
+            ? preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
+            : SortOrder switch
+            {
+                "played"  => preFilter.OrderByDescending(g => g.PlaytimeMinutes ?? 0).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "recent"  => preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "added"   => preFilter.OrderByDescending(g => g.AddedAt ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                _         => preFilter.OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+            };
+
+        var filtered = sorted
             .Select(g => new GameCardViewModel(g, _games))
             .ToList();
 
-        // Flat list for orbit view
         VisibleGames.Clear();
         foreach (var c in filtered) VisibleGames.Add(c);
 
-        // Grouped by platform for card grid
         GameGroups.Clear();
-        foreach (var grp in filtered.GroupBy(c => c.Platform ?? "custom")
-                                    .OrderBy(g => g.Key))
+        foreach (var grp in filtered.GroupBy(c => c.Platform ?? "custom").OrderBy(g => g.Key))
         {
             var group = new PlatformGroupViewModel(grp.Key);
             foreach (var card in grp) group.Games.Add(card);
             GameGroups.Add(group);
         }
+
+        if (SelectedGame is not null)
+        {
+            var fresh = VisibleGames.FirstOrDefault(c => c.Id == SelectedGame.Id);
+            SelectedGame = fresh;
+            if (fresh is null) ShowFocus = false;
+        }
+
+        OnPropertyChanged(nameof(AllCategories));
     }
 
-    // Re-run filter whenever search or filter chips change
+    partial void OnSearchQueryChanged(string value)
+    {
+        SearchPlatformFilter = null;
+        OnPropertyChanged(nameof(SearchResults));
+        OnPropertyChanged(nameof(SearchActivePlatforms));
+        OnPropertyChanged(nameof(HasNoSearchResults));
+    }
+
+    partial void OnSearchPlatformFilterChanged(string? value) =>
+        OnPropertyChanged(nameof(SearchResults));
+
     partial void OnSearchTextChanged(string value) => Refresh();
     partial void OnActivePlatformFiltersChanged(ObservableCollection<string> value) => Refresh();
     partial void OnActiveCategoryFiltersChanged(ObservableCollection<string> value) => Refresh();
     partial void OnShowHiddenChanged(bool value) => Refresh();
-
-    // ─── Commands ────────────────────────────────────────────────────────────
+    partial void OnShowInstalledOnlyChanged(bool value) => Refresh();
+    partial void OnSortOrderChanged(string value) => Refresh();
+    partial void OnQuickFilterChanged(string value) => Refresh();
 
     [RelayCommand]
-    private void SelectGame(GameCardViewModel? card) => SelectedGame = card;
+    private void SelectGame(GameCardViewModel? card)
+    {
+        SelectedGame = card;
+        ShowFocus = card is not null;
+    }
 
-    /// <summary>Raised when the UI should show the AddGame dialog (avoids ViewModel → View dependency).</summary>
+    // ── Screenshot zoom ───────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void OpenZoom(string url) => ZoomScreenshotUrl = url;
+
+    [RelayCommand]
+    private void CloseZoom() => ZoomScreenshotUrl = null;
+
+    // ── Search overlay ────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void OpenSearch()
+    {
+        SearchQuery = "";
+        SearchPlatformFilter = null;
+        ShowSearch = true;
+    }
+
+    [RelayCommand]
+    private void CloseSearch()
+    {
+        ShowSearch = false;
+        SearchQuery = "";
+        SearchPlatformFilter = null;
+    }
+
+    [RelayCommand]
+    private void SearchSelect(GameCardViewModel card)
+    {
+        CloseSearch();
+        SelectGame(card);
+    }
+
+    [RelayCommand]
+    private async Task SearchLaunch(GameCardViewModel card)
+    {
+        CloseSearch();
+        await LaunchGame(card);
+    }
+
+    [RelayCommand]
+    private void SetSearchPlatformFilter(string? platform) =>
+        SearchPlatformFilter = SearchPlatformFilter == platform ? null : platform;
+
+    // ── Continue banner ───────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void DismissContinueBanner() => ShowContinueBanner = false;
+
+    // ── Toasts ────────────────────────────────────────────────────────────────
+
+    public void ShowToast(string message)
+    {
+        var toast = new ToastViewModel(message);
+        Toasts.Add(toast);
+        Task.Delay(3000).ContinueWith(_ =>
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => Toasts.Remove(toast)));
+    }
+
     public event EventHandler? AddGameRequested;
+    public event EventHandler<Game>? EditGameRequested;
 
     [RelayCommand]
     private void ShowAddGame() => AddGameRequested?.Invoke(this, EventArgs.Empty);
 
-    /// <summary>Called by the View after AddGameDialog closes with a result.</summary>
+    [RelayCommand]
+    private void EditGame()
+    {
+        if (SelectedGame is not null)
+            EditGameRequested?.Invoke(this, SelectedGame.Game);
+    }
+
     public void AddGame(Models.Game game)
     {
         _games.Add(game);
@@ -144,14 +288,35 @@ public partial class MainViewModel : ObservableObject
         StatusMessage = $"Added \"{game.Name}\"";
     }
 
+    public void UpdateGame(Models.Game game)
+    {
+        _games.Update(game);
+        if (!string.IsNullOrEmpty(game.CoverUrl))
+            _covers.EnqueueGame(game.Id);
+        Refresh();
+        StatusMessage = $"Saved \"{game.Name}\"";
+    }
+
     [RelayCommand]
     private async Task LaunchGame(GameCardViewModel card)
     {
         if (card is null) return;
-        StatusMessage = $"Launching {card.Name}…";
+        StatusMessage = $"Launching {card.Name}...";
         var launch = App.Services.GetRequiredService<LaunchService>();
         var result = await launch.LaunchAsync(card.Game);
         StatusMessage = result.Success ? null : $"Failed to launch: {result.Error}";
+    }
+
+    [RelayCommand]
+    private void DeleteGame(string id)
+    {
+        _games.Delete(id);
+        if (SelectedGame?.Id == id)
+        {
+            SelectedGame = null;
+            ShowFocus = false;
+        }
+        Refresh();
     }
 
     [RelayCommand]
@@ -180,16 +345,32 @@ public partial class MainViewModel : ObservableObject
         ActivePlatformFilters.Clear();
         ActiveCategoryFilters.Clear();
         SearchText = "";
+        SortOrder = "name";
+        ShowHidden = false;
+        ShowInstalledOnly = false;
+        QuickFilter = "all";
         Refresh();
     }
 
-    // Label for the toggle button: shows what you'll switch TO
+    [RelayCommand]
+    private void SetSort(string sort) => SortOrder = sort;
+
+    [RelayCommand]
+    private void SetQuickFilter(string filter) => QuickFilter = filter;
+
+    [RelayCommand]
+    private void RefreshGameInfo()
+    {
+        if (SelectedGame is null) return;
+        _covers.EnqueueGame(SelectedGame.Id);
+        Refresh();
+    }
+
     public string ViewModeToggleLabel => ViewMode == "cards" ? "Orbit" : "Cards";
     partial void OnViewModeChanged(string value) => OnPropertyChanged(nameof(ViewModeToggleLabel));
 
     [RelayCommand]
-    private void ToggleViewMode() =>
-        ViewMode = ViewMode == "cards" ? "orbit" : "cards";
+    private void ToggleViewMode() => ViewMode = ViewMode == "cards" ? "orbit" : "cards";
 
     [RelayCommand]
     private void Navigate(string nav) => ActiveNav = nav;
@@ -202,7 +383,25 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand] private void CloseChiaki()   { ShowChiaki  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void OpenXcloud()    { ShowXcloud  = true;   OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void CloseXcloud()   { ShowXcloud  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void CloseAllPanels() { ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = false; OnPropertyChanged(nameof(AnyPanelOpen)); }
+    [RelayCommand] private void CloseFocus()    { ShowFocus = false; SelectedGame = null; }
+
+    [RelayCommand]
+    private void CloseAllPanels()
+    {
+        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = false;
+        OnPropertyChanged(nameof(AnyPanelOpen));
+    }
+
+    public void EscapePressed()
+    {
+        if (ZoomScreenshotUrl is not null) { CloseZoom(); return; }
+        if (ShowSearch)   { CloseSearch(); return; }
+        if (ShowFocus)    { ShowFocus = false; SelectedGame = null; return; }
+        if (ShowSettings) { ShowSettings = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        if (ShowDetect)   { ShowDetect  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        if (ShowChiaki)   { ShowChiaki  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        if (ShowXcloud)   { ShowXcloud  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+    }
 
     [RelayCommand]
     private void CloseStreamTab(string gameId)
@@ -213,17 +412,11 @@ public partial class MainViewModel : ObservableObject
         if (tab is not null) StreamTabs.Remove(tab);
     }
 
-    // ─── Event handlers ───────────────────────────────────────────────────────
-
     private void OnCoverProgress(object? sender, CoverProgressArgs e)
     {
         if (e.Downloaded > 0)
-        {
-            // Refresh visible cards' cover paths
-            foreach (var card in VisibleGames)
-                card.Refresh();
-        }
-        StatusMessage = e.Done ? null : $"Downloading artwork… ({e.Remaining} remaining)";
+            foreach (var card in VisibleGames) card.Refresh();
+        StatusMessage = e.Done ? null : $"Downloading artwork... ({e.Remaining} remaining)";
     }
 
     private void OnChiakiEvent(object? sender, ChiakiEventArgs e)
@@ -232,7 +425,6 @@ public partial class MainViewModel : ObservableObject
         {
             var stateStr = state?.ToString() ?? "";
             var tab = StreamTabs.FirstOrDefault(t => t.GameId == e.GameId);
-
             if (stateStr is "launching" or "connecting" or "streaming" or "gui")
             {
                 if (tab is null)
@@ -243,12 +435,12 @@ public partial class MainViewModel : ObservableObject
                 else
                 {
                     tab.State = stateStr;
+                    OnPropertyChanged(nameof(ActiveStreamTab));
+                    OnPropertyChanged(nameof(IsStreaming));
                 }
             }
-            else if (stateStr == "disconnected")
-            {
-                if (tab is not null) StreamTabs.Remove(tab);
-            }
+            else if (stateStr == "disconnected" && tab is not null)
+                StreamTabs.Remove(tab);
         }
     }
 
@@ -260,16 +452,22 @@ public partial class MainViewModel : ObservableObject
             if (tab is null)
                 StreamTabs.Add(new StreamTabViewModel(e.GameId, e.GameId, "xbox"));
             else if (e.Data.TryGetValue("state", out var s))
+            {
                 tab.State = s?.ToString() ?? "";
+                OnPropertyChanged(nameof(ActiveStreamTab));
+                OnPropertyChanged(nameof(IsStreaming));
+            }
         }
         else if (e.Type == "disconnected" && tab is not null)
-        {
             StreamTabs.Remove(tab);
-        }
     }
 }
 
-// ─── Stream tab (chiaki / xcloud session tab in title bar) ───────────────────
+public class ToastViewModel
+{
+    public string Message { get; }
+    public ToastViewModel(string message) => Message = message;
+}
 
 public partial class StreamTabViewModel : ObservableObject
 {

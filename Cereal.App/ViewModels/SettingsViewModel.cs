@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Cereal.App.Models;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
+using Cereal.App.Services.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cereal.App.ViewModels;
@@ -16,6 +17,8 @@ public partial class SettingsViewModel : ObservableObject
     private readonly CoverService _covers;
     private readonly CredentialService _creds;
     private readonly ThemeService _themeSvc;
+    private readonly GameService _games;
+    private readonly IEnumerable<IProvider> _providers;
 
     // ─── Bound properties (shadow the Settings model for live two-way binding) ─
 
@@ -41,13 +44,16 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _isValidatingKey;
 
     public SettingsViewModel(SettingsService settings, DiscordService discord,
-                             CoverService covers, CredentialService creds, ThemeService theme)
+                             CoverService covers, CredentialService creds, ThemeService theme,
+                             GameService games, IEnumerable<IProvider> providers)
     {
         _settingsSvc = settings;
         _discord = discord;
         _covers = covers;
         _creds = creds;
         _themeSvc = theme;
+        _games = games;
+        _providers = providers;
         LoadFromModel(settings.Get());
     }
 
@@ -139,4 +145,45 @@ public partial class SettingsViewModel : ObservableObject
         _creds.SetPassword("cereal", "steamgriddb_key", SteamGridDbKey);
         StatusMessage = "SteamGridDB key saved.";
     }
+
+    [RelayCommand]
+    private void FetchAllArtwork()
+    {
+        _covers.EnqueueAll();
+        StatusMessage = "Queued artwork download for all games.";
+    }
+
+    [RelayCommand]
+    private async Task RescanAll()
+    {
+        StatusMessage = "Scanning all platforms…";
+        var added = 0;
+        foreach (var provider in _providers)
+        {
+            try
+            {
+                var result = await provider.DetectInstalled();
+                foreach (var game in result.Games)
+                {
+                    var g = _games.Add(game);
+                    if (!string.IsNullOrEmpty(g.CoverUrl))
+                        _covers.EnqueueGame(g.Id);
+                    added++;
+                }
+            }
+            catch { }
+        }
+        StatusMessage = $"Rescan complete — {added} game(s) merged.";
+    }
+
+    public string AppVersion =>
+        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
+
+    public string DataPath =>
+        App.Services.GetRequiredService<PathService>().AppDataDir;
+
+    [RelayCommand]
+    private void OpenDataFolder() =>
+        System.Diagnostics.Process.Start(
+            new System.Diagnostics.ProcessStartInfo(DataPath) { UseShellExecute = true });
 }

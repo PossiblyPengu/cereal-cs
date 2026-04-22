@@ -72,6 +72,12 @@ public class ChiakiConsole
 
     [JsonPropertyName("id")]
     public string? Id { get; set; }
+
+    [JsonPropertyName("registKey")]
+    public string? RegistKey { get; set; }
+
+    [JsonPropertyName("morning")]
+    public string? Morning { get; set; }
 }
 
 public class MediaInfo

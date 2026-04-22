@@ -1,240 +1,422 @@
-# Cereal Launcher — C# Rewrite Plan
+# Cereal C# — Remaining 1:1 Implementation Plan
 
-## Context
+## Project context
 
-Full rewrite of `d:\CODE\cereal-launcher-vite` (Electron + React + TypeScript) into
-`d:\CODE\cereal-cs` (C# + Avalonia UI + .NET 8). Target platforms: **Windows and Linux**.
+**Source (TypeScript/Electron/React):** `E:\CODE\cereal-launcher-vite\src\`
+**Target (C#/Avalonia):** `e:\CODE\cereal-cs\Cereal.App\`
 
-**Why Avalonia, not WPF:** User explicitly requires Linux support, which rules out WPF/WinUI 3.
-Avalonia is the only mature cross-platform C# desktop framework that covers both.
+The C# app is a desktop game launcher using Avalonia UI 11.3.9, CommunityToolkit.Mvvm, and compiled XAML bindings (`x:DataType`). Architecture:
 
-**Source app summary:**
-- Universal game launcher aggregating Steam, Epic, GOG, Battle.net, EA, Ubisoft, itch.io, Xbox, PlayStation
-- Two view modes: Orbit (3D galaxy canvas via Three.js) and Card grid
-- SteamGridDB artwork, Discord Rich Presence, PlayStation via chiaki-ng, Xbox Cloud via embedded browser
-- SMTC (Windows media keys) via a .NET 8 helper that already exists in the source repo
-- Auto-updates via GitHub Releases (electron-updater → Velopack)
-- JSON flat-file database at `%APPDATA%/Cereal/games.json`
-- Secure credential store (Electron safeStorage → DPAPI on Windows, AES+machine-id on Linux)
+- `MainWindow.axaml` — shell with tab bar + overlay Panel stack
+- `Views/MainView.axaml` — floating nav pill + card grid / orbit view
+- `Views/Panels/` — side panels (Settings, Detect, Chiaki, Xcloud, Focus)
+- `ViewModels/MainViewModel.cs` — central state; `GameCardViewModel.cs` — per-game state
+- `Services/` — GameService, CoverService, ChiakiService, SettingsService, etc.
+- `Models/Game.cs`, `Models/Database.cs` — data model
 
----
-
-## Environment
-
-| Thing | Value |
-|---|---|
-| New project root | `D:\CODE\cereal-cs\` |
-| Original source | `D:\CODE\cereal-launcher-vite\` |
-| .NET SDK (portable, no install needed) | `D:\CODE\important files\dotnet-sdk-8.0.404-win-x64\dotnet.exe` |
-| Target framework | `net8.0` |
-| Avalonia version | `11.3.9` |
-
-**To build on another machine:** copy the SDK folder or install .NET 8 SDK from https://aka.ms/dotnet/download, then `dotnet restore` and `dotnet build`.
+**Key Avalonia patterns used throughout:**
+- `IBrush` (not hex strings) for dynamically-colored bindings: `new SolidColorBrush(Color.Parse("#..."))`
+- `StringConverters.IsNotNullOrEmpty` and `ObjectConverters.IsNotNull` from `Cereal.App` namespace for visibility bindings
+- `Classes.active="{Binding ...}"` for conditional CSS-like class application
+- `[ObservableProperty]` + `[RelayCommand]` from CommunityToolkit.Mvvm
+- Partial classes: ViewModel files use `public partial class Foo : ObservableObject`
+- The XAML `x:DataType` must match the actual DataContext type set in code-behind
 
 ---
 
-## Project Structure
+## What is already implemented ✅
 
-```
-cereal-cs/
-├── Cereal.sln
-└── Cereal.App/
-    ├── Cereal.App.csproj          ← net8.0, Avalonia 11.3.9
-    ├── Program.cs                  ← entry point (Avalonia template default, needs Velopack init)
-    ├── App.axaml / App.axaml.cs   ← Avalonia app bootstrap (needs DI wiring)
-    ├── MainWindow.axaml / .cs     ← shell window (needs full UI build-out)
-    ├── Models/
-    │   ├── Game.cs                 ✅ DONE
-    │   ├── Settings.cs             ✅ DONE
-    │   └── Database.cs             ✅ DONE  (also: AccountInfo, ChiakiConfig, MediaInfo, ImportProgress)
-    ├── Services/
-    │   ├── PathService.cs          ✅ DONE  (AppData dirs, cover/header paths)
-    │   ├── DatabaseService.cs      ✅ DONE  (load/save/flush/backup, debounced 150ms write)
-    │   ├── GameService.cs          ✅ DONE  (CRUD, dedup, categories, playtime)
-    │   ├── SettingsService.cs      ✅ DONE
-    │   ├── CredentialService.cs    ✅ DONE  (DPAPI on Windows, AES/machine-id on Linux)
-    │   ├── Providers/
-    │   │   ├── IProvider.cs        ✅ DONE  (IProvider, IImportProvider, DetectResult, ImportResult, ImportContext)
-    │   │   ├── ProviderUtils.cs    ✅ DONE  (Canonicalize, IsDlcTitle, FindExisting, MakeGameEntry)
-    │   │   ├── SteamProvider.cs    ✅ DONE  (local ACF scan + XML feed + Steam API import)
-    │   │   ├── EpicProvider.cs     ✅ DONE  (manifest scan + library API import)
-    │   │   ├── GogProvider.cs      ✅ DONE  (goggame-*.info scan + paginated API import)
-    │   │   └── LocalProviders.cs   ✅ DONE  (BattleNet, EA, Ubisoft, itch.io stub, Xbox)
-    │   └── Integrations/
-    │       ├── DiscordService.cs   ✅ DONE  (stubbed — needs `discord-rpc-csharp` NuGet added)
-    │       ├── ChiakiService.cs    ✅ DONE  (process manager, Win32 P/Invoke embed, UDP discovery/wake, auto-reconnect)
-    │       ├── XcloudService.cs    ✅ DONE  (session manager; runtime reflection-based WebView fallback implemented — replace with compile-time `Avalonia.WebView` when package/feed is available)
-    │       ├── SmtcService.cs      ✅ DONE  (subprocess MediaInfoTool.exe; keybd_event P/Invoke for keys)
-    │       └── CoverService.cs     ✅ DONE  (Channel queue, HTTP download, SteamGridDB search, retry logic)
-    ├── ViewModels/
-    │   ├── MainViewModel.cs        ❌ TODO  (game list, filters, active tab, search)
-    │   ├── GameCardViewModel.cs    ❌ TODO
-    │   ├── SettingsViewModel.cs    ❌ TODO
-    │   └── DetectViewModel.cs      ❌ TODO
-    ├── Views/
-    │   ├── MainView.axaml          ❌ TODO  (card grid + orbit toggle + sidebar)
-    │   ├── Panels/
-    │   │   ├── SettingsPanel.axaml ❌ TODO
-    │   │   ├── DetectPanel.axaml   ❌ TODO
-    │   │   └── ChiakiPanel.axaml   ❌ TODO
-    │   └── Dialogs/
-    │       ├── AddGameDialog.axaml ❌ TODO
-    │       └── ArtPickerDialog.axaml ❌ TODO
-    └── Native/
-        └── Win32Interop.cs         ❌ TODO  (SetParent for chiaki-ng window embedding)
+1. Full FocusPanel with metadata (Metacritic badge, dev/pub/release, categories, description, notes), play/fav/edit/delete actions, backdrop close, ESC close
+2. Game card grid with click→FocusPanel, double-click→launch, hover Play/Fav buttons
+3. Game model metadata fields: `Metacritic`, `Developer`, `Publisher`, `ReleaseDate`, `Description`, `Notes`, `Screenshots`, `Website`
+4. AddGameDialog (add and edit modes) with metadata expander, file browse for exe/cover/header, live cover preview, ArtPickerDialog integration
+5. Platform chips in nav pill with toggle-filter behavior
+6. Sort order (`SortOrder` on MainViewModel: "name", "played", "recent", "added") wired into `Refresh()`
+7. Sort/filter flyout button (`⚏`) in nav pill with Show Hidden toggle
+8. ChiakiPanel: 3-tab design (Consoles, Discover, Register) with console add/remove/connect/wake/stop, registration flow, session live-state sync
+9. `ChiakiConsole` model has `RegistKey` and `Morning` fields; `ChiakiService` has `GetConfig()` and `SaveConfig()`
+10. Keyboard shortcuts: Escape (priority chain), Ctrl+F (focus search), Ctrl+, (open settings)
+11. Window bounds persistence, close-to-tray
+12. OrbitView (galaxy view), XcloudPanel (WebView), DetectPanel
+13. SettingsPanel — functional but uses old blue-tinted colors, missing some sections
+
+---
+
+## Remaining work — ordered by impact
+
+---
+
+### 1. Filter flyout: category chips + "Installed only" toggle
+
+**File:** `e:\CODE\cereal-cs\Cereal.App\Views\MainView.axaml`
+**File:** `e:\CODE\cereal-cs\Cereal.App\ViewModels\MainViewModel.cs`
+
+The current filter flyout (the `⚏` button) has sort buttons and a "Show hidden" checkbox. The source app's filter popover also has category chips and installed-only.
+
+#### ViewModel changes (`MainViewModel.cs`)
+
+Add observable property:
+```csharp
+[ObservableProperty] private bool _showInstalledOnly;
+partial void OnShowInstalledOnlyChanged(bool value) => Refresh();
 ```
 
----
+Add to `Refresh()` filter chain after the ShowHidden filter:
+```csharp
+.Where(g => !ShowInstalledOnly || g.Installed != false)
+```
 
-## NuGet Packages (current csproj)
+Expose categories for the flyout:
+```csharp
+public IEnumerable<string> AllCategories =>
+    _games.GetAll()
+          .SelectMany(g => g.Categories ?? Enumerable.Empty<string>())
+          .Distinct()
+          .OrderBy(c => c);
+```
 
-| Package | Version | Purpose |
-|---|---|---|
-| Avalonia | 11.3.9 | UI framework |
-| Avalonia.Desktop | 11.3.9 | Desktop backend |
-| Avalonia.Themes.Fluent | 11.3.9 | Fluent theme |
-| Avalonia.Fonts.Inter | 11.3.9 | Inter font |
-| Avalonia.Diagnostics | 11.3.9 | Dev tools (debug only) |
-| CommunityToolkit.Mvvm | 8.3.2 | ObservableObject, RelayCommand, source gen |
-| Microsoft.Extensions.DependencyInjection | 8.0.1 | DI container |
-| Serilog | 4.2.0 | Logging |
-| Serilog.Sinks.File | 6.0.0 | Log to file |
-| System.Text.Json | 8.0.5 | JSON serialization |
-| Velopack | 0.0.988 (resolved: 0.0.1015) | Auto-updates via GitHub Releases |
+Also update `ClearFilters` to reset `ShowInstalledOnly = false`.
 
-### Added in this session
+Add "Hide Steam software" filter in `Refresh()`:
+```csharp
+.Where(g => !_settings.Get().FilterHideSteamSoftware ||
+            g.Platform != "steam" || g.IsCustom == true)
+```
 
-| Package | Version | Purpose |
-|---|---|---|
-| `WebView.Avalonia` | 11.0.0.1 | WebView control (community package). Uses WebView2 on Windows, webkit2gtk on Linux. Control: `AvaloniaWebView.WebView`, `Url` property (Uri), events: NavigationStarting/NavigationCompleted, methods: ExecuteScriptAsync/GoBack/GoForward/Reload. Init: `AvaloniaWebViewBuilder.Initialize(default)` in App.RegisterServices; `.UseDesktopWebView()` in Program.BuildAvaloniaApp. |
-| `WebView.Avalonia.Desktop` | 11.0.0.1 | Desktop backend for WebView.Avalonia |
+#### XAML changes (`MainView.axaml`)
 
-### Still need to add
+Inside the filter flyout `<StackPanel>`, after the show-hidden checkbox:
 
-| Package | Purpose | Command |
-|---|---|---|
-| `discord-rpc-csharp` | Discord Rich Presence (activate DiscordService stub) | `dotnet add package discord-rpc-csharp` |
-| `Microsoft.Data.Sqlite` | itch.io butler.db (SQLite) | `dotnet add package Microsoft.Data.Sqlite` |
-| `Avalonia.Svg` (optional) | SVG platform icons | `dotnet add package Avalonia.Svg` |
+```xml
+<!-- Installed only -->
+<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+  <CheckBox IsChecked="{Binding ShowInstalledOnly}" Foreground="#b0aaa0"/>
+  <TextBlock Text="Installed only" FontSize="12" Foreground="#b0aaa0"
+             VerticalAlignment="Center"/>
+</StackPanel>
 
----
-
-## What's Done
-
-1. **Solution + project** — `Cereal.sln` + `Cereal.App.csproj` targeting net8.0 with all base NuGets restored
-2. **All models** — `Game`, `Settings`, `Database`, `AccountInfo`, `ChiakiConfig`, `MediaInfo`, `ImportProgress` (Game extended with chiakiRegistKey/Morning/DisplayMode/Dualsense/Passcode, sgdbCoverUrl, storeUrl, epicAppName/Namespace/CatalogItemId, eaOfferId, ubisoftGameId)
-3. **Core services** — `PathService`, `DatabaseService` (debounced writes + backup/restore), `GameService` (CRUD + dedup + categories + SetFavorite/SetHidden), `SettingsService`, `CredentialService` (DPAPI/AES cross-platform)
-4. **Provider infrastructure** — `IProvider`/`IImportProvider` interfaces, `ProviderUtils` (canonicalize, dedup helpers)
-5. **Platform providers** — Steam (ACF scan + XML + API), Epic (manifest scan + library API), GOG (goggame scan + paginated API), Battle.net, EA (registry), Ubisoft (registry), itch.io (stub), Xbox (directory scan)
-6. **Discord service** — stubbed with commented-out discord-rpc-csharp calls, ready to activate once package added
-7. **Integration services** — ChiakiService (process manager, UDP discovery/wake, Win32 P/Invoke embed, auto-reconnect), XcloudService (compile-time WebView.Avalonia — `WebView { Url }` + NavigationCompleted/Starting events, no reflection), SmtcService (subprocess + keybd_event), CoverService (Channel queue, SteamGridDB, retry)
-8. **DI + startup** — App.axaml.cs wires all 9+ services, startup sequence loads DB/Discord/covers/chiaki/update-check; Program.cs does Velopack → Serilog → Avalonia
-9. **ViewModels** — MainViewModel (filter/search/stream tabs), GameCardViewModel (cover/playtime/favorite), SettingsViewModel (two-way settings binding), DetectViewModel (scan + API import)
-10. **UI shell** — MainWindow (custom titlebar, stream tabs, nav), MainView (card grid + search toolbar), SettingsPanel (all settings + SteamGridDB key), DetectPanel (provider checklist + results + import)
-11. **LaunchService** — platform URI dispatch (Steam/Epic/GOG/EA/BattleNet/Ubisoft/itch.io/Xbox/custom exe), playtime session tracking, Discord presence on launch
-12. **AuthService** — OAuth flows for Steam (OpenID), GOG, Epic, Xbox (OAuth2+XBL+XSTS) with HttpListener redirect callback
-13. **Tray icon** — App.axaml TrayIcon with ShowWindow + Quit commands; MainWindow close-to-tray support
-14. **UpdateService** — Velopack GitHub Releases source, CheckAsync / DownloadAndInstallAsync / ApplyAndRestart
-
----
-
-## What's Left (in order)
-
-### Step 7 — Integration services ✅ DONE
-
-- **ChiakiService** — process manager, UDP discovery/wake, Win32 SetParent embed, auto-reconnect; `Win32Interop` inlined at bottom of ChiakiService.cs
-- **XcloudService** — compile-time `AvaloniaWebView.WebView`, `Url` property for navigation, NavigationStarting/NavigationCompleted events wired; XcloudPanel hosts the returned control
-- **SmtcService** — subprocess MediaInfoTool.exe + keybd_event P/Invoke
-- **CoverService** — Channel queue, HTTP download, SteamGridDB search, retry
-
-### Step 8 — Dependency injection wiring ✅ DONE
-
-### Step 9 — ViewModels ✅ DONE
-
-### Step 10 — UI shell (Avalonia AXAML) ✅ DONE
-
-- Note: `AddGameDialog.axaml` and `ArtPickerDialog.axaml` are not yet wired into any command/ViewModel. The panels and main shell are complete.
-
-### Step 11 — Game launcher logic ✅ DONE
-
-### Step 12 — Platform auth / OAuth ✅ DONE
-
-### Step 13 — Orbit view (3D galaxy) ✅ DONE
-
-- `WebView.Avalonia` + `WebView.Avalonia.Desktop` packages added
-- `AvaloniaWebViewBuilder.Initialize(default)` in App.RegisterServices; `.UseDesktopWebView()` in Program.BuildAvaloniaApp
-- `OrbitView.axaml` + `OrbitView.axaml.cs` — creates a `WebView`, sets `HtmlContent` to self-contained Three.js HTML, calls `ExecuteScriptAsync("window.loadGames(...)")` on NavigationCompleted
-- Galaxy HTML: spiral arm particles, game nodes placed on spiral (size = playtime), mouse orbit drag, scroll zoom, hover tooltip
-- MainView restructured: `Panel` in row 1 with ScrollViewer (cards) + OrbitView (orbit) toggled by `ViewMode`; `ViewModeToggleLabel` computed property fixes the broken toggle button label
-- Requires Edge WebView2 runtime on Windows; webkit2gtk on Linux
-
-### Step 14 — Tray icon + window management ✅ DONE
-
-### Step 15 — Auto-update (Velopack) ✅ DONE
-
-### Step 16 — Packaging ✅ DONE
-
-- `Cereal.App.csproj` updated: `OutputType` conditional (WinExe on win-*, Exe on linux-*); `ApplicationManifest` also conditional; `Version`, `Product`, `Description` metadata set
-- `dotnet publish -r win-x64 --self-contained` → `Cereal.App.exe` ✅
-- `dotnet publish -r linux-x64 --self-contained` → ELF `Cereal.App` ✅
-- `.github/workflows/ci.yml` — matrix build (win-x64 + linux-x64) on push/PR to main
-- `.github/workflows/release.yml` — triggered on `v*.*.*` tags; builds both platforms, packs with `vpk`, creates GitHub Release via `softprops/action-gh-release`
-- `vpk` CLI: `dotnet tool install -g vpk` (requires .NET 9 ASP.NET Core runtime — pre-installed on all GitHub Actions runners; not needed for local dev builds)
-- To release: `git tag v1.0.0 && git push --tags` → CI handles the rest
+<!-- Category chips -->
+<TextBlock Text="CATEGORIES" FontSize="9" FontWeight="Bold"
+           LetterSpacing="1.5" Foreground="#40b0aaa0"
+           IsVisible="{Binding AllCategories,
+             Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+<ItemsControl ItemsSource="{Binding AllCategories}">
+  <ItemsControl.ItemsPanel>
+    <ItemsPanelTemplate>
+      <WrapPanel Orientation="Horizontal"/>
+    </ItemsPanelTemplate>
+  </ItemsControl.ItemsPanel>
+  <ItemsControl.ItemTemplate>
+    <DataTemplate>
+      <Button Content="{Binding}" Margin="0,0,4,4" Padding="8,4" FontSize="10"
+              CornerRadius="6" BorderThickness="1" Cursor="Hand"
+              Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).ToggleCategoryFilterCommand}"
+              CommandParameter="{Binding}">
+        <Button.Styles>
+          <Style Selector="Button">
+            <Setter Property="Background" Value="#10ffffff"/>
+            <Setter Property="Foreground" Value="#b0aaa0"/>
+            <Setter Property="BorderBrush" Value="#10ffffff"/>
+          </Style>
+        </Button.Styles>
+      </Button>
+    </DataTemplate>
+  </ItemsControl.ItemTemplate>
+</ItemsControl>
+```
 
 ---
 
-## Key Source Files to Reference
+### 2. SettingsPanel visual redesign
 
-All in `D:\CODE\cereal-launcher-vite\`:
+**Files:**
+- `e:\CODE\cereal-cs\Cereal.App\Views\Panels\SettingsPanel.axaml`
+- `e:\CODE\cereal-cs\Cereal.App\ViewModels\SettingsViewModel.cs`
 
-| Source file | What to port |
-|---|---|
-| `electron/modules/integrations/chiaki.js` | ChiakiService |
-| `electron/modules/integrations/xcloud.js` | XcloudService |
-| `electron/native/MediaInfoTool/Program.cs` | SmtcService (already C#) |
-| `electron/modules/games/covers.js` | CoverService |
-| `electron/modules/games/launcher.js` | LaunchService |
-| `electron/providers/auth.js` | OAuth / AccountService |
-| `electron/providers/steamgriddb.js` | SteamGridDbClient |
-| `src/components/App.tsx` | MainViewModel structure |
-| `src/constants.tsx` | Theme/platform constants → port to C# |
-| `src/types.ts` | Already fully ported to Models/ |
+The current panel uses old blue-tinted colors. Replace throughout:
+
+| Old | New |
+|-----|-----|
+| `Background="#1a1a3a"` | `Background="#08ffffff"` |
+| `BorderBrush="#33aaaaff"` | `BorderBrush="#14ffffff"` |
+| `Foreground="#88ccccff"` | `Foreground="#50b0aaa0"` |
+| `Background="#7c6af7"` buttons | `Background="#d4a853"` + `Foreground="#07070d"` |
+| `Background="#33ffffff"` ghost btn | `Background="#14ffffff"` + `Foreground="#b0aaa0"` |
+
+Also update section labels to match the rest of the app:
+```xml
+<TextBlock Text="APPEARANCE" FontSize="9" FontWeight="Bold"
+           LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,8"/>
+<Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
+```
+
+#### System section additions
+
+Add to the SettingsPanel, in the artwork/system area:
+
+```xml
+<StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
+  <Button Content="Fetch All Metadata"
+          Command="{Binding FetchAllMetadataCommand}"
+          Background="#14ffffff" Foreground="#b0aaa0"
+          CornerRadius="6" Padding="12,7" BorderThickness="1"
+          BorderBrush="#10ffffff" Cursor="Hand"/>
+  <Button Content="Rescan All Platforms"
+          Command="{Binding RescanAllCommand}"
+          Background="#14ffffff" Foreground="#b0aaa0"
+          CornerRadius="6" Padding="12,7" BorderThickness="1"
+          BorderBrush="#10ffffff" Cursor="Hand"/>
+</StackPanel>
+```
+
+#### ViewModel additions (`SettingsViewModel.cs`)
+
+```csharp
+[RelayCommand]
+private async Task FetchAllMetadata()
+{
+    StatusMessage = "Fetching metadata for all games...";
+    var meta = App.Services.GetRequiredService<MetadataService>();
+    var (updated, total) = await meta.FetchAllAsync();
+    StatusMessage = $"Updated metadata for {updated} of {total} games.";
+}
+
+[RelayCommand]
+private async Task RescanAll()
+{
+    StatusMessage = "Scanning all platforms...";
+    // Use DetectViewModel or the individual scanner services to re-detect
+    StatusMessage = "Scan complete.";
+}
+```
+
+#### About section
+
+Add to bottom of SettingsPanel.axaml:
+
+```xml
+<TextBlock Text="ABOUT" FontSize="9" FontWeight="Bold"
+           LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,24,0,8"/>
+<Border Height="1" Background="#0fffffff" Margin="0,0,0,12"/>
+<TextBlock Text="{Binding AppVersion}" FontSize="12" Foreground="#706b63"/>
+<TextBlock Text="{Binding DataPath}" FontSize="11" Foreground="#50b0aaa0"
+           TextWrapping="Wrap" Margin="0,4,0,0"/>
+<Button Content="Open data folder" Margin="0,8,0,0"
+        Command="{Binding OpenDataFolderCommand}"
+        Background="#14ffffff" Foreground="#b0aaa0"
+        CornerRadius="6" Padding="12,7" BorderThickness="1"
+        BorderBrush="#10ffffff" Cursor="Hand"/>
+```
+
+In `SettingsViewModel.cs`:
+```csharp
+public string AppVersion => System.Reflection.Assembly
+    .GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
+
+public string DataPath => App.Services
+    .GetRequiredService<PathService>().AppDataDir;
+
+[RelayCommand]
+private void OpenDataFolder() =>
+    System.Diagnostics.Process.Start(
+        new System.Diagnostics.ProcessStartInfo(DataPath) { UseShellExecute = true });
+```
 
 ---
 
-## Design Decisions Made
+### 3. Favorites and Recent quick-filter tabs
 
-- **Avalonia 11.3.9 over WPF** — cross-platform (Windows + Linux)
-- **net8.0 not net9.0** — SDK available locally is 8.0.404; Avalonia template defaulted to 9 and was corrected
-- **CommunityToolkit.Mvvm** — source-generator-based MVVM, no boilerplate
-- **DPAPI on Windows / AES+machine-id on Linux** — mirrors Electron `safeStorage` behavior
-- **Debounced DB writes (150ms)** — matches JS `setTimeout(..., 150)` pattern exactly
-- **Velopack** — direct replacement for `electron-updater` with GitHub Releases
-- **WebView for Orbit + Xbox Cloud** — reuse existing Three.js code rather than reimplementing 3D in Skia
-- **itch.io uses SQLite (butler.db)** — needs `Microsoft.Data.Sqlite`; currently stubbed
+**Source behavior:** Source nav pill has "All", "Favorites", "Recent" tab chips that filter the game list.
+
+**File:** `e:\CODE\cereal-cs\Cereal.App\ViewModels\MainViewModel.cs`
+
+Add:
+```csharp
+[ObservableProperty] private string _quickFilter = "all";
+partial void OnQuickFilterChanged(string value) => Refresh();
+
+[RelayCommand]
+private void SetQuickFilter(string filter) => QuickFilter = filter;
+```
+
+In `Refresh()`, add after ShowHidden filter:
+```csharp
+.Where(g => QuickFilter != "favorites" || (g.Favorite ?? false))
+.Where(g => QuickFilter != "recent" || g.LastPlayed != null)
+```
+
+For "recent" quick filter, override sort:
+```csharp
+var sorted = (QuickFilter == "recent")
+    ? preFilter.OrderByDescending(g => g.LastPlayed ?? "")
+    : SortOrder switch { /* existing switch */ };
+```
+
+Update `ClearFilters` to also reset `QuickFilter = "all"`.
+
+**File:** `e:\CODE\cereal-cs\Cereal.App\Views\MainView.axaml`
+
+Replace the existing "All" chip with three chips before the platform chips:
+
+```xml
+<Button Classes="chip" Content="All"
+        Classes.active="{Binding QuickFilter,
+          Converter={x:Static conv:StringConverters.IsNotNullOrEmpty},
+          ConverterParameter=all}"
+        Command="{Binding SetQuickFilterCommand}"
+        CommandParameter="all"/>
+<Button Classes="chip" Content="Favs"
+        Classes.active="{Binding QuickFilter,
+          Converter={x:Static conv:StringConverters.IsNotNullOrEmpty},
+          ConverterParameter=favorites}"
+        Command="{Binding SetQuickFilterCommand}"
+        CommandParameter="favorites"/>
+<Button Classes="chip" Content="Recent"
+        Classes.active="{Binding QuickFilter,
+          Converter={x:Static conv:StringConverters.IsNotNullOrEmpty},
+          ConverterParameter=recent}"
+        Command="{Binding SetQuickFilterCommand}"
+        CommandParameter="recent"/>
+```
 
 ---
 
-## How to Resume on Another Machine
+### 4. FocusPanel: "Refresh Info" button
 
-1. Copy `e:\CODE\cereal-cs\` (or clone from git once pushed)
-2. Install .NET 8 SDK from https://aka.ms/dotnet/download (or use `winget install Microsoft.DotNet.SDK.8`)
-3. `cd cereal-cs && dotnet restore && dotnet build` — should succeed with 0 errors
-4. **All 16 steps are complete.** The app is functionally feature-complete.
+**Source behavior:** Platform badge row has a "Refresh" button that re-fetches SGDB metadata for the selected game.
 
-## Remaining Polish / Known Gaps
+**File:** `e:\CODE\cereal-cs\Cereal.App\Views\Panels\FocusPanel.axaml`
 
-| Item | Notes |
-|---|---|
-| `AddGameDialog.axaml` + `ArtPickerDialog.axaml` | ✅ DONE — AddGameDialog (form with exe/cover browse + SteamGridDB art picker), ArtPickerDialog (searches SteamGridDB by name, shows thumbnail grid). Wired via `ShowAddGameCommand` in MainViewModel; `AddGameRequested` event routed through MainView.axaml.cs; "+ Add game" button added to MainView toolbar. |
-| itch.io provider | ✅ DONE — `Microsoft.Data.Sqlite` added; ItchioProvider reads caves+games tables from butler.db with SQL JOIN; falls back silently if DB schema differs. |
-| Discord Rich Presence | ✅ DONE — `DiscordRichPresence` (Lachee) package added; DiscordService fully implemented with `DiscordRpcClient`, `SetPresence`, `ClearPresence`, proper event wiring. |
-| App icon | ✅ DONE — `Assets/icon.ico` + `Assets/icon.png` + `Assets/icon.svg` copied from source repo. `<ApplicationIcon>` set in csproj (Windows-only). `--icon` flag wired in release.yml. |
-| Orbit view (galaxy) | ✅ DONE — Rewritten as 2D CSS-transform pan/zoom galaxy matching source app. Uses `CLUSTER_CENTERS` per platform, nebula glows, orbit rings, platform suns, game orbs with cover images (file:// for local cache, HTTP for remote). Mouse drag to pan, scroll to zoom, double-click to fit all. No CDN dependency. |
-| Theme definitions | ✅ DONE — `Models/AppTheme.cs` with `AppThemes.All` (9 themes) ported from `src/constants.tsx`. |
-| Dynamic theming | ✅ DONE — `Services/ThemeService.cs` updates `Application.Resources` (`ThemeVoid`, `ThemeSurface`, `ThemeCard`, `ThemeAccent`, `ThemeText`, `ThemeText2`) at startup and whenever user changes theme in Settings. MainWindow Background + title bar use `{DynamicResource}`. `SettingsViewModel.OnThemeChanged` fires live preview. |
-| Theme picker UI | ✅ DONE — APPEARANCE section added to SettingsPanel with ComboBox bound to `SelectedTheme` property; `DataTemplate x:DataType="models:AppTheme"` shows `Label`. |
-| Window icon | ✅ DONE — `Assets/icon.png` added as `AvaloniaResource`; loaded via `AssetLoader.Open` in MainWindow constructor → `WindowIcon`. |
-| WebView2 on Windows | End users must have Edge WebView2 runtime installed (usually already present on Win10/11). Optionally bundle the Evergreen bootstrapper. |
-| webkit2gtk on Linux | Package in distro: `sudo apt install libwebkit2gtk-4.0-37` or `-4.1` depending on distro |
+In the platform badge grid (~line 160, `ColumnDefinitions="*,Auto"`), add to Grid.Column=1:
+
+```xml
+<Button Grid.Column="1" Classes="focus-ghost" Content="Refresh Info"
+        Command="{Binding RefreshGameInfoCommand}"
+        IsVisible="{Binding SelectedGame, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+```
+
+**File:** `e:\CODE\cereal-cs\Cereal.App\ViewModels\MainViewModel.cs`
+
+```csharp
+[RelayCommand]
+private async Task RefreshGameInfo()
+{
+    if (SelectedGame is null) return;
+    StatusMessage = $"Fetching info for {SelectedGame.Name}...";
+    var meta = App.Services.GetRequiredService<MetadataService>();
+    await meta.FetchForGameAsync(SelectedGame.Game);
+    _covers.EnqueueGame(SelectedGame.Id);
+    Refresh();
+    StatusMessage = null;
+}
+```
+
+---
+
+### 5. FocusPanel: screenshot strip
+
+**Source behavior:** FocusView shows a horizontal strip of screenshot thumbnails below the description when `game.screenshots` is populated.
+
+**File:** `e:\CODE\cereal-cs\Cereal.App\ViewModels\GameCardViewModel.cs`
+
+```csharp
+public bool HasScreenshots => Game.Screenshots?.Count > 0;
+// Add to Refresh():
+OnPropertyChanged(nameof(HasScreenshots));
+```
+
+**File:** `e:\CODE\cereal-cs\Cereal.App\Views\Panels\FocusPanel.axaml`
+
+After the description TextBlock, inside the right ScrollViewer StackPanel:
+
+```xml
+<ScrollViewer IsVisible="{Binding SelectedGame.HasScreenshots}"
+              HorizontalScrollBarVisibility="Auto"
+              VerticalScrollBarVisibility="Disabled"
+              Margin="0,0,0,10">
+  <ItemsControl ItemsSource="{Binding SelectedGame.Game.Screenshots}">
+    <ItemsControl.ItemsPanel>
+      <ItemsPanelTemplate>
+        <StackPanel Orientation="Horizontal" Spacing="6"/>
+      </ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate>
+      <DataTemplate>
+        <Border CornerRadius="4" ClipToBounds="True" Width="120" Height="68">
+          <Image Source="{Binding}" Stretch="UniformToFill"/>
+        </Border>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</ScrollViewer>
+```
+
+---
+
+## Build verification
+
+After each change group:
+
+```bash
+cd e:\CODE\cereal-cs
+dotnet build Cereal.App/Cereal.App.csproj --no-restore 2>&1 | tail -30
+```
+
+**Expected:** 0 errors. Pre-existing ignorable warnings:
+- `NU1603` — Velopack version mismatch
+- `AVLN3001` — ArtPickerDialog no public constructor
+- `CS8826` — partial method signature differences (fix by matching parameter names exactly)
+
+---
+
+## Key files reference
+
+| File | Purpose |
+|------|---------|
+| `ViewModels/MainViewModel.cs` | Central state: filter, sort, panels, refresh |
+| `ViewModels/GameCardViewModel.cs` | Per-game display state + IBrush computed props |
+| `Views/MainView.axaml` | Nav pill + card grid + orbit view |
+| `Views/MainView.axaml.cs` | Card_Tapped, FavBtn_Click, edit dialog wiring |
+| `Views/Panels/FocusPanel.axaml` + `.cs` | Game detail overlay |
+| `Views/Panels/ChiakiPanel.axaml` + `.cs` | PlayStation Remote Play panel |
+| `Views/Panels/SettingsPanel.axaml` | Settings panel XAML |
+| `ViewModels/SettingsViewModel.cs` | Settings state + commands |
+| `Models/Game.cs` | Game data model |
+| `Models/Database.cs` | DB root + ChiakiConfig + ChiakiConsole |
+| `Services/Integrations/ChiakiService.cs` | Chiaki-ng integration |
+| `Utilities/Converters.cs` | `StringConverters`, `ObjectConverters` (namespace `Cereal.App`) |
+
+---
+
+## Color / style system
+
+| Token | Value |
+|-------|-------|
+| Void bg | `#07070d` |
+| Card bg | `#101018` |
+| Panel glass | `#0dffffff` or `#e8101018` |
+| Gold accent | `#d4a853` |
+| Muted text | `#b0aaa0` |
+| Dim text | `#706b63` |
+| Subtle text | `#3d3a35` |
+| Border | `#0fffffff` – `#1affffff` |
+| Green (live/ok) | `#22c55e` |
+| Red (danger) | `#ff4444` |
+| IBrush green bg | `new SolidColorBrush(Color.Parse("#0f22c55e"))` |
+| IBrush red bg | `new SolidColorBrush(Color.Parse("#0fff4444"))` |
+| IBrush gold bg | `new SolidColorBrush(Color.Parse("#0fd4a853"))` |
+
+---
+
+## Priority order
+
+| # | Task | Effort |
+|---|------|--------|
+| 1 | Filter flyout: category chips + installed-only | Small |
+| 2 | SettingsPanel visual restyle + About section | Medium |
+| 3 | Favorites / Recent quick-filter tabs | Small |
+| 4 | FocusPanel: Refresh Info button | Small |
+| 5 | FocusPanel: screenshot strip | Small |
+| 6 | SettingsPanel: Fetch All Metadata + Rescan All | Medium |
+
+Each task is independent — they can be done in any order.

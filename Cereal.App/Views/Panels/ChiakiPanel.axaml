@@ -1,39 +1,382 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:services="using:Cereal.App.Services.Integrations"
+             xmlns:conv="using:Cereal.App"
              xmlns:local="using:Cereal.App.Views.Panels"
              x:Class="Cereal.App.Views.Panels.ChiakiPanel"
-             x:DataType="local:ChiakiPanel"
+             x:DataType="local:ChiakiPanelViewModel"
              Background="Transparent">
 
-  <Grid RowDefinitions="Auto,Auto,*" Margin="12">
-    <StackPanel Orientation="Horizontal" Spacing="8">
-      <Button Content="Discover consoles" Click="Discover_Click" />
-      <Button Content="Open Chiaki GUI" Click="OpenGui_Click"/>
-    </StackPanel>
+  <UserControl.Styles>
 
-    <Border Grid.Row="1" x:Name="EmbedHost" Height="360" Background="#001122" CornerRadius="6" Margin="0,12,0,0">
-      <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#66ccccff" Text="Chiaki embed area"/>
+    <Style Selector="Button.chiaki-tab">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#706b63"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="BorderThickness" Value="0,0,0,2"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.chiaki-tab.active">
+      <Setter Property="Foreground" Value="#d4a853"/>
+      <Setter Property="BorderBrush" Value="#d4a853"/>
+    </Style>
+    <Style Selector="Button.chiaki-tab:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+    </Style>
+
+    <Style Selector="Button.ch-sm">
+      <Setter Property="Background" Value="#14ffffff"/>
+      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="#10ffffff"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.ch-sm:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#20ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+    </Style>
+
+    <Style Selector="Button.ch-primary">
+      <Setter Property="Background" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="#07070d"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.ch-primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#e8b85e"/>
+    </Style>
+
+    <Style Selector="Button.ch-danger">
+      <Setter Property="Background" Value="#33ff4444"/>
+      <Setter Property="Foreground" Value="#ff7070"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Padding" Value="6,5"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.ch-danger:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#55ff4444"/>
+    </Style>
+
+    <Style Selector="TextBox.ch-input">
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="Foreground" Value="#e8e4de"/>
+      <Setter Property="BorderBrush" Value="#14ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="CaretBrush" Value="#d4a853"/>
+    </Style>
+    <Style Selector="TextBox.ch-input:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="#4dd4a853"/>
+    </Style>
+
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*">
+
+    <!-- Status bar -->
+    <Border Grid.Row="0" Margin="16,12,16,0" CornerRadius="8" Padding="10,7"
+            Background="{Binding StatusBg}">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Ellipse Width="6" Height="6" Fill="{Binding StatusDot}" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="SemiBold"
+                   Foreground="{Binding StatusFg}" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding StatusVersion}" FontSize="10" Foreground="#50b0aaa0"
+                   VerticalAlignment="Center"
+                   IsVisible="{Binding StatusVersion, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+      </StackPanel>
     </Border>
 
-    <ListBox Grid.Row="2" ItemsSource="{Binding Consoles}" Margin="0,12,0,0">
-      <ListBox.ItemTemplate>
-        <DataTemplate DataType="services:DiscoveredConsole">
-          <Border Padding="8" Margin="0,4" Background="#111122" CornerRadius="6">
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-              <StackPanel Grid.Column="0">
-                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding Host}" Foreground="#88ccccff"/>
-                <TextBlock Text="{Binding State}" Foreground="#66ccccff"/>
+    <!-- Tabs -->
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="16,8,16,0">
+      <Button Classes="chiaki-tab" Content="Consoles"
+              Classes.active="{Binding IsTabConsoles}"
+              Click="TabConsoles_Click"/>
+      <Button Classes="chiaki-tab" Content="Discover"
+              Classes.active="{Binding IsTabDiscover}"
+              Click="TabDiscover_Click"/>
+      <Button Classes="chiaki-tab" Content="Register"
+              Classes.active="{Binding IsTabRegister}"
+              Click="TabRegister_Click"/>
+    </StackPanel>
+
+    <!-- Tab content -->
+    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="16,10,16,16" Spacing="10">
+
+        <!-- ── Consoles tab ── -->
+        <StackPanel IsVisible="{Binding IsTabConsoles}" Spacing="10">
+
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="REGISTERED CONSOLES" FontSize="9"
+                       FontWeight="Bold" LetterSpacing="1.5" Foreground="#40b0aaa0"
+                       VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Classes="ch-sm" Content="+ Add"
+                    Click="ShowAddConsole_Click"/>
+          </Grid>
+
+          <!-- Add console form -->
+          <Border IsVisible="{Binding ShowAddConsoleForm}"
+                  Background="#0dffffff" CornerRadius="8" Padding="12">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,12,*">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Text="Nickname" FontSize="10" Foreground="#50b0aaa0"/>
+                  <TextBox Classes="ch-input" x:Name="NewNicknameBox"
+                           Watermark="PS5-Living-Room"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="4">
+                  <TextBlock Text="Host IP" FontSize="10" Foreground="#50b0aaa0"/>
+                  <TextBox Classes="ch-input" x:Name="NewHostBox"
+                           Watermark="192.168.1.x"/>
+                </StackPanel>
+              </Grid>
+              <StackPanel Spacing="4">
+                <TextBlock Text="Profile (optional)" FontSize="10" Foreground="#50b0aaa0"/>
+                <TextBox Classes="ch-input" x:Name="NewProfileBox" Watermark="default"/>
               </StackPanel>
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
-                <Button Content="Start" Click="Start_Click" />
-                <Button Content="Wake" Click="Wake_Click"/>
+              <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button Classes="ch-sm" Content="Cancel" Click="CancelAddConsole_Click"/>
+                <Button Classes="ch-primary" Content="Add Console" Click="AddConsole_Click"/>
               </StackPanel>
-            </Grid>
+            </StackPanel>
           </Border>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
+
+          <!-- Empty state -->
+          <Border IsVisible="{Binding HasNoConsoles}"
+                  Background="#08ffffff" CornerRadius="8" Padding="16">
+            <TextBlock FontSize="12" Foreground="#50b0aaa0" TextWrapping="Wrap"
+                       TextAlignment="Center">
+              No consoles registered. Use the Discover tab to find consoles on your network,
+              or click + Add to add one manually.
+            </TextBlock>
+          </Border>
+
+          <!-- Console cards -->
+          <ItemsControl ItemsSource="{Binding Consoles}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:ChiakiConsoleViewModel">
+                <Border Background="#0dffffff" CornerRadius="8" Padding="12" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+
+                    <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                            Background="#1a0070d1" Margin="0,0,10,0" VerticalAlignment="Top">
+                      <TextBlock Text="PS" FontSize="10" FontWeight="Bold"
+                                 Foreground="#0070d1"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{Binding Nickname}" FontSize="13"
+                                   FontWeight="SemiBold" Foreground="#e8e4de"/>
+                        <Border IsVisible="{Binding IsLive}"
+                                Background="#1a22c55e" CornerRadius="4" Padding="5,1">
+                          <TextBlock Text="LIVE" FontSize="9" FontWeight="Bold"
+                                     Foreground="#22c55e"/>
+                        </Border>
+                        <Border IsVisible="{Binding IsNotRegistered}"
+                                Background="#14ffffff" CornerRadius="4" Padding="5,1">
+                          <TextBlock Text="Not registered" FontSize="9" Foreground="#706b63"/>
+                        </Border>
+                      </StackPanel>
+                      <TextBlock FontSize="11" Foreground="#50b0aaa0">
+                        <Run Text="{Binding Host}"/>
+                        <Run Text="{Binding ProfileSuffix}"/>
+                      </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4"
+                                VerticalAlignment="Center">
+                      <Button Classes="ch-danger" Content="Stop"
+                              IsVisible="{Binding IsLive}"
+                              Tag="{Binding Host}"
+                              Click="StopConsole_Click"/>
+                      <Button Classes="ch-primary" Content="Connect"
+                              IsVisible="{Binding !IsLive}"
+                              Tag="{Binding .}"
+                              Click="ConnectConsole_Click"/>
+                      <Button Classes="ch-sm" Content="Wake"
+                              IsVisible="{Binding !IsLive}"
+                              Tag="{Binding .}"
+                              Click="WakeConsole_Click"/>
+                      <Button Classes="ch-danger" Content="✕"
+                              Tag="{Binding .}"
+                              Click="RemoveConsole_Click"/>
+                    </StackPanel>
+
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+        </StackPanel>
+
+        <!-- ── Discover tab ── -->
+        <StackPanel IsVisible="{Binding IsTabDiscover}" Spacing="10">
+
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="Scan your network for PlayStation consoles"
+                       FontSize="12" Foreground="#706b63" VerticalAlignment="Center"
+                       TextWrapping="Wrap"/>
+            <Button Grid.Column="1" Classes="ch-primary" Content="Scan Network"
+                    Click="Discover_Click" Margin="8,0,0,0"/>
+          </Grid>
+
+          <TextBlock IsVisible="{Binding IsDiscovering}" Text="Scanning…"
+                     FontSize="12" Foreground="#d4a853" HorizontalAlignment="Center"/>
+
+          <ItemsControl ItemsSource="{Binding DiscoveredConsoles}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:DiscoveredConsoleViewModel">
+                <Border Background="#0dffffff" CornerRadius="8" Padding="12" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+
+                    <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                            Background="#1a0070d1" Margin="0,0,10,0" VerticalAlignment="Top">
+                      <TextBlock Text="{Binding TypeLabel}" FontSize="9" FontWeight="Bold"
+                                 Foreground="#0070d1"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13"
+                                 FontWeight="SemiBold" Foreground="#e8e4de"/>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{Binding Host}" FontSize="11" Foreground="#50b0aaa0"/>
+                        <Border IsVisible="{Binding IsStandby}"
+                                Background="#14ffffff" CornerRadius="3" Padding="4,1">
+                          <TextBlock Text="Standby" FontSize="9" Foreground="#706b63"/>
+                        </Border>
+                        <Border IsVisible="{Binding IsReady}"
+                                Background="#1a22c55e" CornerRadius="3" Padding="4,1">
+                          <TextBlock Text="Awake" FontSize="9" Foreground="#22c55e"/>
+                        </Border>
+                        <Border IsVisible="{Binding AlreadyAdded}"
+                                Background="#14ffffff" CornerRadius="3" Padding="4,1">
+                          <TextBlock Text="Added" FontSize="9" Foreground="#706b63"/>
+                        </Border>
+                      </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4"
+                                VerticalAlignment="Center">
+                      <Button Classes="ch-primary" Content="Add"
+                              IsVisible="{Binding !AlreadyAdded}"
+                              Tag="{Binding .}"
+                              Click="AddDiscovered_Click"/>
+                      <Button Classes="ch-sm" Content="Register"
+                              Tag="{Binding .}"
+                              Click="RegisterDiscovered_Click"/>
+                    </StackPanel>
+
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border IsVisible="{Binding ShowDiscoverEmpty}"
+                  Background="#08ffffff" CornerRadius="8" Padding="16">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+              <TextBlock Text="Click Scan Network to find PlayStation consoles."
+                         FontSize="12" Foreground="#50b0aaa0" TextAlignment="Center"/>
+              <TextBlock Text="Make sure your console is on and on the same network."
+                         FontSize="10" Foreground="#30b0aaa0" TextAlignment="Center"/>
+            </StackPanel>
+          </Border>
+
+        </StackPanel>
+
+        <!-- ── Register tab ── -->
+        <StackPanel IsVisible="{Binding IsTabRegister}" Spacing="12">
+
+          <TextBlock Text="Register your PlayStation for Remote Play. One-time setup per console."
+                     FontSize="12" Foreground="#706b63" TextWrapping="Wrap"/>
+
+          <Border Background="#0dffffff" CornerRadius="8" Padding="12">
+            <StackPanel Spacing="8">
+              <TextBlock Text="SETUP STEPS" FontSize="9" FontWeight="Bold"
+                         LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,4"/>
+              <Grid ColumnDefinitions="22,*" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,0">
+                <Border Grid.Row="0" Grid.Column="0" Width="18" Height="18" CornerRadius="9"
+                        Background="#22d4a853" VerticalAlignment="Top">
+                  <TextBlock Text="1" FontSize="9" FontWeight="Bold" Foreground="#d4a853"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11" Foreground="#706b63"
+                           TextWrapping="Wrap" Margin="0,0,0,6">
+                  On console: Settings › System › Remote Play — enable it.
+                </TextBlock>
+                <Border Grid.Row="1" Grid.Column="0" Width="18" Height="18" CornerRadius="9"
+                        Background="#22d4a853" VerticalAlignment="Top">
+                  <TextBlock Text="2" FontSize="9" FontWeight="Bold" Foreground="#d4a853"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11" Foreground="#706b63"
+                           TextWrapping="Wrap" Margin="0,0,0,6">
+                  Go to Remote Play › Link Device to get the 8-digit link code.
+                </TextBlock>
+                <Border Grid.Row="2" Grid.Column="0" Width="18" Height="18" CornerRadius="9"
+                        Background="#22d4a853" VerticalAlignment="Top">
+                  <TextBlock Text="3" FontSize="9" FontWeight="Bold" Foreground="#d4a853"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11" Foreground="#706b63"
+                           TextWrapping="Wrap">
+                  Get your PSN Account ID (Base64) from psn.flipscreen.games.
+                </TextBlock>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <StackPanel Spacing="4">
+            <TextBlock Text="Console IP" FontSize="10" Foreground="#50b0aaa0"/>
+            <TextBox Classes="ch-input" x:Name="RegHostBox" Watermark="192.168.1.x"/>
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="PSN Account ID (Base64)" FontSize="10" Foreground="#50b0aaa0"/>
+            <TextBox Classes="ch-input" x:Name="RegAccountIdBox"
+                     Watermark="e.g. ab12CDef3ghIjk…"/>
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Link Code (8 digits)" FontSize="10" Foreground="#50b0aaa0"/>
+            <TextBox Classes="ch-input" x:Name="RegPinBox"
+                     Watermark="12345678" MaxLength="8"/>
+          </StackPanel>
+
+          <Border IsVisible="{Binding RegStatus, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                  CornerRadius="6" Padding="10,8"
+                  Background="{Binding RegStatusBg}">
+            <TextBlock Text="{Binding RegStatus}" FontSize="11"
+                       Foreground="{Binding RegStatusFg}" TextWrapping="Wrap"/>
+          </Border>
+
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Classes="ch-primary" Content="Register Console" Click="Register_Click"/>
+            <Button Classes="ch-sm" Content="Reset" Click="RegReset_Click"/>
+          </StackPanel>
+
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+
   </Grid>
 </UserControl>

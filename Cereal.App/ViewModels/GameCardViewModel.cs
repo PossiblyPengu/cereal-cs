@@ -1,3 +1,4 @@
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cereal.App.Models;
@@ -15,10 +16,37 @@ public partial class GameCardViewModel : ObservableObject
     public string Name => Game.Name;
     public string Platform => Game.Platform;
     public string? PlatformId => Game.PlatformId;
-    public string PlatformLabel => PlatformInfo.GetLabel(Game.Platform);
-    public string PlatformColor => PlatformInfo.GetColor(Game.Platform);
+    public string PlatformLabel  => PlatformInfo.GetLabel(Game.Platform);
+    public string PlatformLetter => PlatformInfo.GetLetter(Game.Platform);
+    public string PlatformColor  => PlatformInfo.GetColor(Game.Platform);
+    public bool IsNotInstalled   => Game.Installed == false;
     public string Initial => string.IsNullOrEmpty(Game.Name) ? "?" : Game.Name[0].ToString().ToUpperInvariant();
     public bool HasCover => !string.IsNullOrEmpty(CoverPath);
+
+    // Metadata
+    public int? Metacritic => Game.Metacritic;
+    public bool HasMetacritic => Game.Metacritic is > 0;
+    public string MetacriticColor => Game.Metacritic is int mc
+        ? mc >= 75 ? "#6dc849" : mc >= 50 ? "#fdca52" : "#fc4b37"
+        : "#888888";
+    public IBrush MetacriticFgBrush => new SolidColorBrush(Color.Parse(MetacriticColor));
+    public IBrush MetacriticBgBrush => new SolidColorBrush(Color.Parse(
+        "#22" + MetacriticColor[1..]));
+    public string? Developer => Game.Developer;
+    public string? Publisher => Game.Publisher;
+    public string? ReleaseDate => Game.ReleaseDate;
+    public string? Description => Game.Description;
+    public string? Notes => Game.Notes;
+    public List<string>? Screenshots => Game.Screenshots;
+    public string? Website => Game.Website;
+    public bool HasDeveloper => !string.IsNullOrEmpty(Game.Developer);
+    public bool HasPublisher => !string.IsNullOrEmpty(Game.Publisher);
+    public bool HasReleaseDate => !string.IsNullOrEmpty(Game.ReleaseDate);
+    public bool HasDescription => !string.IsNullOrEmpty(Game.Description);
+    public bool HasNotes => !string.IsNullOrEmpty(Game.Notes);
+    public bool HasCategories => Game.Categories?.Count > 0;
+    public bool HasScreenshots => Game.Screenshots?.Count > 0;
+    public string FavoriteLabel => IsFavorite ? "Unfav" : "Fav";
 
     [ObservableProperty] private string? _coverPath;
     [ObservableProperty] private string? _headerPath;
@@ -73,7 +101,24 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(LastPlayedLabel));
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(HasCover));
+        OnPropertyChanged(nameof(Metacritic));
+        OnPropertyChanged(nameof(HasMetacritic));
+        OnPropertyChanged(nameof(Developer));
+        OnPropertyChanged(nameof(Publisher));
+        OnPropertyChanged(nameof(ReleaseDate));
+        OnPropertyChanged(nameof(Description));
+        OnPropertyChanged(nameof(Notes));
+        OnPropertyChanged(nameof(HasDeveloper));
+        OnPropertyChanged(nameof(HasPublisher));
+        OnPropertyChanged(nameof(HasReleaseDate));
+        OnPropertyChanged(nameof(HasDescription));
+        OnPropertyChanged(nameof(HasNotes));
+        OnPropertyChanged(nameof(HasCategories));
+        OnPropertyChanged(nameof(HasScreenshots));
+        OnPropertyChanged(nameof(FavoriteLabel));
     }
+
+    partial void OnIsFavoriteChanged(bool value) => OnPropertyChanged(nameof(FavoriteLabel));
 
     [RelayCommand]
     private void ToggleFavorite()

@@ -1,0 +1,348 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cereal.App.ViewModels"
+             xmlns:conv="using:Cereal.App"
+             x:Class="Cereal.App.Views.Panels.FocusPanel"
+             x:DataType="vm:MainViewModel"
+             Background="Transparent">
+
+  <UserControl.Styles>
+
+    <Style Selector="Button.focus-action">
+      <Setter Property="Background" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="#07070d"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="16,8"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.focus-action:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#e8b85e"/>
+    </Style>
+
+    <Style Selector="Button.focus-ghost">
+      <Setter Property="Background" Value="#18ffffff"/>
+      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="16,8"/>
+      <Setter Property="BorderBrush" Value="#18ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.focus-ghost:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#28ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+    </Style>
+
+    <Style Selector="Button.focus-danger">
+      <Setter Property="Background" Value="#33ff4444"/>
+      <Setter Property="Foreground" Value="#ff7070"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.focus-danger:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#55ff4444"/>
+      <Setter Property="TextElement.Foreground" Value="#ff9090"/>
+    </Style>
+
+    <Style Selector="Button.focus-close">
+      <Setter Property="Background" Value="#18ffffff"/>
+      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="Width" Value="32"/>
+      <Setter Property="Height" Value="32"/>
+      <Setter Property="CornerRadius" Value="16"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.focus-close:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#33ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+    </Style>
+
+    <Style Selector="Border.cat-chip">
+      <Setter Property="Background" Value="#1ad4a853"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="8,3"/>
+    </Style>
+
+  </UserControl.Styles>
+
+  <!-- Root grid — click outside content closes panel -->
+  <Grid PointerPressed="Root_PointerPressed">
+
+    <!-- Blurred background: header image or cover -->
+    <Image Source="{Binding SelectedGame.HeaderPath}"
+           Stretch="UniformToFill"
+           Opacity="0.15"
+           IsHitTestVisible="False">
+      <Image.Effect>
+        <BlurEffect Radius="30"/>
+      </Image.Effect>
+    </Image>
+    <Image Source="{Binding SelectedGame.CoverPath}"
+           IsVisible="{Binding SelectedGame.HasCover}"
+           Stretch="UniformToFill"
+           Opacity="0.08"
+           IsHitTestVisible="False">
+      <Image.Effect>
+        <BlurEffect Radius="30"/>
+      </Image.Effect>
+    </Image>
+
+    <!-- Dark overlay gradient -->
+    <Border IsHitTestVisible="False">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+          <GradientStop Color="#cc07070d" Offset="0"/>
+          <GradientStop Color="#ee07070d" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+
+    <!-- Content card (click intercepted — prevents close) -->
+    <Border x:Name="ContentCard"
+            PointerPressed="ContentCard_PointerPressed"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Margin="40"
+            MaxWidth="880"
+            CornerRadius="16"
+            Background="#e8101018"
+            BorderBrush="#1affffff"
+            BorderThickness="1"
+            ClipToBounds="True">
+
+      <Grid ColumnDefinitions="200,*" MaxHeight="560">
+
+        <!-- Left: cover art -->
+        <Panel Grid.Column="0">
+          <Border Background="#16161f" CornerRadius="16,0,0,16"/>
+          <!-- Fallback initial -->
+          <TextBlock Text="{Binding SelectedGame.Initial}"
+                     FontSize="64" FontWeight="Light"
+                     Foreground="#1de8e4de"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"/>
+          <!-- Cover image -->
+          <Image Source="{Binding SelectedGame.CoverPath}"
+                 IsVisible="{Binding SelectedGame.HasCover}"
+                 Stretch="UniformToFill"/>
+          <!-- Gradient at bottom of cover -->
+          <Border VerticalAlignment="Bottom" Height="80"
+                  CornerRadius="0,0,0,16"
+                  IsHitTestVisible="False">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="Transparent" Offset="0"/>
+                <GradientStop Color="#ee101018" Offset="1"/>
+              </LinearGradientBrush>
+            </Border.Background>
+          </Border>
+        </Panel>
+
+        <!-- Right: game details + actions -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Margin="24,20,24,24" Spacing="0">
+
+            <!-- Platform badge + Refresh Info row -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+              <Border Grid.Column="0"
+                      CornerRadius="4" Padding="8,3"
+                      HorizontalAlignment="Left"
+                      Background="#18ffffff">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Ellipse Width="6" Height="6"
+                           Fill="{Binding SelectedGame.PlatformColor}"
+                           VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding SelectedGame.PlatformLabel}"
+                             FontSize="10" FontWeight="Bold"
+                             Foreground="{Binding SelectedGame.PlatformColor}"/>
+                </StackPanel>
+              </Border>
+              <Button Grid.Column="1" Classes="focus-ghost" Content="Refresh Info"
+                      Command="{Binding RefreshGameInfoCommand}"
+                      IsVisible="{Binding SelectedGame, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+            </Grid>
+
+            <!-- Game title -->
+            <TextBlock Text="{Binding SelectedGame.Name}"
+                       FontSize="22" FontWeight="Bold"
+                       Foreground="#e8e4de"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"/>
+
+            <!-- Metacritic badge -->
+            <Border IsVisible="{Binding SelectedGame.HasMetacritic}"
+                    CornerRadius="4" Padding="8,3"
+                    HorizontalAlignment="Left"
+                    Margin="0,0,0,8"
+                    Background="{Binding SelectedGame.MetacriticBgBrush}">
+              <TextBlock Foreground="{Binding SelectedGame.MetacriticFgBrush}"
+                         FontSize="11" FontWeight="Bold">
+                <Run Text="{Binding SelectedGame.Metacritic}"/>
+                <Run Text=" Metacritic"/>
+              </TextBlock>
+            </Border>
+
+            <!-- Playtime / Last played row -->
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+              <TextBlock Text="{Binding SelectedGame.PlaytimeLabel}"
+                         FontSize="12" Foreground="#b0aaa0"/>
+              <TextBlock Text="|" FontSize="12" Foreground="#3d3a35"
+                         IsVisible="{Binding SelectedGame.PlaytimeLabel, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+              <TextBlock Text="{Binding SelectedGame.LastPlayedLabel}"
+                         FontSize="12" Foreground="#706b63"/>
+            </StackPanel>
+
+            <!-- Developer / Publisher / Release date -->
+            <Grid IsVisible="{Binding SelectedGame.HasDeveloper}"
+                  ColumnDefinitions="Auto,*" Margin="0,0,0,4">
+              <TextBlock Grid.Column="0" Text="Developer" FontSize="11"
+                         Foreground="#50b0aaa0" Width="80"/>
+              <TextBlock Grid.Column="1" Text="{Binding SelectedGame.Developer}"
+                         FontSize="11" Foreground="#b0aaa0" TextWrapping="Wrap"/>
+            </Grid>
+            <Grid IsVisible="{Binding SelectedGame.HasPublisher}"
+                  ColumnDefinitions="Auto,*" Margin="0,0,0,4">
+              <TextBlock Grid.Column="0" Text="Publisher" FontSize="11"
+                         Foreground="#50b0aaa0" Width="80"/>
+              <TextBlock Grid.Column="1" Text="{Binding SelectedGame.Publisher}"
+                         FontSize="11" Foreground="#b0aaa0" TextWrapping="Wrap"/>
+            </Grid>
+            <Grid IsVisible="{Binding SelectedGame.HasReleaseDate}"
+                  ColumnDefinitions="Auto,*" Margin="0,0,0,10">
+              <TextBlock Grid.Column="0" Text="Released" FontSize="11"
+                         Foreground="#50b0aaa0" Width="80"/>
+              <TextBlock Grid.Column="1" Text="{Binding SelectedGame.ReleaseDate}"
+                         FontSize="11" Foreground="#b0aaa0"/>
+            </Grid>
+
+            <!-- Categories -->
+            <ItemsControl IsVisible="{Binding SelectedGame.HasCategories}"
+                          ItemsSource="{Binding SelectedGame.Game.Categories}"
+                          Margin="0,0,0,10">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="cat-chip" Margin="0,0,4,4">
+                    <TextBlock Text="{Binding}" FontSize="10" Foreground="#d4a853"/>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Description -->
+            <TextBlock IsVisible="{Binding SelectedGame.HasDescription}"
+                       Text="{Binding SelectedGame.Description}"
+                       FontSize="12" Foreground="#706b63"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,10"
+                       MaxLines="4"
+                       TextTrimming="CharacterEllipsis"/>
+
+            <!-- Notes -->
+            <StackPanel IsVisible="{Binding SelectedGame.HasNotes}" Margin="0,0,0,10">
+              <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold"
+                         LetterSpacing="1" Foreground="#40b0aaa0" Margin="0,0,0,4"/>
+              <TextBlock Text="{Binding SelectedGame.Notes}"
+                         FontSize="12" Foreground="#706b63"
+                         TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- Screenshot strip -->
+            <ScrollViewer IsVisible="{Binding SelectedGame.HasScreenshots}"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled"
+                          Margin="0,0,0,10">
+              <ItemsControl ItemsSource="{Binding SelectedGame.Game.Screenshots}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="6"/>
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border CornerRadius="4" ClipToBounds="True" Width="120" Height="68"
+                            Cursor="Hand"
+                            PointerPressed="Screenshot_PointerPressed">
+                      <Image Source="{Binding}" Stretch="UniformToFill"/>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Action buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+              <Button Classes="focus-action" Content="▶  Play"
+                      Command="{Binding LaunchGameCommand}"
+                      CommandParameter="{Binding SelectedGame}"/>
+              <Button Classes="focus-ghost"
+                      Content="{Binding SelectedGame.FavoriteLabel}"
+                      Command="{Binding SelectedGame.ToggleFavoriteCommand}"/>
+              <Button Classes="focus-ghost" Content="Edit"
+                      Command="{Binding EditGameCommand}"/>
+              <Button Classes="focus-danger" Content="✕"
+                      Command="{Binding DeleteGameCommand}"
+                      CommandParameter="{Binding SelectedGame.Id}"
+                      Click="Delete_Click"/>
+            </StackPanel>
+
+          </StackPanel>
+        </ScrollViewer>
+
+      </Grid>
+    </Border>
+
+    <!-- Close button top-right -->
+    <Button Classes="focus-close"
+            Content="×"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Margin="0,16,16,0"
+            Command="{Binding CloseFocusCommand}"/>
+
+    <!-- ESC hint bottom center -->
+    <TextBlock Text="ESC to close"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Bottom"
+               Margin="0,0,0,16"
+               FontSize="11"
+               Foreground="#28b0aaa0"
+               IsHitTestVisible="False"/>
+
+    <!-- Screenshot zoom overlay -->
+    <Panel IsVisible="{Binding ZoomScreenshotUrl,
+                       Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+           PointerPressed="Zoom_PointerPressed">
+      <Border Background="#ee07070d"/>
+      <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+              MaxWidth="1000" MaxHeight="620" Margin="40"
+              CornerRadius="8" ClipToBounds="True"
+              PointerPressed="ZoomImage_PointerPressed">
+        <Image Source="{Binding ZoomScreenshotUrl}" Stretch="Uniform"/>
+      </Border>
+      <TextBlock Text="click to close"
+                 HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                 Margin="0,0,0,20" FontSize="11" Foreground="#28b0aaa0"
+                 IsHitTestVisible="False"/>
+    </Panel>
+
+  </Grid>
+</UserControl>

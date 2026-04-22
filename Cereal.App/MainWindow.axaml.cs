@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Platform;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
@@ -39,6 +40,7 @@ public partial class MainWindow : Window
         Closing += OnClosing;
         PositionChanged += OnPositionChanged;
         PropertyChanged += OnPropertyChanged;
+        KeyDown += OnKeyDown;
     }
 
     private void TrySetIcon()
@@ -85,5 +87,85 @@ public partial class MainWindow : Window
             settings.WindowY = Position.Y;
         }
         App.Services.GetRequiredService<SettingsService>().Save(settings);
+    }
+
+    private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseAllPanelsCommand.Execute(null);
+    }
+
+    private void SearchBackdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.CloseSearchCommand.Execute(null);
+    }
+
+    private void SearchBox_AttachedToVisualTree(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        (sender as TextBox)?.Focus();
+    }
+
+    private void ContentCard_PointerPressedNoop(object? sender, PointerPressedEventArgs e)
+    {
+        e.Handled = true; // prevent backdrop from closing the overlay
+    }
+
+    private void SearchResult_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        if ((sender as Avalonia.Controls.Control)?.DataContext is GameCardViewModel card)
+        {
+            e.Handled = true;
+            vm.SearchSelectCommand.Execute(card);
+        }
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            vm.EscapePressed();
+            return;
+        }
+
+        // Ctrl+K — open search overlay
+        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.K)
+        {
+            e.Handled = true;
+            vm.OpenSearchCommand.Execute(null);
+            return;
+        }
+
+        // Ctrl+F — focus search box
+        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.F)
+        {
+            e.Handled = true;
+            var search = FindSearchBox(this);
+            search?.Focus();
+            return;
+        }
+
+        // Ctrl+, — open settings
+        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.OemComma)
+        {
+            e.Handled = true;
+            vm.OpenSettingsCommand.Execute(null);
+        }
+    }
+
+    private static TextBox? FindSearchBox(Avalonia.Visual root)
+    {
+        if (root is TextBox tb && tb.Classes.Contains("search"))
+            return tb;
+        foreach (var child in Avalonia.VisualTree.VisualExtensions.GetVisualChildren(root))
+        {
+            var found = FindSearchBox(child);
+            if (found is not null) return found;
+        }
+        return null;
     }
 }
