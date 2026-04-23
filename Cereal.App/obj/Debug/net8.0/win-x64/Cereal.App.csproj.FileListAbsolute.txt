@@ -554,3 +554,7 @@ E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\mscorrc.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\msquic.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\setup-chiaki.ps1
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\win32-stream.ps1
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\setup-chiaki.ps1
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\win32-stream.ps1
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\System.CodeDom.dll
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\System.Management.dll

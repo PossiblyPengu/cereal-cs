@@ -211,9 +211,13 @@ public partial class MainWindow : Window
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (DataContext is not MainViewModel { IsStreaming: true }) return;
-        var y = e.GetPosition(this).Y - 40; // subtract title bar height
-        if (y <= 60)
+        if (DataContext is not MainViewModel { IsStreaming: true } vm) return;
+        var pos = e.GetPosition(this);
+        var y = pos.Y - 40; // subtract title bar height
+        bool nearEdge = string.Equals(vm.ToolbarPosition, "bottom", StringComparison.OrdinalIgnoreCase)
+            ? y >= ClientSize.Height - 40 - 60
+            : y <= 60;
+        if (nearEdge)
             ShowStreamBar();
     }
 

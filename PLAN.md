@@ -8,51 +8,51 @@ This file replaces the older gap list (much of that content was **obsolete**). U
 
 ### Legend
 
-| Tag | Meaning |
-|-----|--------|
-| **OK** | Aligned with the Electron app for practical purposes |
+| Tag         | Meaning                                              |
+| ----------- | ---------------------------------------------------- |
+| **OK**      | Aligned with the Electron app for practical purposes |
 | **PARTIAL** | Works but missing polish, edge cases, or full parity |
-| **TODO** | Not done or not verified |
+| **TODO**    | Not done or not verified                             |
 
 ---
 
 ## 1. Architecture (correct as of last review)
 
-| Area | Electron | C# |
-|------|----------|-----|
-| API surface | `preload.js` → `window.api` | In-process services + DI (`App.axaml.cs`) |
-| Data store | `games.json` + backup story | `games.json` with **`.bak` + rolling `bak*`** and **schema migrations** (`DatabaseService`) |
-| Secrets | `safeStore` | `CredentialService` (DPAPI / encrypted store) |
-| Logging | `logger.js` | Serilog (rolling file under `%AppData%\Cereal\logs`) |
-| Updates | `electron-updater` | **Velopack** (`UpdateService` → GitHub releases) |
-| Themes | CSS variables | `ThemeService` + `DynamicResource` |
-| Single instance | App semantics | `SingleInstanceGuard` in `Program.cs` |
+| Area            | Electron                    | C#                                                                                          |
+| --------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
+| API surface     | `preload.js` → `window.api` | In-process services + DI (`App.axaml.cs`)                                                   |
+| Data store      | `games.json` + backup story | `games.json` with **`.bak` + rolling `bak*`** and **schema migrations** (`DatabaseService`) |
+| Secrets         | `safeStore`                 | `CredentialService` (DPAPI / encrypted store)                                               |
+| Logging         | `logger.js`                 | Serilog (rolling file under `%AppData%\Cereal\logs`)                                        |
+| Updates         | `electron-updater`          | **Velopack** (`UpdateService` → GitHub releases)                                            |
+| Themes          | CSS variables               | `ThemeService` + `DynamicResource`                                                          |
+| Single instance | App semantics               | `SingleInstanceGuard` in `Program.cs`                                                       |
 
 ---
 
 ## 2. Major features — status snapshot
 
-| Feature | Status | Notes |
-|---------|--------|--------|
-| Library / cards / filters / sorts | **OK** | Includes `FilterHideSteamSoftware`, quick filters, platform chips |
-| Orbit view | **OK** | Native controls (`OrbitView`, `OrbitWorld`, stations, parallax, drift) — not WebView |
-| Search (Ctrl+K) | **OK** | Platform chips, Ctrl+Enter launch, arrows + Enter |
-| Focus / game detail | **PARTIAL** | Optional: website link, “Fetching…” on refresh, CSS-like transitions |
-| Stream bar (in-window) | **PARTIAL** | `MainWindow` bar + tabs; see Phase 1 for **resolution / StreamInfo** and **toolbar-relative placement** |
-| Chiaki (stream, embed, title_change, auto-create PSN game) | **OK** | `ChiakiService` + `MainViewModel.HandleChiakiEvent` |
-| xCloud (WebView, sessions, storage clear) | **OK** | `XcloudService` + `XcloudPanel` |
-| Metadata (Steam, Wikipedia, SGDB) | **OK** | `MetadataService`; `metadataSource` `steam` / `wikipedia` in Settings |
-| Playtime auto-sync (Steam) | **OK** | `PlaytimeSyncService` + background interval in `App.axaml.cs` |
-| Platforms panel (OAuth, import) | **OK** | `PlatformsPanel` + `AuthService` + `IImportProvider` (incl. Xbox Title Hub) |
-| Continue banner | **OK** | `UpdateContinueBanner` + `MainWindow` |
-| Media (SMTC) widget | **PARTIAL** | 3s poll, art, collapse; **position vs toolbar** still static bottom-left (Phase 4) |
-| Gamepad | **PARTIAL** | `GamepadService` exists; **full App.tsx parity** not audited (Phase 5) |
-| Discord | **PARTIAL** | `DiscordService`; clear rules for URI launch / long sessions (Phase 6) |
-| Card list performance | **PARTIAL** | No virtualization for huge libraries (Phase 7) |
-| Tray icon | **PARTIAL** | Always defined in `App.axaml`; Electron only creates when `closeToTray` (Phase 3) |
-| Chiaki “check update” in Settings | **TODO** | `CheckChiakiUpdateCommand` is still a **stub** (Phase 2) |
-| Auto-update download % in UI | **PARTIAL** | Banner exists; **fine-grained %** may still trail electron-updater (Phase 2) |
-| `PLAN.md` (this file) | **OK** | Replaced 2026-04-23 |
+| Feature                                                    | Status      | Notes                                                                                                   |
+| ---------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| Library / cards / filters / sorts                          | **OK**      | Includes `FilterHideSteamSoftware`, quick filters, platform chips                                       |
+| Orbit view                                                 | **OK**      | Native controls (`OrbitView`, `OrbitWorld`, stations, parallax, drift) — not WebView                    |
+| Search (Ctrl+K)                                            | **OK**      | Platform chips, Ctrl+Enter launch, arrows + Enter                                                       |
+| Focus / game detail                                        | **PARTIAL** | Optional: website link, “Fetching…” on refresh, CSS-like transitions                                    |
+| Stream bar (in-window)                                     | **PARTIAL** | `MainWindow` bar + tabs; see Phase 1 for **resolution / StreamInfo** and **toolbar-relative placement** |
+| Chiaki (stream, embed, title_change, auto-create PSN game) | **OK**      | `ChiakiService` + `MainViewModel.HandleChiakiEvent`                                                     |
+| xCloud (WebView, sessions, storage clear)                  | **OK**      | `XcloudService` + `XcloudPanel`                                                                         |
+| Metadata (Steam, Wikipedia, SGDB)                          | **OK**      | `MetadataService`; `metadataSource` `steam` / `wikipedia` in Settings                                   |
+| Playtime auto-sync (Steam)                                 | **OK**      | `PlaytimeSyncService` + background interval in `App.axaml.cs`                                           |
+| Platforms panel (OAuth, import)                            | **OK**      | `PlatformsPanel` + `AuthService` + `IImportProvider` (incl. Xbox Title Hub)                             |
+| Continue banner                                            | **OK**      | `UpdateContinueBanner` + `MainWindow`                                                                   |
+| Media (SMTC) widget                                        | **PARTIAL** | 3s poll, art, collapse; **position vs toolbar** still static bottom-left (Phase 4)                      |
+| Gamepad                                                    | **PARTIAL** | `GamepadService` exists; **full App.tsx parity** not audited (Phase 5)                                  |
+| Discord                                                    | **PARTIAL** | `DiscordService`; clear rules for URI launch / long sessions (Phase 6)                                  |
+| Card list performance                                      | **PARTIAL** | No virtualization for huge libraries (Phase 7)                                                          |
+| Tray icon                                                  | **PARTIAL** | Always defined in `App.axaml`; Electron only creates when `closeToTray` (Phase 3)                       |
+| Chiaki “check update” in Settings                          | **TODO**    | `CheckChiakiUpdateCommand` is still a **stub** (Phase 2)                                                |
+| Auto-update download % in UI                               | **PARTIAL** | Banner exists; **fine-grained %** may still trail electron-updater (Phase 2)                            |
+| `PLAN.md` (this file)                                      | **OK**      | Replaced 2026-04-23                                                                                     |
 
 ---
 
@@ -60,10 +60,10 @@ This file replaces the older gap list (much of that content was **obsolete**). U
 
 ### Phase 1 — Stream session parity
 
-- [ ] In `MainViewModel.HandleChiakiEvent`, when handling `state` = streaming, read **StreamInfo** from event payload and set `StreamTabViewModel.Resolution` (and optional codec / fps string).
-- [ ] Add a single **display title** (e.g. `DisplayTitle` or bind `Title` + `DetectedTitle`) so the stream bar matches `StreamOverlay.tsx` behavior.
-- [ ] **Reposition** the stream bar (`StreamBarBorder`) for **bottom / left / right** toolbar (`MainViewModel.ToolbarPosition`) — today it is top-aligned only inside content.
-- [ ] For **Xbox** rows: if no quality stats are ever emitted, **hide** empty stat slots (match Electron: PS stats, not xCloud codec strip).
+- [x] In `MainViewModel.HandleChiakiEvent`, when handling `state` = streaming, read **StreamInfo** from event payload and set `StreamTabViewModel.Resolution` (and optional codec / fps string).
+- [x] Add a single **display title** (e.g. `DisplayTitle` or bind `Title` + `DetectedTitle`) so the stream bar matches `StreamOverlay.tsx` behavior.
+- [x] **Reposition** the stream bar (`StreamBarBorder`) for **bottom / left / right** toolbar (`MainViewModel.ToolbarPosition`) — today it is top-aligned only inside content.
+- [x] For **Xbox** rows: if no quality stats are ever emitted, **hide** empty stat slots (match Electron: PS stats, not xCloud codec strip). *(already correct via `HasQualityStats`)*
 
 **Files:** `MainViewModel.cs` (Chiaki + tab VM), `MainWindow.axaml` / `MainWindow.axaml.cs` (bar layout).
 
@@ -137,23 +137,23 @@ This file replaces the older gap list (much of that content was **obsolete**). U
 
 ## 4. Key reference files
 
-| Area | C# | Electron (indicative) |
-|------|----|-------------------------|
-| API list | (services) | `electron/preload.js` |
-| Stream UI | `MainWindow.axaml` stream bar, `StreamTabViewModel` | `StreamOverlay.tsx`, `TabBar.tsx` |
-| Search | `MainWindow.axaml` search panel, `MainViewModel` | `SearchOverlay.tsx` |
-| Focus | `FocusPanel.axaml` | `FocusView.tsx` |
-| Settings | `SettingsPanel.axaml`, `SettingsViewModel.cs` | `SettingsPanel.tsx` |
-| Chiaki | `ChiakiService.cs`, `ChiakiPanel` | `electron` chiaki + `ChiakiPanel.tsx` |
-| xCloud | `XcloudService.cs`, `XcloudPanel` | `xcloud` module + `XcloudPanel.tsx` |
-| Orbit | `Views/OrbitView.*`, `Controls/Orbit/*` | `Orbit` / `App.tsx` + CSS |
+| Area      | C#                                                  | Electron (indicative)                 |
+| --------- | --------------------------------------------------- | ------------------------------------- |
+| API list  | (services)                                          | `electron/preload.js`                 |
+| Stream UI | `MainWindow.axaml` stream bar, `StreamTabViewModel` | `StreamOverlay.tsx`, `TabBar.tsx`     |
+| Search    | `MainWindow.axaml` search panel, `MainViewModel`    | `SearchOverlay.tsx`                   |
+| Focus     | `FocusPanel.axaml`                                  | `FocusView.tsx`                       |
+| Settings  | `SettingsPanel.axaml`, `SettingsViewModel.cs`       | `SettingsPanel.tsx`                   |
+| Chiaki    | `ChiakiService.cs`, `ChiakiPanel`                   | `electron` chiaki + `ChiakiPanel.tsx` |
+| xCloud    | `XcloudService.cs`, `XcloudPanel`                   | `xcloud` module + `XcloudPanel.tsx`   |
+| Orbit     | `Views/OrbitView.*`, `Controls/Orbit/*`             | `Orbit` / `App.tsx` + CSS             |
 
 ---
 
 ## 5. Changelog of this document
 
-| Date | Change |
-|------|--------|
+| Date       | Change                                                                                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-04-23 | Replaced legacy gap list with current snapshot + phased roadmap; removed obsolete [MISSING] items (Platforms, metadata, playtime, stream bar, etc.) that are now implemented. |
 
 When you finish a phase, tick the boxes above and bump **Last reviewed** at the top.

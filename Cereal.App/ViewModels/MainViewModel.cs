@@ -47,10 +47,16 @@ public partial class MainViewModel : ObservableObject
             ? Avalonia.Layout.VerticalAlignment.Top
             : Avalonia.Layout.VerticalAlignment.Bottom;
 
+    public Avalonia.Thickness StreamBarBorderThickness =>
+        string.Equals(ToolbarPosition, "bottom", StringComparison.OrdinalIgnoreCase)
+            ? new Avalonia.Thickness(0, 1, 0, 0)
+            : new Avalonia.Thickness(0, 0, 0, 1);
+
     partial void OnToolbarPositionChanged(string value)
     {
         OnPropertyChanged(nameof(ToolbarVerticalAlignment));
         OnPropertyChanged(nameof(MediaVerticalAlignment));
+        OnPropertyChanged(nameof(StreamBarBorderThickness));
     }
 
     public IEnumerable<string> AllCategories =>
@@ -1012,6 +1018,13 @@ public partial class MainViewModel : ObservableObject
                 {
                     tab.State = stateStr;
                 }
+
+                if (stateStr == "streaming")
+                {
+                    if (e.Data.TryGetValue("resolution", out var res))
+                        tab.Resolution = res?.ToString();
+                }
+
                 OnPropertyChanged(nameof(ActiveStreamTab));
                 OnPropertyChanged(nameof(IsStreaming));
                 OnPropertyChanged(nameof(IsStreamConnecting));
@@ -1122,6 +1135,8 @@ public partial class StreamTabViewModel : ObservableObject
     [ObservableProperty] private string? _resolution;
     [ObservableProperty] private string? _detectedTitle;
 
+    public string DisplayTitle => !string.IsNullOrEmpty(DetectedTitle) ? DetectedTitle : Title;
+
     public string PlatformLabel => Platform switch
     {
         "psn" or "psremote" => "PS Remote Play",
@@ -1142,6 +1157,9 @@ public partial class StreamTabViewModel : ObservableObject
         _title = title;
         Platform = platform;
     }
+
+    partial void OnTitleChanged(string value) => OnPropertyChanged(nameof(DisplayTitle));
+    partial void OnDetectedTitleChanged(string? value) => OnPropertyChanged(nameof(DisplayTitle));
 
     partial void OnBitrateMbpsChanged(double? value)
     {

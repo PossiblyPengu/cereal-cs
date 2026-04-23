@@ -1,5 +1,7 @@
 D:\CODE\cereal-cs\out\win-x64\Cereal.App.exe
 D:\CODE\cereal-cs\out\win-x64\Assets\icon.ico
+D:\CODE\cereal-cs\out\win-x64\resources\scripts\setup-chiaki.ps1
+D:\CODE\cereal-cs\out\win-x64\resources\scripts\win32-stream.ps1
 D:\CODE\cereal-cs\out\win-x64\Cereal.App.dll
 D:\CODE\cereal-cs\out\win-x64\Cereal.App.deps.json
 D:\CODE\cereal-cs\out\win-x64\Cereal.App.runtimeconfig.json
@@ -238,7 +240,9 @@ D:\CODE\cereal-cs\out\win-x64\SkiaSharp.dll
 D:\CODE\cereal-cs\out\win-x64\SQLitePCLRaw.batteries_v2.dll
 D:\CODE\cereal-cs\out\win-x64\SQLitePCLRaw.core.dll
 D:\CODE\cereal-cs\out\win-x64\SQLitePCLRaw.provider.e_sqlite3.dll
+D:\CODE\cereal-cs\out\win-x64\System.CodeDom.dll
 D:\CODE\cereal-cs\out\win-x64\System.IO.Pipelines.dll
+D:\CODE\cereal-cs\out\win-x64\System.Management.dll
 D:\CODE\cereal-cs\out\win-x64\System.Security.Cryptography.ProtectedData.dll
 D:\CODE\cereal-cs\out\win-x64\Tmds.DBus.Protocol.dll
 D:\CODE\cereal-cs\out\win-x64\Velopack.dll

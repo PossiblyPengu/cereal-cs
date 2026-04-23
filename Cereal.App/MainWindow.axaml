@@ -168,11 +168,11 @@
 
       <!-- ── Stream overlay bar ── -->
       <Border x:Name="StreamBarBorder"
-              VerticalAlignment="Top"
+              VerticalAlignment="{Binding ToolbarVerticalAlignment}"
               IsVisible="{Binding IsStreaming}"
               Background="#f0101018"
               BorderBrush="#1affffff"
-              BorderThickness="0,0,0,1"
+              BorderThickness="{Binding StreamBarBorderThickness}"
               ZIndex="60"
               PointerEntered="StreamBar_PointerEntered"
               PointerExited="StreamBar_PointerExited">
@@ -185,7 +185,7 @@
                 <SolidColorBrush Color="#22c55e"/>
               </Ellipse.Fill>
             </Ellipse>
-            <TextBlock Text="{Binding ActiveStreamTab.Title}"
+            <TextBlock Text="{Binding ActiveStreamTab.DisplayTitle}"
                        FontSize="12" FontWeight="SemiBold"
                        Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
           </StackPanel>

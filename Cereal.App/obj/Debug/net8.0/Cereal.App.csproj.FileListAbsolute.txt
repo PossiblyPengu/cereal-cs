@@ -287,3 +287,8 @@ E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\System.Management.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Management.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\resources\scripts\setup-chiaki.ps1
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\resources\scripts\win32-stream.ps1
+d:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\resources\scripts\setup-chiaki.ps1
+d:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\resources\scripts\win32-stream.ps1
+d:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\System.CodeDom.dll
+d:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\System.Management.dll
+d:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Management.dll

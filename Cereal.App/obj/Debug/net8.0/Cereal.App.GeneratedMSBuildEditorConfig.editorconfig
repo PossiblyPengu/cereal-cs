@@ -8,8 +8,6 @@ build_property.AvaloniaNameGeneratorViewFileNamingStrategy = NamespaceAndClassNa
 build_property.AvaloniaNameGeneratorAttachDevTools = true
 build_property.MvvmToolkitEnableINotifyPropertyChangingSupport = true
 build_property.TargetFramework = net8.0
-build_property.TargetFrameworkIdentifier = .NETCoreApp
-build_property.TargetFrameworkVersion = v8.0
 build_property.TargetPlatformMinVersion = 
 build_property.UsingMicrosoftNETSdkWeb = 
 build_property.ProjectTypeGuids = 
@@ -19,78 +17,78 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = Cereal.App
 build_property.RootNamespace = Cereal.App
-build_property.ProjectDir = e:\CODE\cereal-cs\Cereal.App\
+build_property.ProjectDir = d:\CODE\cereal-cs\Cereal.App\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = e:\CODE\cereal-cs\Cereal.App
+build_property.MSBuildProjectDirectory = d:\CODE\cereal-cs\Cereal.App
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[e:/CODE/cereal-cs/Cereal.App/App.axaml]
+[d:/CODE/cereal-cs/Cereal.App/App.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/MainWindow.axaml]
+[d:/CODE/cereal-cs/Cereal.App/MainWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Dialogs/AddGameDialog.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Dialogs/AddGameDialog.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Dialogs/ArtPickerDialog.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Dialogs/ArtPickerDialog.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Dialogs/StartupWizardDialog.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Dialogs/StartupWizardDialog.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/MainView.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/MainView.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/OrbitView.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/OrbitView.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Panels/ChiakiPanel.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Panels/ChiakiPanel.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Panels/DetectPanel.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Panels/DetectPanel.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Panels/FocusPanel.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Panels/FocusPanel.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Panels/PlatformsPanel.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Panels/PlatformsPanel.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Panels/SettingsPanel.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Panels/SettingsPanel.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[e:/CODE/cereal-cs/Cereal.App/Views/Panels/XcloudPanel.axaml]
+[d:/CODE/cereal-cs/Cereal.App/Views/Panels/XcloudPanel.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 build_metadata.AdditionalFiles.TargetPath = 
 build_metadata.AdditionalFiles.CssScope = 
