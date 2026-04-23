@@ -6,7 +6,7 @@
 
 This file replaces the older gap list (much of that content was **obsolete**). Use it to track what still diverges from the original and to drive implementation in order.
 
-### Legend
+## Legend
 
 | Tag         | Meaning                                              |
 | ----------- | ---------------------------------------------------- |

@@ -17,6 +17,7 @@ public sealed class UpdateService
     private UpdateInfo? _pendingUpdate;
 
     public event EventHandler<UpdateAvailableArgs>? UpdateAvailable;
+    public event EventHandler<int>? DownloadProgressChanged;
     public event EventHandler? UpdateReady;
 
     public bool IsUpdateReady => _pendingUpdate is not null;
