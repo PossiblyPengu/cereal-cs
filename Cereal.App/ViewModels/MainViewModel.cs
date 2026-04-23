@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Cereal.App.Models;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
+using Cereal.App.Services.Metadata;
 using Cereal.App.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +21,6 @@ public partial class MainViewModel : ObservableObject
     public MediaViewModel Media { get; }
 
     [ObservableProperty] private string _searchText = "";
-    [ObservableProperty] private string _activeNav = "library";
     [ObservableProperty] private string _viewMode = "cards";
     [ObservableProperty] private GameCardViewModel? _selectedGame;
     [ObservableProperty] private bool _isLoading;
@@ -32,6 +32,26 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _showInstalledOnly;
     [ObservableProperty] private string _sortOrder = "name";
     [ObservableProperty] private string _quickFilter = "all";
+    // "top" | "bottom" — drives VerticalAlignment of the floating nav pill.
+    [ObservableProperty] private string _toolbarPosition = "top";
+
+    public Avalonia.Layout.VerticalAlignment ToolbarVerticalAlignment =>
+        string.Equals(ToolbarPosition, "bottom", StringComparison.OrdinalIgnoreCase)
+            ? Avalonia.Layout.VerticalAlignment.Bottom
+            : Avalonia.Layout.VerticalAlignment.Top;
+
+    // Put the now-playing widget on the opposite edge from the toolbar so they
+    // never overlap (toolbar at bottom → media at top, and vice versa).
+    public Avalonia.Layout.VerticalAlignment MediaVerticalAlignment =>
+        string.Equals(ToolbarPosition, "bottom", StringComparison.OrdinalIgnoreCase)
+            ? Avalonia.Layout.VerticalAlignment.Top
+            : Avalonia.Layout.VerticalAlignment.Bottom;
+
+    partial void OnToolbarPositionChanged(string value)
+    {
+        OnPropertyChanged(nameof(ToolbarVerticalAlignment));
+        OnPropertyChanged(nameof(MediaVerticalAlignment));
+    }
 
     public IEnumerable<string> AllCategories =>
         _games.GetAll()
@@ -39,27 +59,96 @@ public partial class MainViewModel : ObservableObject
               .Distinct()
               .OrderBy(c => c);
 
+    // Mirrors Electron's filterCount badge on the nav-pill filter button
+    // (App.tsx 968): sum of platforms + categories + sort + text + flags.
+    public int ActiveFilterCount =>
+        ActivePlatformFilters.Count
+        + ActiveCategoryFilters.Count
+        + (string.IsNullOrEmpty(SearchText) ? 0 : 1)
+        + (ShowInstalledOnly ? 0 : 0)
+        + (SortOrder != "name" && !string.IsNullOrEmpty(SortOrder) ? 1 : 0);
+
+    public bool HasActiveFilters => ActiveFilterCount > 0;
+
     public ObservableCollection<GameCardViewModel> VisibleGames { get; } = [];
     public ObservableCollection<PlatformGroupViewModel> GameGroups { get; } = [];
     public ObservableCollection<PlatformChipViewModel> PlatformChips { get; } = [];
+
+    private CancellationTokenSource? _progressiveRenderCts;
+
+    private void RebuildGroups(IEnumerable<GameCardViewModel> cards)
+    {
+        GameGroups.Clear();
+        foreach (var grp in cards.GroupBy(c => c.Platform ?? "custom").OrderBy(g => g.Key))
+        {
+            var group = new PlatformGroupViewModel(grp.Key);
+            foreach (var card in grp) group.Games.Add(card);
+            GameGroups.Add(group);
+        }
+    }
 
     [ObservableProperty] private bool _showSettings;
     [ObservableProperty] private bool _showDetect;
     [ObservableProperty] private bool _showChiaki;
     [ObservableProperty] private bool _showXcloud;
+    [ObservableProperty] private bool _showPlatforms;
     [ObservableProperty] private bool _showFocus;
     [ObservableProperty] private bool _showSearch;
     [ObservableProperty] private string? _zoomScreenshotUrl;
     [ObservableProperty] private string _searchQuery = "";
     [ObservableProperty] private string? _searchPlatformFilter;
-    public bool AnyPanelOpen => ShowSettings || ShowDetect || ShowChiaki || ShowXcloud;
+    public bool AnyPanelOpen => ShowSettings || ShowDetect || ShowChiaki || ShowXcloud || ShowPlatforms;
 
     // Continue banner
     [ObservableProperty] private bool _showContinueBanner;
-    public GameCardViewModel? ContinueGame { get; private set; }
+    [ObservableProperty] private GameCardViewModel? _continueGame;
 
     // Toasts
     public ObservableCollection<ToastViewModel> Toasts { get; } = [];
+
+    // App auto-update banner (App.tsx 1274–1294).
+    // ShowAppUpdate becomes true when UpdateService reports a new version is
+    // available; user can dismiss it or click "Restart" once downloaded.
+    [ObservableProperty] private bool _showAppUpdate;
+    [ObservableProperty] private string? _appUpdateVersion;
+    [ObservableProperty] private bool _appUpdateReady;
+    public bool AppUpdateDownloading => ShowAppUpdate && !AppUpdateReady;
+    partial void OnShowAppUpdateChanged(bool value) => OnPropertyChanged(nameof(AppUpdateDownloading));
+    partial void OnAppUpdateReadyChanged(bool value) => OnPropertyChanged(nameof(AppUpdateDownloading));
+
+    // Subtle progress pill (bottom-right), mirrors Electron's importProgress /
+    // metaProgress UI in App.tsx 1232–1272. Single ObservableProperty set ==
+    // show the pill, null == hide it.
+    [ObservableProperty] private string? _progressPillText;
+    [ObservableProperty] private double _progressPillPercent;
+    [ObservableProperty] private bool _progressPillDone;
+    public bool ShowProgressPill => !string.IsNullOrEmpty(ProgressPillText);
+    partial void OnProgressPillTextChanged(string? value) =>
+        OnPropertyChanged(nameof(ShowProgressPill));
+
+    private CancellationTokenSource? _progressHideCts;
+    private void SetProgress(string? text, double percent, bool done)
+    {
+        ProgressPillPercent = percent;
+        ProgressPillDone = done;
+        ProgressPillText = text;
+
+        _progressHideCts?.Cancel();
+        if (done && !string.IsNullOrEmpty(text))
+        {
+            _progressHideCts = new CancellationTokenSource();
+            var token = _progressHideCts.Token;
+            _ = Task.Delay(3_000, token).ContinueWith(t =>
+            {
+                if (t.IsCanceled) return;
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    ProgressPillText = null;
+                    ProgressPillDone = false;
+                });
+            }, TaskScheduler.Default);
+        }
+    }
 
     // Search results
     public IEnumerable<GameCardViewModel> SearchResults =>
@@ -105,7 +194,17 @@ public partial class MainViewModel : ObservableObject
         _xcloud = xcloud;
         Media = new MediaViewModel(smtc);
 
-        ViewMode = settings.Get().DefaultView ?? "cards";
+        var s = settings.Get();
+        ViewMode = s.DefaultView ?? "cards";
+        ToolbarPosition = string.IsNullOrWhiteSpace(s.ToolbarPosition) ? s.NavPosition : s.ToolbarPosition;
+
+        // Restore user-saved filter state (port parity with settings.js DEFAULT_SETTINGS).
+        if (s.FilterPlatforms is { Count: > 0 })
+            ActivePlatformFilters = new ObservableCollection<string>(s.FilterPlatforms);
+        if (s.FilterCategories is { Count: > 0 })
+            ActiveCategoryFilters = new ObservableCollection<string>(s.FilterCategories);
+        if (!string.IsNullOrWhiteSpace(s.DefaultTab) && s.DefaultTab is "all" or "favorites" or "recent")
+            QuickFilter = s.DefaultTab!;
 
         covers.ProgressChanged += OnCoverProgress;
         chiaki.SessionEvent += OnChiakiEvent;
@@ -118,9 +217,153 @@ public partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(IsStreamConnecting));
         };
 
-        Refresh();
+        // Controller input from GamepadService is delivered on the UI thread.
+        try
+        {
+            var gamepad = App.Services.GetRequiredService<GamepadService>();
+            gamepad.ActionsReceived += (_, e) => HandleGamepadActions(e.Actions);
+            gamepad.Connected    += (_, _) => ShowToast("Controller connected");
+            gamepad.Disconnected += (_, _) => ShowToast("Controller disconnected");
+        }
+        catch { /* non-Windows / no-gamepad: silently skip */ }
 
-        // Continue banner: most recently played game
+        // Auto-update banner — mirrors App.tsx 1274–1294. The UpdateService
+        // emits `UpdateAvailable` from its background check, then `UpdateReady`
+        // once the payload has been staged by Velopack.
+        try
+        {
+            var updater = App.Services.GetRequiredService<UpdateService>();
+            updater.UpdateAvailable += (_, args) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                AppUpdateVersion = args.NewVersion;
+                AppUpdateReady = false;
+                ShowAppUpdate = true;
+                // Kick off the download as soon as we know one is available
+                // so the "Restart" button can light up when ready.
+                _ = updater.DownloadAndInstallAsync();
+            });
+            updater.UpdateReady += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                AppUpdateReady = true;
+            });
+        }
+        catch { /* non-Velopack dev run: silently skip */ }
+
+        Refresh();
+        UpdateContinueBanner();
+    }
+
+    // ─── Gamepad ──────────────────────────────────────────────────────────────
+    // Translates gamepad action strings into VM commands. Mirrors the mapping in
+    // src/App.tsx's useGamepad callback.
+
+    private int _gpIdx = -1;
+    private string _gpArea = "cards"; // cards | orbit | focus | pill
+
+    public void HandleGamepadActions(IReadOnlyList<string> actions)
+    {
+        foreach (var act in actions) HandleGamepadAction(act);
+    }
+
+    private void HandleGamepadAction(string act)
+    {
+        // Global actions (work regardless of which panel is open):
+        if (act == "back")
+        {
+            if (ShowFocus)       { ShowFocus = false; return; }
+            if (ShowSearch)      { CloseSearch(); return; }
+            if (ShowSettings)    { ShowSettings = false; return; }
+            if (ShowDetect)      { ShowDetect = false; return; }
+            if (ShowChiaki)      { ShowChiaki = false; return; }
+            if (ShowXcloud)      { ShowXcloud = false; return; }
+            if (ShowPlatforms)   { ShowPlatforms = false; return; }
+            if (!string.IsNullOrEmpty(ZoomScreenshotUrl)) { ZoomScreenshotUrl = null; return; }
+            return;
+        }
+        if (act == "start")   { ShowSettings = !ShowSettings; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        if (act == "select")  { if (ShowSearch) CloseSearch(); else OpenSearch(); return; }
+
+        if (AnyPanelOpen) return; // Nothing else to do while a panel is open.
+
+        if (act == "y") { ToggleViewMode(); return; }
+
+        // LB / RB cycle quick-filter + active platform chips (tabs equivalent).
+        if (act is "lb" or "rb")
+        {
+            var tabs = new List<string> { "all", "favorites", "recent" };
+            foreach (var chip in PlatformChips.Where(c => c.IsActive)) tabs.Add(chip.Id);
+            var curIdx = Math.Max(0, tabs.IndexOf(QuickFilter));
+            var delta = act == "rb" ? 1 : -1;
+            curIdx = ((curIdx + delta) % tabs.Count + tabs.Count) % tabs.Count;
+            QuickFilter = tabs[curIdx];
+            return;
+        }
+
+        // Focus panel: navigate action buttons (play/fav/edit/delete) and confirm.
+        if (ShowFocus && SelectedGame is not null)
+        {
+            var focusBtns = new[] { "play", "fav", "edit", "delete" };
+            switch (act)
+            {
+                case "left":    _gpIdx = (_gpIdx - 1 + focusBtns.Length) % focusBtns.Length; break;
+                case "right":   _gpIdx = (_gpIdx + 1) % focusBtns.Length; break;
+                case "confirm":
+                {
+                    var fi = _gpIdx < 0 ? 0 : _gpIdx;
+                    switch (focusBtns[fi])
+                    {
+                        case "play":   _ = LaunchGame(SelectedGame); break;
+                        case "fav":    SelectedGame.ToggleFavoriteCommand.Execute(null); break;
+                        case "edit":   EditGame(); break;
+                        case "delete": DeleteGame(SelectedGame.Id); break;
+                    }
+                    break;
+                }
+                case "x": SelectedGame.ToggleFavoriteCommand.Execute(null); break;
+            }
+            _gpArea = "focus";
+            return;
+        }
+
+        // Library: move selection within VisibleGames and open focus on confirm.
+        if (VisibleGames.Count == 0) return;
+        var idx = Math.Max(0, Math.Min(_gpIdx, VisibleGames.Count - 1));
+
+        // Rough column count based on window width (cards are ~180px).
+        int cols = 6;
+        try
+        {
+            if (Avalonia.Application.Current?.ApplicationLifetime
+                is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime d &&
+                d.MainWindow is { } w)
+                cols = Math.Max(1, (int)((w.Bounds.Width - 64) / 180));
+        }
+        catch { /* use default */ }
+
+        switch (act)
+        {
+            case "right":   idx = Math.Min(VisibleGames.Count - 1, idx + 1); break;
+            case "left":    idx = Math.Max(0, idx - 1); break;
+            case "down":    idx = Math.Min(VisibleGames.Count - 1, idx + cols); break;
+            case "up":      idx = Math.Max(0, idx - cols); break;
+            case "confirm":
+                _gpIdx = Math.Clamp(_gpIdx < 0 ? 0 : _gpIdx, 0, VisibleGames.Count - 1);
+                SelectedGame = VisibleGames[_gpIdx];
+                ShowFocus = true;
+                _gpIdx = 0;
+                _gpArea = "focus";
+                return;
+            case "x":
+                VisibleGames[idx].ToggleFavoriteCommand.Execute(null);
+                break;
+        }
+        _gpIdx = idx;
+        _gpArea = ViewMode == "orbit" ? "orbit" : "cards";
+        SelectedGame = VisibleGames[idx];
+    }
+
+    private void UpdateContinueBanner()
+    {
         var latest = _games.GetAll()
             .Where(g => g.LastPlayed != null && g.Hidden != true)
             .OrderByDescending(g => g.LastPlayed)
@@ -130,19 +373,55 @@ public partial class MainViewModel : ObservableObject
             ContinueGame = new GameCardViewModel(latest, _games);
             ShowContinueBanner = true;
         }
+        else
+        {
+            ContinueGame = null;
+            ShowContinueBanner = false;
+        }
     }
 
     public void Refresh()
     {
         var all = _games.GetAll();
 
-        var platformCounts = all.GroupBy(g => g.Platform ?? "custom")
+        // Hide-Steam-software filter: matches heuristics in Electron metadata.js —
+        // explicit `software = true`, appdetails `type = "tool"/"application"`,
+        // or category names that smell like "tool" / "software" / "soundtrack" / "demo".
+        var hideSoftware = _settings.Get().FilterHideSteamSoftware;
+        bool IsSteamSoftware(Game g)
+        {
+            if (g.Platform != "steam") return false;
+            if (g.Software == true) return true;
+            var type = g.Type?.ToLowerInvariant();
+            if (type is "tool" or "application" or "demo" or "soundtrack") return true;
+            if (g.Categories is { Count: > 0 } cats)
+            {
+                foreach (var c in cats)
+                {
+                    var lc = c.ToLowerInvariant();
+                    if (lc.Contains("tool") || lc.Contains("software") ||
+                        lc.Contains("soundtrack") || lc.Contains("benchmark") ||
+                        lc.Contains("utility"))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        // Drop ephemeral streaming stubs from the main grid (matches Electron: psn/psremote
+        // live only as stream sessions, xbox tiles live in the xcloud panel).
+        var visibleAll = all
+            .Where(g => g.Platform is not "psn" and not "psremote")
+            .Where(g => !hideSoftware || !IsSteamSoftware(g))
+            .ToList();
+
+        var platformCounts = visibleAll.GroupBy(g => g.Platform ?? "custom")
             .ToDictionary(g => g.Key, g => g.Count());
         PlatformChips.Clear();
         foreach (var (plat, count) in platformCounts.OrderBy(kv => kv.Key))
             PlatformChips.Add(new PlatformChipViewModel(plat, count, ActivePlatformFilters.Contains(plat)));
 
-        var preFilter = all
+        var preFilter = visibleAll
             .Where(g => ShowHidden || g.Hidden != true)
             .Where(g => !ShowInstalledOnly || g.Installed != false)
             .Where(g => ActivePlatformFilters.Count == 0 || ActivePlatformFilters.Contains(g.Platform))
@@ -157,25 +436,46 @@ public partial class MainViewModel : ObservableObject
             ? preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
             : SortOrder switch
             {
-                "played"  => preFilter.OrderByDescending(g => g.PlaytimeMinutes ?? 0).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-                "recent"  => preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-                "added"   => preFilter.OrderByDescending(g => g.AddedAt ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-                _         => preFilter.OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "played"    => preFilter.OrderByDescending(g => g.PlaytimeMinutes ?? 0).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "recent"    => preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "added"     => preFilter.OrderByDescending(g => g.AddedAt ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "installed" => preFilter.OrderByDescending(g => g.Installed ?? false).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                // "default" / "name" / anything else → alphabetical.
+                _           => preFilter.OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
             };
 
         var filtered = sorted
             .Select(g => new GameCardViewModel(g, _games))
             .ToList();
 
+        // Progressive render: for large libraries, show the first chunk immediately
+        // and append the rest in batches on the UI-thread loop. This keeps the first
+        // paint responsive even with thousands of games.
+        _progressiveRenderCts?.Cancel();
         VisibleGames.Clear();
-        foreach (var c in filtered) VisibleGames.Add(c);
-
         GameGroups.Clear();
-        foreach (var grp in filtered.GroupBy(c => c.Platform ?? "custom").OrderBy(g => g.Key))
+
+        const int firstBatch = 60;
+        const int batchSize  = 40;
+
+        var head = filtered.Take(firstBatch).ToList();
+        foreach (var c in head) VisibleGames.Add(c);
+        RebuildGroups(VisibleGames);
+
+        if (filtered.Count > firstBatch)
         {
-            var group = new PlatformGroupViewModel(grp.Key);
-            foreach (var card in grp) group.Games.Add(card);
-            GameGroups.Add(group);
+            var tail = filtered.Skip(firstBatch).ToList();
+            _progressiveRenderCts = new CancellationTokenSource();
+            var token = _progressiveRenderCts.Token;
+            _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                for (var i = 0; i < tail.Count && !token.IsCancellationRequested; i += batchSize)
+                {
+                    foreach (var c in tail.Skip(i).Take(batchSize)) VisibleGames.Add(c);
+                    RebuildGroups(VisibleGames);
+                    await Task.Yield();
+                }
+            }, Avalonia.Threading.DispatcherPriority.Background);
         }
 
         if (SelectedGame is not null)
@@ -202,13 +502,90 @@ public partial class MainViewModel : ObservableObject
     partial void OnSearchPlatformFilterChanged(string? value) =>
         OnPropertyChanged(nameof(SearchResults));
 
-    partial void OnSearchTextChanged(string value) => Refresh();
-    partial void OnActivePlatformFiltersChanged(ObservableCollection<string> value) => Refresh();
-    partial void OnActiveCategoryFiltersChanged(ObservableCollection<string> value) => Refresh();
+    partial void OnSearchTextChanged(string value) { Refresh(); NotifyFilterCount(); }
+    partial void OnActivePlatformFiltersChanged(ObservableCollection<string> value) { PersistFilters(); Refresh(); NotifyFilterCount(); }
+    partial void OnActiveCategoryFiltersChanged(ObservableCollection<string> value) { PersistFilters(); Refresh(); NotifyFilterCount(); }
     partial void OnShowHiddenChanged(bool value) => Refresh();
-    partial void OnShowInstalledOnlyChanged(bool value) => Refresh();
-    partial void OnSortOrderChanged(string value) => Refresh();
-    partial void OnQuickFilterChanged(string value) => Refresh();
+    partial void OnShowInstalledOnlyChanged(bool value) { Refresh(); NotifyFilterCount(); }
+    partial void OnSortOrderChanged(string value) { Refresh(); NotifyFilterCount(); }
+
+    private void NotifyFilterCount()
+    {
+        OnPropertyChanged(nameof(ActiveFilterCount));
+        OnPropertyChanged(nameof(HasActiveFilters));
+    }
+    partial void OnQuickFilterChanged(string value) { PersistDefaultTab(); Refresh(); }
+
+    private void PersistFilters()
+    {
+        try
+        {
+            var s = _settings.Get();
+            s.FilterPlatforms  = ActivePlatformFilters.ToList();
+            s.FilterCategories = ActiveCategoryFilters.ToList();
+            _settings.Save(s);
+        }
+        catch { /* best-effort */ }
+    }
+
+    private void PersistDefaultTab()
+    {
+        try
+        {
+            var s = _settings.Get();
+            s.DefaultTab = QuickFilter;
+            _settings.Save(s);
+        }
+        catch { /* best-effort */ }
+    }
+
+    // Theme swatches on the main nav (ports App.tsx 1034–1069). Re-creates the
+    // list whenever the theme changes so the "active ring" follows along.
+    public IEnumerable<ThemeSwatchViewModel> ThemeSwatches =>
+        Models.AppThemes.All.Select(t => new ThemeSwatchViewModel(t, _settings.Get().Theme ?? "midnight"));
+
+    // Accent color mirror (persists on change) — used by the main-nav theme flyout
+    // for the custom accent TextBox.
+    public string AccentColor
+    {
+        get => _settings.Get().AccentColor ?? string.Empty;
+        set
+        {
+            var trimmed = (value ?? string.Empty).Trim();
+            var s = _settings.Get();
+            if ((s.AccentColor ?? string.Empty) == trimmed) return;
+            s.AccentColor = trimmed;
+            _settings.Save(s);
+            try { App.Services.GetRequiredService<Services.ThemeService>().ApplyCurrent(); } catch { }
+            OnPropertyChanged();
+        }
+    }
+
+    [RelayCommand]
+    private void SetTheme(string themeId)
+    {
+        if (string.IsNullOrEmpty(themeId)) return;
+        try
+        {
+            var s = _settings.Get();
+            s.Theme = themeId;
+            s.AccentColor = string.Empty; // reset custom accent to follow the theme
+            _settings.Save(s);
+            App.Services.GetRequiredService<Services.ThemeService>().ApplyCurrent();
+            OnPropertyChanged(nameof(ThemeSwatches));
+        }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] SetTheme failed"); }
+    }
+
+    // Toolbar position popover on the main nav (ports App.tsx 1122–1150).
+    // ToolbarPosition is an [ObservableProperty] declared above; we just push
+    // changes into it and the existing OnToolbarPositionChanged partial saves
+    // to SettingsService on our behalf.
+    [RelayCommand]
+    private void SetToolbarPosition(string pos)
+    {
+        if (!string.IsNullOrEmpty(pos)) ToolbarPosition = pos;
+    }
 
     [RelayCommand]
     private void SelectGame(GameCardViewModel? card)
@@ -293,6 +670,16 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void DismissContinueBanner() => ShowContinueBanner = false;
 
+    [RelayCommand]
+    private void DismissAppUpdate() => ShowAppUpdate = false;
+
+    [RelayCommand]
+    private void InstallAppUpdate()
+    {
+        try { App.Services.GetRequiredService<UpdateService>().ApplyAndRestart(); }
+        catch (Exception ex) { Serilog.Log.Warning(ex, "[update] ApplyAndRestart failed"); }
+    }
+
     // ── Toasts ────────────────────────────────────────────────────────────────
 
     public void ShowToast(string message)
@@ -342,6 +729,7 @@ public partial class MainViewModel : ObservableObject
         var launch = App.Services.GetRequiredService<LaunchService>();
         var result = await launch.LaunchAsync(card.Game);
         StatusMessage = result.Success ? null : $"Failed to launch: {result.Error}";
+        UpdateContinueBanner();
     }
 
     [RelayCommand]
@@ -364,6 +752,30 @@ public partial class MainViewModel : ObservableObject
         await LaunchGame(card);
     }
 
+    // Port of Electron `games:install` — asks the platform client to install
+    // the given title. No-op for psn/custom (surfaced as a toast).
+    [RelayCommand]
+    private async Task InstallGame()
+    {
+        if (SelectedGame is null) return;
+        StatusMessage = $"Installing {SelectedGame.Name}…";
+        var launch = App.Services.GetRequiredService<LaunchService>();
+        var res = await launch.InstallAsync(SelectedGame.Game);
+        StatusMessage = res.Success ? $"Opened installer for {SelectedGame.Name}" : $"Install failed: {res.Error}";
+    }
+
+    // Port of Electron `games:openInClient` — opens the platform client
+    // focused on this title without launching it.
+    [RelayCommand]
+    private async Task OpenInClient()
+    {
+        if (SelectedGame is null) return;
+        StatusMessage = $"Opening {SelectedGame.Platform} client…";
+        var launch = App.Services.GetRequiredService<LaunchService>();
+        var res = await launch.OpenInClientAsync(SelectedGame.Game);
+        StatusMessage = res.Success ? null : $"Could not open client: {res.Error}";
+    }
+
     [RelayCommand]
     private void DeleteGame(string id)
     {
@@ -383,6 +795,7 @@ public partial class MainViewModel : ObservableObject
             ActivePlatformFilters.Remove(platform);
         else
             ActivePlatformFilters.Add(platform);
+        PersistFilters();
         Refresh();
     }
 
@@ -393,6 +806,7 @@ public partial class MainViewModel : ObservableObject
             ActiveCategoryFilters.Remove(category);
         else
             ActiveCategoryFilters.Add(category);
+        PersistFilters();
         Refresh();
     }
 
@@ -406,6 +820,8 @@ public partial class MainViewModel : ObservableObject
         ShowHidden = false;
         ShowInstalledOnly = false;
         QuickFilter = "all";
+        PersistFilters();
+        PersistDefaultTab();
         Refresh();
     }
 
@@ -416,11 +832,63 @@ public partial class MainViewModel : ObservableObject
     private void SetQuickFilter(string filter) => QuickFilter = filter;
 
     [RelayCommand]
-    private void RefreshGameInfo()
+    private async Task RefreshGameInfo()
     {
         if (SelectedGame is null) return;
-        _covers.EnqueueGame(SelectedGame.Id);
-        Refresh();
+        var id = SelectedGame.Id;
+        var name = SelectedGame.Name;
+        StatusMessage = $"Fetching info for {name}...";
+        try
+        {
+            var meta = App.Services.GetRequiredService<MetadataService>();
+            var changed = await meta.FetchForGameAsync(SelectedGame.Game, force: true);
+            _covers.EnqueueGame(id);
+            Refresh();
+            // Re-resolve selection so the FocusPanel picks up the refreshed Game fields.
+            SelectedGame = VisibleGames.FirstOrDefault(c => c.Id == id) ?? SelectedGame;
+            StatusMessage = changed
+                ? $"Updated info for {name}"
+                : $"No new info found for {name}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Refresh failed: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task FetchAllMetadata()
+    {
+        SetProgress("Syncing metadata…", 0, done: false);
+        try
+        {
+            var meta = App.Services.GetRequiredService<MetadataService>();
+            void OnProgress(object? sender, MetadataProgressArgs e)
+            {
+                var pct = e.Total > 0 ? (double)e.Completed / e.Total * 0.5 : 0; // metadata = first 50%
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    SetProgress(
+                        e.Done
+                            ? $"Synced · {e.Updated} updated"
+                            : $"Syncing · {e.Completed}/{e.Total}",
+                        e.Done ? 1.0 : pct,
+                        e.Done));
+            }
+            meta.ProgressChanged += OnProgress;
+            try
+            {
+                var (updated, total) = await meta.FetchAllAsync();
+                foreach (var card in VisibleGames) card.Refresh();
+                Refresh();
+                _covers.EnqueueAll();
+                // Cover queue now drives the pill via OnCoverProgress.
+            }
+            finally { meta.ProgressChanged -= OnProgress; }
+        }
+        catch (Exception ex)
+        {
+            SetProgress($"Metadata failed: {ex.Message}", 0, done: true);
+        }
     }
 
     public string ViewModeToggleLabel => ViewMode == "cards" ? "Orbit" : "Cards";
@@ -429,8 +897,13 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ToggleViewMode() => ViewMode = ViewMode == "cards" ? "orbit" : "cards";
 
+    // Electron's view-toggle calls switchView(mode) with the explicit target
+    // so clicking the already-active button is a no-op. Mirror that.
     [RelayCommand]
-    private void Navigate(string nav) => ActiveNav = nav;
+    private void SetViewMode(string mode)
+    {
+        if (!string.IsNullOrEmpty(mode) && mode != ViewMode) ViewMode = mode;
+    }
 
     [RelayCommand] private void OpenSettings()  { ShowSettings = true;  OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void CloseSettings() { ShowSettings = false; OnPropertyChanged(nameof(AnyPanelOpen)); }
@@ -440,12 +913,14 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand] private void CloseChiaki()   { ShowChiaki  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void OpenXcloud()    { ShowXcloud  = true;   OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void CloseXcloud()   { ShowXcloud  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
+    [RelayCommand] private void OpenPlatforms() { ShowPlatforms = true;  OnPropertyChanged(nameof(AnyPanelOpen)); }
+    [RelayCommand] private void ClosePlatforms(){ ShowPlatforms = false; OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void CloseFocus()    { ShowFocus = false; SelectedGame = null; }
 
     [RelayCommand]
     private void CloseAllPanels()
     {
-        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = false;
+        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = false;
         OnPropertyChanged(nameof(AnyPanelOpen));
     }
 
@@ -458,6 +933,7 @@ public partial class MainViewModel : ObservableObject
         if (ShowDetect)   { ShowDetect  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
         if (ShowChiaki)   { ShowChiaki  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
         if (ShowXcloud)   { ShowXcloud  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        if (ShowPlatforms){ ShowPlatforms = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
     }
 
     [RelayCommand]
@@ -469,36 +945,128 @@ public partial class MainViewModel : ObservableObject
         if (tab is not null) StreamTabs.Remove(tab);
     }
 
+    /// <summary>Click a stream tab in the title bar to return to its panel.</summary>
+    [RelayCommand]
+    private void SwitchToStreamTab(StreamTabViewModel? tab)
+    {
+        if (tab is null) return;
+        // Close any other open overlay panels so only the stream re-opens.
+        ShowSettings = ShowDetect = ShowPlatforms = false;
+        if (tab.Platform is "psn" or "psremote")
+        {
+            ShowXcloud = false;
+            ShowChiaki = true;
+        }
+        else if (tab.Platform == "xbox")
+        {
+            ShowChiaki = false;
+            ShowXcloud = true;
+        }
+        OnPropertyChanged(nameof(AnyPanelOpen));
+    }
+
+    private int _coverInitialRemaining;
     private void OnCoverProgress(object? sender, CoverProgressArgs e)
     {
         if (e.Downloaded > 0)
             foreach (var card in VisibleGames) card.Refresh();
-        StatusMessage = e.Done ? null : $"Downloading artwork... ({e.Remaining} remaining)";
+
+        if (e.Done)
+        {
+            _coverInitialRemaining = 0;
+            SetProgress("Artwork downloaded", 1.0, done: true);
+            StatusMessage = null;
+            return;
+        }
+
+        // Capture the initial total so we can show a proper percent bar.
+        if (e.Remaining > _coverInitialRemaining) _coverInitialRemaining = e.Remaining;
+        var pct = _coverInitialRemaining > 0
+            ? 1.0 - (double)e.Remaining / _coverInitialRemaining
+            : 0;
+        SetProgress($"Syncing artwork · {e.Remaining} left", pct, done: false);
+        StatusMessage = null;
     }
 
     private void OnChiakiEvent(object? sender, ChiakiEventArgs e)
     {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => HandleChiakiEvent(e));
+    }
+
+    private void HandleChiakiEvent(ChiakiEventArgs e)
+    {
+        var tab = StreamTabs.FirstOrDefault(t => t.GameId == e.GameId);
+
         if (e.Type == "state" && e.Data.TryGetValue("state", out var state))
         {
             var stateStr = state?.ToString() ?? "";
-            var tab = StreamTabs.FirstOrDefault(t => t.GameId == e.GameId);
             if (stateStr is "launching" or "connecting" or "streaming" or "gui")
             {
                 if (tab is null)
                 {
                     var game = _games.GetAll().Find(g => g.Id == e.GameId);
-                    StreamTabs.Add(new StreamTabViewModel(e.GameId, game?.Name ?? e.GameId, "psn"));
+                    tab = new StreamTabViewModel(e.GameId, game?.Name ?? e.GameId, "psn") { State = stateStr };
+                    StreamTabs.Add(tab);
                 }
                 else
                 {
                     tab.State = stateStr;
-                    OnPropertyChanged(nameof(ActiveStreamTab));
-                    OnPropertyChanged(nameof(IsStreaming));
-            OnPropertyChanged(nameof(IsStreamConnecting));
                 }
+                OnPropertyChanged(nameof(ActiveStreamTab));
+                OnPropertyChanged(nameof(IsStreaming));
+                OnPropertyChanged(nameof(IsStreamConnecting));
             }
             else if (stateStr == "disconnected" && tab is not null)
+            {
                 StreamTabs.Remove(tab);
+            }
+        }
+        else if (e.Type == "quality" && tab is not null)
+        {
+            if (e.Data.TryGetValue("bitrate", out var b) && b is double bd) tab.BitrateMbps = bd;
+            if (e.Data.TryGetValue("fpsActual", out var f) && f is double fd) tab.Fps = fd;
+            if (e.Data.TryGetValue("latencyMs", out var l) && l is double ld) tab.LatencyMs = ld;
+        }
+        else if (e.Type == "title_change")
+        {
+            // ChiakiService emits { titleId, titleName, gameId, gameName }.
+            // The service may have swapped the active psn game underneath us; if so,
+            // re-key the tab so later state/quality events route to the right row.
+            var newGameId = e.Data.TryGetValue("gameId", out var gi) ? gi?.ToString() : null;
+            var detected  = e.Data.TryGetValue("gameName", out var gn) ? gn?.ToString()
+                          : e.Data.TryGetValue("titleName", out var tn) ? tn?.ToString()
+                          : null;
+
+            if (tab is not null)
+            {
+                tab.DetectedTitle = detected;
+                if (!string.IsNullOrEmpty(newGameId) && newGameId != tab.GameId)
+                {
+                    tab.GameId = newGameId!;
+                    tab.Title  = detected ?? tab.Title;
+                }
+            }
+
+            // If the Chiaki-ng service just auto-created a new psn game, refresh so
+            // the library sees it (matches the Electron version's `games:refresh`).
+            Refresh();
+            UpdateContinueBanner();
+
+            // And make sure Discord presence shows the new title for non-URI launches.
+            if (!string.IsNullOrEmpty(newGameId))
+            {
+                var g = _games.GetAll().FirstOrDefault(x => x.Id == newGameId);
+                if (g is not null)
+                {
+                    try
+                    {
+                        var discord = App.Services.GetRequiredService<Services.Integrations.DiscordService>();
+                        discord.SetPresence(g.Name, g.Platform ?? "psn",
+                            DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                    }
+                    catch { /* best-effort */ }
+                }
+            }
         }
     }
 
@@ -507,18 +1075,29 @@ public partial class MainViewModel : ObservableObject
         var tab = StreamTabs.FirstOrDefault(t => t.GameId == e.GameId);
         if (e.Type == "state")
         {
+            e.Data.TryGetValue("state", out var stateObj);
+            var stateStr = stateObj?.ToString() ?? "connecting";
+
             if (tab is null)
-                StreamTabs.Add(new StreamTabViewModel(e.GameId, e.GameId, "xbox"));
-            else if (e.Data.TryGetValue("state", out var s))
             {
-                tab.State = s?.ToString() ?? "";
-                OnPropertyChanged(nameof(ActiveStreamTab));
-                OnPropertyChanged(nameof(IsStreaming));
-            OnPropertyChanged(nameof(IsStreamConnecting));
+                var game = _games.GetAll().FirstOrDefault(g => g.Id == e.GameId);
+                var title = game?.Name ?? e.GameId;
+                tab = new StreamTabViewModel(e.GameId, title, "xbox") { State = stateStr };
+                StreamTabs.Add(tab);
             }
+            else
+            {
+                tab.State = stateStr;
+            }
+
+            OnPropertyChanged(nameof(ActiveStreamTab));
+            OnPropertyChanged(nameof(IsStreaming));
+            OnPropertyChanged(nameof(IsStreamConnecting));
         }
         else if (e.Type == "disconnected" && tab is not null)
+        {
             StreamTabs.Remove(tab);
+        }
     }
 }
 
@@ -530,15 +1109,53 @@ public class ToastViewModel
 
 public partial class StreamTabViewModel : ObservableObject
 {
-    public string GameId { get; }
-    public string Title { get; }
+    // Mutable so the Chiaki title_change handler can re-point a PSN tab to the
+    // auto-created game it discovered underneath us (matches Electron behaviour).
+    [ObservableProperty] private string _gameId;
     public string Platform { get; }
+
+    [ObservableProperty] private string _title;
     [ObservableProperty] private string _state = "connecting";
+    [ObservableProperty] private double? _bitrateMbps;
+    [ObservableProperty] private double? _fps;
+    [ObservableProperty] private double? _latencyMs;
+    [ObservableProperty] private string? _resolution;
+    [ObservableProperty] private string? _detectedTitle;
+
+    public string PlatformLabel => Platform switch
+    {
+        "psn" or "psremote" => "PS Remote Play",
+        "xbox" => "Xbox Cloud Gaming",
+        _ => Platform,
+    };
+
+    public bool HasQualityStats =>
+        BitrateMbps.HasValue || Fps.HasValue || LatencyMs.HasValue;
+
+    public string BitrateLabel => BitrateMbps is double b ? b.ToString("F1") : "—";
+    public string FpsLabel => Fps is double f ? ((int)Math.Round(f)).ToString() : "—";
+    public string LatencyLabel => LatencyMs is double l ? ((int)Math.Round(l)).ToString() : "—";
 
     public StreamTabViewModel(string gameId, string title, string platform)
     {
-        GameId = gameId;
-        Title = title;
+        _gameId = gameId;
+        _title = title;
         Platform = platform;
+    }
+
+    partial void OnBitrateMbpsChanged(double? value)
+    {
+        OnPropertyChanged(nameof(BitrateLabel));
+        OnPropertyChanged(nameof(HasQualityStats));
+    }
+    partial void OnFpsChanged(double? value)
+    {
+        OnPropertyChanged(nameof(FpsLabel));
+        OnPropertyChanged(nameof(HasQualityStats));
+    }
+    partial void OnLatencyMsChanged(double? value)
+    {
+        OnPropertyChanged(nameof(LatencyLabel));
+        OnPropertyChanged(nameof(HasQualityStats));
     }
 }

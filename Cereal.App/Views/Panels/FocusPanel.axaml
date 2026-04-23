@@ -4,17 +4,19 @@
              xmlns:conv="using:Cereal.App"
              x:Class="Cereal.App.Views.Panels.FocusPanel"
              x:DataType="vm:MainViewModel"
+             KeyboardNavigation.TabNavigation="Cycle"
              Background="Transparent">
 
   <UserControl.Styles>
 
+    <!-- .btn-play (index.css 529) -->
     <Style Selector="Button.focus-action">
-      <Setter Property="Background" Value="#d4a853"/>
-      <Setter Property="Foreground" Value="#07070d"/>
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="16,8"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="24,10"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
@@ -22,20 +24,21 @@
       <Setter Property="Background" Value="#e8b85e"/>
     </Style>
 
+    <!-- .btn-ghost (index.css 532) — transparent w/ 1px border -->
     <Style Selector="Button.focus-ghost">
-      <Setter Property="Background" Value="#18ffffff"/>
-      <Setter Property="Foreground" Value="#b0aaa0"/>
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="FontWeight" Value="Medium"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="16,8"/>
-      <Setter Property="BorderBrush" Value="#18ffffff"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="20,10"/>
+      <Setter Property="BorderBrush" Value="#17ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.focus-ghost:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#28ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeText3}"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
 
     <Style Selector="Button.focus-danger">
@@ -55,7 +58,7 @@
 
     <Style Selector="Button.focus-close">
       <Setter Property="Background" Value="#18ffffff"/>
-      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="FontSize" Value="18"/>
       <Setter Property="Width" Value="32"/>
       <Setter Property="Height" Value="32"/>
@@ -66,7 +69,7 @@
     </Style>
     <Style Selector="Button.focus-close:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#33ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
 
     <Style Selector="Border.cat-chip">
@@ -77,17 +80,22 @@
 
   </UserControl.Styles>
 
-  <!-- Root grid — click outside content closes panel -->
+  <!-- Root grid — matches Electron .focus-overlay (App.tsx / FocusView.tsx / index.css 412-447).
+       Full-screen blurred backdrop, no card chrome — the art + details float on the dim overlay.
+       Click anywhere outside the content closes. -->
   <Grid PointerPressed="Root_PointerPressed">
 
-    <!-- Blurred background: header image or cover -->
+    <!-- Blurred background: header image (index.css 413 — scaled 1.2× so blur edges don't show) -->
     <Image Source="{Binding SelectedGame.HeaderPath}"
            Stretch="UniformToFill"
-           Opacity="0.15"
+           Opacity="0.12"
            IsHitTestVisible="False">
       <Image.Effect>
-        <BlurEffect Radius="30"/>
+        <BlurEffect Radius="70"/>
       </Image.Effect>
+      <Image.RenderTransform>
+        <ScaleTransform ScaleX="1.2" ScaleY="1.2"/>
+      </Image.RenderTransform>
     </Image>
     <Image Source="{Binding SelectedGame.CoverPath}"
            IsVisible="{Binding SelectedGame.HasCover}"
@@ -95,93 +103,89 @@
            Opacity="0.08"
            IsHitTestVisible="False">
       <Image.Effect>
-        <BlurEffect Radius="30"/>
+        <BlurEffect Radius="70"/>
       </Image.Effect>
     </Image>
 
-    <!-- Dark overlay gradient -->
-    <Border IsHitTestVisible="False">
-      <Border.Background>
-        <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-          <GradientStop Color="#cc07070d" Offset="0"/>
-          <GradientStop Color="#ee07070d" Offset="1"/>
-        </LinearGradientBrush>
-      </Border.Background>
-    </Border>
+    <!-- Dim overlay (index.css 414 — rgba(7,7,13,0.78)) -->
+    <Border Background="#c707070d" IsHitTestVisible="False"/>
 
-    <!-- Content card (click intercepted — prevents close) -->
+    <!-- Content row (index.css 415): art + details, 48px gap, max 860px, 80vh -->
     <Border x:Name="ContentCard"
             PointerPressed="ContentCard_PointerPressed"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
-            Margin="40"
-            MaxWidth="880"
-            CornerRadius="16"
-            Background="#e8101018"
-            BorderBrush="#1affffff"
-            BorderThickness="1"
-            ClipToBounds="True">
+            Margin="32,48,32,48"
+            MaxWidth="860"
+            Background="Transparent">
 
-      <Grid ColumnDefinitions="200,*" MaxHeight="560">
+      <Grid ColumnDefinitions="Auto,48,*" MaxHeight="620">
 
-        <!-- Left: cover art -->
-        <Panel Grid.Column="0">
-          <Border Background="#16161f" CornerRadius="16,0,0,16"/>
-          <!-- Fallback initial -->
-          <TextBlock Text="{Binding SelectedGame.Initial}"
-                     FontSize="64" FontWeight="Light"
-                     Foreground="#1de8e4de"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center"/>
-          <!-- Cover image -->
-          <Image Source="{Binding SelectedGame.CoverPath}"
-                 IsVisible="{Binding SelectedGame.HasCover}"
-                 Stretch="UniformToFill"/>
-          <!-- Gradient at bottom of cover -->
-          <Border VerticalAlignment="Bottom" Height="80"
-                  CornerRadius="0,0,0,16"
-                  IsHitTestVisible="False">
-            <Border.Background>
-              <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Color="Transparent" Offset="0"/>
-                <GradientStop Color="#ee101018" Offset="1"/>
-              </LinearGradientBrush>
-            </Border.Background>
+        <!-- Left: cover art — 340px tall, 14px corners, deep shadow (index.css 420) -->
+        <Panel Grid.Column="0" Width="220" Height="340"
+               VerticalAlignment="Top">
+          <Border CornerRadius="14" ClipToBounds="True"
+                  BoxShadow="0 24 64 0 #990a0a14">
+            <Panel>
+              <Border Background="{DynamicResource ThemeCardUp}"/>
+              <TextBlock Text="{Binding SelectedGame.Initial}"
+                         FontSize="80" FontWeight="Light"
+                         Foreground="#1de8e4de"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         IsVisible="{Binding !SelectedGame.HasCover}"/>
+              <Image Source="{Binding SelectedGame.CoverPath}"
+                     IsVisible="{Binding SelectedGame.HasCover}"
+                     Stretch="UniformToFill"/>
+            </Panel>
           </Border>
         </Panel>
 
         <!-- Right: game details + actions -->
-        <ScrollViewer Grid.Column="1"
+        <ScrollViewer Grid.Column="2"
                       VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Margin="24,20,24,24" Spacing="0">
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalAlignment="Top"
+                      MaxHeight="620">
+          <StackPanel Margin="0,0,0,0" Spacing="0">
 
-            <!-- Platform badge + Refresh Info row -->
-            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+            <!-- Platform pill + Refresh Info row (index.css 423-446) -->
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
               <Border Grid.Column="0"
-                      CornerRadius="4" Padding="8,3"
+                      CornerRadius="6" Padding="12,4"
                       HorizontalAlignment="Left"
-                      Background="#18ffffff">
-                <StackPanel Orientation="Horizontal" Spacing="6">
+                      Background="Transparent"
+                      BorderThickness="1"
+                      BorderBrush="{Binding SelectedGame.PlatformColor}">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                   <Ellipse Width="6" Height="6"
                            Fill="{Binding SelectedGame.PlatformColor}"
                            VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding SelectedGame.PlatformLabel}"
                              FontSize="10" FontWeight="Bold"
-                             Foreground="{Binding SelectedGame.PlatformColor}"/>
+                             LetterSpacing="0.5"
+                             Foreground="{Binding SelectedGame.PlatformColor}"
+                             VerticalAlignment="Center"/>
                 </StackPanel>
               </Border>
-              <Button Grid.Column="1" Classes="focus-ghost" Content="Refresh Info"
+              <Button Grid.Column="2" Content="Refresh Info"
+                      Background="Transparent"
+                      Foreground="{DynamicResource ThemeText4}"
+                      FontSize="10"
+                      BorderBrush="#17ffffff" BorderThickness="1"
+                      CornerRadius="6" Padding="10,3"
+                      Cursor="Hand"
                       Command="{Binding RefreshGameInfoCommand}"
                       IsVisible="{Binding SelectedGame, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
             </Grid>
 
-            <!-- Game title -->
+            <!-- Game title — 32px heavy, line-height 1.1 (index.css 425) -->
             <TextBlock Text="{Binding SelectedGame.Name}"
-                       FontSize="22" FontWeight="Bold"
-                       Foreground="#e8e4de"
-                       TextWrapping="Wrap"
-                       Margin="0,0,0,8"/>
+                       FontSize="32" FontWeight="Bold"
+                       LineHeight="36"
+                       Foreground="{DynamicResource ThemeText}"
+                       TextTrimming="CharacterEllipsis"
+                       Margin="0,0,0,10"/>
 
             <!-- Metacritic badge -->
             <Border IsVisible="{Binding SelectedGame.HasMetacritic}"
@@ -199,34 +203,40 @@
             <!-- Playtime / Last played row -->
             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
               <TextBlock Text="{Binding SelectedGame.PlaytimeLabel}"
-                         FontSize="12" Foreground="#b0aaa0"/>
-              <TextBlock Text="|" FontSize="12" Foreground="#3d3a35"
+                         FontSize="12" Foreground="{DynamicResource ThemeText2}"/>
+              <TextBlock Text="|" FontSize="12" Foreground="{DynamicResource ThemeText4}"
                          IsVisible="{Binding SelectedGame.PlaytimeLabel, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
               <TextBlock Text="{Binding SelectedGame.LastPlayedLabel}"
-                         FontSize="12" Foreground="#706b63"/>
+                         FontSize="12" Foreground="{DynamicResource ThemeText3}"/>
             </StackPanel>
 
-            <!-- Developer / Publisher / Release date -->
-            <Grid IsVisible="{Binding SelectedGame.HasDeveloper}"
-                  ColumnDefinitions="Auto,*" Margin="0,0,0,4">
-              <TextBlock Grid.Column="0" Text="Developer" FontSize="11"
-                         Foreground="#50b0aaa0" Width="80"/>
-              <TextBlock Grid.Column="1" Text="{Binding SelectedGame.Developer}"
-                         FontSize="11" Foreground="#b0aaa0" TextWrapping="Wrap"/>
-            </Grid>
-            <Grid IsVisible="{Binding SelectedGame.HasPublisher}"
-                  ColumnDefinitions="Auto,*" Margin="0,0,0,4">
-              <TextBlock Grid.Column="0" Text="Publisher" FontSize="11"
-                         Foreground="#50b0aaa0" Width="80"/>
-              <TextBlock Grid.Column="1" Text="{Binding SelectedGame.Publisher}"
-                         FontSize="11" Foreground="#b0aaa0" TextWrapping="Wrap"/>
-            </Grid>
-            <Grid IsVisible="{Binding SelectedGame.HasReleaseDate}"
-                  ColumnDefinitions="Auto,*" Margin="0,0,0,10">
-              <TextBlock Grid.Column="0" Text="Released" FontSize="11"
-                         Foreground="#50b0aaa0" Width="80"/>
-              <TextBlock Grid.Column="1" Text="{Binding SelectedGame.ReleaseDate}"
-                         FontSize="11" Foreground="#b0aaa0"/>
+            <!-- Developer / Publisher / Release date — two-col info grid (index.css .focus-info-grid) -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Margin="0,0,0,16"
+                  IsVisible="{Binding SelectedGame.HasAnyInfoItem}">
+              <StackPanel Grid.Column="0" Grid.Row="0" Spacing="2" Margin="0,0,16,6"
+                          IsVisible="{Binding SelectedGame.HasDeveloper}">
+                <TextBlock Text="Developer" FontSize="9" FontWeight="SemiBold"
+                           LetterSpacing="0.8"
+                           Foreground="#40b0aaa0"/>
+                <TextBlock Text="{Binding SelectedGame.Developer}"
+                           FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Grid.Row="0" Spacing="2" Margin="0,0,0,6"
+                          IsVisible="{Binding SelectedGame.HasPublisher}">
+                <TextBlock Text="Publisher" FontSize="9" FontWeight="SemiBold"
+                           LetterSpacing="0.8"
+                           Foreground="#40b0aaa0"/>
+                <TextBlock Text="{Binding SelectedGame.Publisher}"
+                           FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+              </StackPanel>
+              <StackPanel Grid.Column="0" Grid.Row="1" Spacing="2" Margin="0,0,16,0"
+                          IsVisible="{Binding SelectedGame.HasReleaseDate}">
+                <TextBlock Text="Released" FontSize="9" FontWeight="SemiBold"
+                           LetterSpacing="0.8"
+                           Foreground="#40b0aaa0"/>
+                <TextBlock Text="{Binding SelectedGame.ReleaseDate}"
+                           FontSize="12" Foreground="{DynamicResource ThemeText2}"/>
+              </StackPanel>
             </Grid>
 
             <!-- Categories -->
@@ -241,27 +251,30 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
                   <Border Classes="cat-chip" Margin="0,0,4,4">
-                    <TextBlock Text="{Binding}" FontSize="10" Foreground="#d4a853"/>
+                    <TextBlock Text="{Binding}" FontSize="10" Foreground="{DynamicResource ThemeAccent}"/>
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Description -->
-            <TextBlock IsVisible="{Binding SelectedGame.HasDescription}"
-                       Text="{Binding SelectedGame.Description}"
-                       FontSize="12" Foreground="#706b63"
-                       TextWrapping="Wrap"
-                       Margin="0,0,0,10"
-                       MaxLines="4"
-                       TextTrimming="CharacterEllipsis"/>
+            <!-- Description — max-height 100, overflow scroll (index.css .focus-desc) -->
+            <ScrollViewer IsVisible="{Binding SelectedGame.HasDescription}"
+                          MaxHeight="120"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="0,0,0,12">
+              <TextBlock Text="{Binding SelectedGame.Description}"
+                         FontSize="12" LineHeight="19"
+                         Foreground="{DynamicResource ThemeText3}"
+                         TextWrapping="Wrap"/>
+            </ScrollViewer>
 
             <!-- Notes -->
             <StackPanel IsVisible="{Binding SelectedGame.HasNotes}" Margin="0,0,0,10">
               <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold"
                          LetterSpacing="1" Foreground="#40b0aaa0" Margin="0,0,0,4"/>
               <TextBlock Text="{Binding SelectedGame.Notes}"
-                         FontSize="12" Foreground="#706b63"
+                         FontSize="12" Foreground="{DynamicResource ThemeText3}"
                          TextWrapping="Wrap"/>
             </StackPanel>
 
@@ -302,6 +315,17 @@
                       Command="{Binding DeleteGameCommand}"
                       CommandParameter="{Binding SelectedGame.Id}"
                       Click="Delete_Click"/>
+            </StackPanel>
+
+            <!-- Secondary actions (mirrors electron games:install / games:openInClient) -->
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+              <Button Classes="focus-ghost" Content="Install"
+                      Command="{Binding InstallGameCommand}"
+                      IsVisible="{Binding SelectedGame.IsNotInstalled}"/>
+              <Button Classes="focus-ghost" Content="Open in client"
+                      Command="{Binding OpenInClientCommand}"/>
+              <Button Classes="focus-ghost" Content="Refresh info"
+                      Command="{Binding RefreshGameInfoCommand}"/>
             </StackPanel>
 
           </StackPanel>

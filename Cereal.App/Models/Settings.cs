@@ -34,6 +34,15 @@ public class Settings
     [JsonPropertyName("closeToTray")]
     public bool CloseToTray { get; set; } = false;
 
+    [JsonPropertyName("minimizeToTray")]
+    public bool MinimizeToTray { get; set; } = false;
+
+    [JsonPropertyName("startMinimized")]
+    public bool StartMinimized { get; set; } = false;
+
+    [JsonPropertyName("launchOnStartup")]
+    public bool LaunchOnStartup { get; set; } = false;
+
     [JsonPropertyName("defaultTab")]
     public string? DefaultTab { get; set; }
 
@@ -41,7 +50,7 @@ public class Settings
     public bool DiscordPresence { get; set; } = true;
 
     [JsonPropertyName("metadataSource")]
-    public string MetadataSource { get; set; } = "steamgriddb";
+    public string MetadataSource { get; set; } = "steam";
 
     [JsonPropertyName("toolbarPosition")]
     public string ToolbarPosition { get; set; } = "top";

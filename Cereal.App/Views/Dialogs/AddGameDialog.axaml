@@ -6,7 +6,7 @@
         MinHeight="500"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
-        Background="#0d0d1a"
+        Background="{DynamicResource ThemeVoid}"
         ExtendClientAreaToDecorationsHint="False">
 
   <Window.Styles>
@@ -21,8 +21,8 @@
       <Setter Property="Background" Value="#10ffffff"/>
       <Setter Property="BorderBrush" Value="#18ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Foreground" Value="#e8e4de"/>
-      <Setter Property="CaretBrush" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+      <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="10,7"/>
       <Setter Property="FontSize" Value="13"/>
@@ -33,13 +33,13 @@
     <Style Selector="ComboBox">
       <Setter Property="Background" Value="#10ffffff"/>
       <Setter Property="BorderBrush" Value="#18ffffff"/>
-      <Setter Property="Foreground" Value="#e8e4de"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="HorizontalAlignment" Value="Stretch"/>
     </Style>
     <Style Selector="Button.action">
-      <Setter Property="Background" Value="#d4a853"/>
-      <Setter Property="Foreground" Value="#07070d"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="20,9"/>
@@ -51,7 +51,7 @@
     </Style>
     <Style Selector="Button.secondary">
       <Setter Property="Background" Value="#10ffffff"/>
-      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="BorderBrush" Value="#18ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="8"/>
@@ -63,7 +63,7 @@
     </Style>
     <Style Selector="Button.sm">
       <Setter Property="Background" Value="#10ffffff"/>
-      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="BorderBrush" Value="#18ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="6"/>
@@ -92,7 +92,7 @@
         <!-- Title -->
         <TextBlock x:Name="DialogTitle" Text="Add Game"
                    FontSize="20" FontWeight="Bold"
-                   Foreground="#e8e4de" Margin="0,0,0,16"/>
+                   Foreground="{DynamicResource ThemeText}" Margin="0,0,0,16"/>
 
         <!-- Name -->
         <TextBlock Classes="label" Text="GAME NAME"/>
@@ -156,6 +156,13 @@
         <Expander x:Name="MetaExpander" Header="▸  METADATA — Auto-fill from web"
                   IsExpanded="False" Margin="0,12,0,0">
           <StackPanel Spacing="0" Margin="0,4,0,0">
+
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+              <Button x:Name="FetchMetaBtn" Classes="sm" Content="Fetch metadata"
+                      Click="FetchMeta_Click"/>
+              <TextBlock x:Name="FetchMetaStatus" VerticalAlignment="Center"
+                         Foreground="#80b0aaa0" FontSize="11"/>
+            </StackPanel>
 
             <TextBlock Classes="label" Text="DESCRIPTION"/>
             <TextBox x:Name="DescBox" Classes="multiline" Watermark="Game description"/>

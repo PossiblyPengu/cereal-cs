@@ -85,6 +85,8 @@ public sealed class SmtcService
                 IsPlaying = root.TryGetProperty("playing", out var pl) && pl.GetBoolean(),
                 Position = root.TryGetProperty("position", out var pos) ? pos.GetDouble() : null,
                 Duration = root.TryGetProperty("duration", out var dur) ? dur.GetDouble() : null,
+                AlbumArtUrl = root.TryGetProperty("albumArt", out var art)
+                    ? art.GetString() : null,
             };
         }
         catch (Exception ex)

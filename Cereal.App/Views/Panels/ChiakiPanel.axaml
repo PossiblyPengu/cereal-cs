@@ -10,7 +10,7 @@
 
     <Style Selector="Button.chiaki-tab">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#706b63"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontWeight" Value="Medium"/>
       <Setter Property="Padding" Value="12,6"/>
@@ -25,12 +25,12 @@
     </Style>
     <Style Selector="Button.chiaki-tab:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#08ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
     </Style>
 
     <Style Selector="Button.ch-sm">
       <Setter Property="Background" Value="#14ffffff"/>
-      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="Padding" Value="10,5"/>
       <Setter Property="CornerRadius" Value="6"/>
@@ -40,7 +40,7 @@
     </Style>
     <Style Selector="Button.ch-sm:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#20ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
 
     <Style Selector="Button.ch-primary">
@@ -72,7 +72,7 @@
 
     <Style Selector="TextBox.ch-input">
       <Setter Property="Background" Value="#08ffffff"/>
-      <Setter Property="Foreground" Value="#e8e4de"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
       <Setter Property="BorderBrush" Value="#14ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="6"/>
@@ -184,7 +184,7 @@
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="{Binding Nickname}" FontSize="13"
-                                   FontWeight="SemiBold" Foreground="#e8e4de"/>
+                                   FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                         <Border IsVisible="{Binding IsLive}"
                                 Background="#1a22c55e" CornerRadius="4" Padding="5,1">
                           <TextBlock Text="LIVE" FontSize="9" FontWeight="Bold"
@@ -192,7 +192,7 @@
                         </Border>
                         <Border IsVisible="{Binding IsNotRegistered}"
                                 Background="#14ffffff" CornerRadius="4" Padding="5,1">
-                          <TextBlock Text="Not registered" FontSize="9" Foreground="#706b63"/>
+                          <TextBlock Text="Not registered" FontSize="9" Foreground="{DynamicResource ThemeText3}"/>
                         </Border>
                       </StackPanel>
                       <TextBlock FontSize="11" Foreground="#50b0aaa0">
@@ -233,7 +233,7 @@
 
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Grid.Column="0" Text="Scan your network for PlayStation consoles"
-                       FontSize="12" Foreground="#706b63" VerticalAlignment="Center"
+                       FontSize="12" Foreground="{DynamicResource ThemeText3}" VerticalAlignment="Center"
                        TextWrapping="Wrap"/>
             <Button Grid.Column="1" Classes="ch-primary" Content="Scan Network"
                     Click="Discover_Click" Margin="8,0,0,0"/>
@@ -257,12 +257,12 @@
 
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Name}" FontSize="13"
-                                 FontWeight="SemiBold" Foreground="#e8e4de"/>
+                                 FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="{Binding Host}" FontSize="11" Foreground="#50b0aaa0"/>
                         <Border IsVisible="{Binding IsStandby}"
                                 Background="#14ffffff" CornerRadius="3" Padding="4,1">
-                          <TextBlock Text="Standby" FontSize="9" Foreground="#706b63"/>
+                          <TextBlock Text="Standby" FontSize="9" Foreground="{DynamicResource ThemeText3}"/>
                         </Border>
                         <Border IsVisible="{Binding IsReady}"
                                 Background="#1a22c55e" CornerRadius="3" Padding="4,1">
@@ -270,7 +270,7 @@
                         </Border>
                         <Border IsVisible="{Binding AlreadyAdded}"
                                 Background="#14ffffff" CornerRadius="3" Padding="4,1">
-                          <TextBlock Text="Added" FontSize="9" Foreground="#706b63"/>
+                          <TextBlock Text="Added" FontSize="9" Foreground="{DynamicResource ThemeText3}"/>
                         </Border>
                       </StackPanel>
                     </StackPanel>
@@ -308,7 +308,7 @@
         <StackPanel IsVisible="{Binding IsTabRegister}" Spacing="12">
 
           <TextBlock Text="Register your PlayStation for Remote Play. One-time setup per console."
-                     FontSize="12" Foreground="#706b63" TextWrapping="Wrap"/>
+                     FontSize="12" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
 
           <Border Background="#0dffffff" CornerRadius="8" Padding="12">
             <StackPanel Spacing="8">
@@ -320,7 +320,7 @@
                   <TextBlock Text="1" FontSize="9" FontWeight="Bold" Foreground="#d4a853"
                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11" Foreground="#706b63"
+                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11" Foreground="{DynamicResource ThemeText3}"
                            TextWrapping="Wrap" Margin="0,0,0,6">
                   On console: Settings › System › Remote Play — enable it.
                 </TextBlock>
@@ -329,7 +329,7 @@
                   <TextBlock Text="2" FontSize="9" FontWeight="Bold" Foreground="#d4a853"
                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11" Foreground="#706b63"
+                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11" Foreground="{DynamicResource ThemeText3}"
                            TextWrapping="Wrap" Margin="0,0,0,6">
                   Go to Remote Play › Link Device to get the 8-digit link code.
                 </TextBlock>
@@ -338,7 +338,7 @@
                   <TextBlock Text="3" FontSize="9" FontWeight="Bold" Foreground="#d4a853"
                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11" Foreground="#706b63"
+                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11" Foreground="{DynamicResource ThemeText3}"
                            TextWrapping="Wrap">
                   Get your PSN Account ID (Base64) from psn.flipscreen.games.
                 </TextBlock>

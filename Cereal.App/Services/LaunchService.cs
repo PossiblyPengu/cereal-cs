@@ -24,6 +24,9 @@ public sealed class LaunchService
     // gameId → session start time (for playtime tracking)
     private readonly Dictionary<string, (DateTime Start, Process? Process)> _sessions = [];
 
+    /// <summary>Raised when the app should be minimized (after a game launch with MinimizeOnLaunch enabled).</summary>
+    public event EventHandler? MinimizeRequested;
+
     public LaunchService(GameService games, SettingsService settings,
                          DiscordService discord, ChiakiService chiaki, XcloudService xcloud)
     {
@@ -47,10 +50,11 @@ public sealed class LaunchService
             return new LaunchResult { Success = success, Error = error, Opened = state };
         }
 
-        // Xbox Cloud → delegate to XcloudService (no-op until WebView added)
+        // Xbox Cloud → delegate to XcloudService
         if (platform == "xbox" && game.StreamUrl is not null)
         {
             _xcloud.StartSession(game.Id, game.StreamUrl, game.Name);
+            MaybeMinimize();
             return new LaunchResult { Success = true, Opened = game.StreamUrl };
         }
 
@@ -64,9 +68,36 @@ public sealed class LaunchService
         return await OpenPlatformAsync(game, ct);
     }
 
-    private async Task<LaunchResult> OpenPlatformAsync(Game game, CancellationToken ct)
+    private void MaybeMinimize()
     {
-        var uris = BuildPlatformUris(game);
+        if (_settings.Get().MinimizeOnLaunch)
+            MinimizeRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Open the platform client focused on this title (no launch). Mirrors the
+    /// Electron `games:openInClient` handler.
+    /// </summary>
+    public Task<LaunchResult> OpenInClientAsync(Game game, CancellationToken ct = default)
+        => OpenPlatformAsync(game, ct, "client");
+
+    /// <summary>
+    /// Ask the platform client to install this title. Mirrors the Electron
+    /// `games:install` handler (psn/custom are not supported).
+    /// </summary>
+    public Task<LaunchResult> InstallAsync(Game game, CancellationToken ct = default)
+    {
+        var platform = NormalizePlatform(game.Platform);
+        if (platform == "psn")
+            return Task.FromResult(new LaunchResult { Success = false, Error = "Install is not supported for Remote Play titles" });
+        if (platform == "custom")
+            return Task.FromResult(new LaunchResult { Success = false, Error = "Custom games must be installed manually" });
+        return OpenPlatformAsync(game, ct, "install");
+    }
+
+    private async Task<LaunchResult> OpenPlatformAsync(Game game, CancellationToken ct, string action = "play")
+    {
+        var uris = BuildPlatformUris(game, action);
         foreach (var uri in uris.Where(u => !string.IsNullOrEmpty(u)))
         {
             try
@@ -75,6 +106,7 @@ public sealed class LaunchService
                 if (result.Success)
                 {
                     RecordSessionStart(game);
+                    MaybeMinimize();
                     return result;
                 }
             }
@@ -88,6 +120,7 @@ public sealed class LaunchService
             {
                 Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
                 RecordSessionStart(game);
+                MaybeMinimize();
                 return new LaunchResult { Success = true, Opened = exe };
             }
             catch { /* try next */ }
@@ -110,12 +143,7 @@ public sealed class LaunchService
         if (p is null) return new LaunchResult { Success = false, Error = "Failed to start process" };
 
         RecordSessionStart(game, p);
-
-        if (_settings.Get().MinimizeOnLaunch)
-        {
-            // Minimize will be handled by the MainWindow via a message/event — skip here
-        }
-
+        MaybeMinimize();
         SetDiscordPresence(game);
 
         // Track playtime when process exits
@@ -164,25 +192,78 @@ public sealed class LaunchService
     private static string NormalizePlatform(string platform) =>
         platform == "psremote" ? "psn" : platform;
 
-    private static IEnumerable<string> BuildPlatformUris(Game game)
+    // URIs differ per action: "play" (default), "install" or "client"; mirrors
+    // electron/modules/games/launcher.js `buildPlatformUris`.
+    private static IEnumerable<string> BuildPlatformUris(Game game, string action = "play")
     {
         var platform = NormalizePlatform(game.Platform);
         var id = game.PlatformId ?? "";
         var store = game.StoreUrl ?? "";
 
-        return platform switch
+        switch (platform)
         {
-            "steam"     => [$"steam://rungameid/{id}", $"steam://nav/games/details/{id}", store],
-            "epic"      => [$"com.epicgames.launcher://apps/{game.EpicAppName ?? id}?action=launch&silent=true",
-                            $"com.epicgames.launcher://apps/{id}?action=launch&silent=true", store],
-            "gog"       => [$"goggalaxy://openGameView/{id}", store],
-            "ea"        => [$"origin2://game/launch?offerIds={id}", "origin2://library/open", store],
-            "battlenet" => string.IsNullOrEmpty(id) ? ["battlenet://"] : [$"battlenet://{id}"],
-            "ubisoft"   => string.IsNullOrEmpty(id) ? ["uplay://"] : [$"uplay://launch/{id}/0"],
-            "itchio"    => string.IsNullOrEmpty(store) ? ["https://itch.io/my-purchases"] : [store],
-            "xbox"      => ["https://www.xbox.com/play"],
-            _           => string.IsNullOrEmpty(store) ? [] : [store],
-        };
+            case "steam":
+                if (action == "install" && !string.IsNullOrEmpty(id))
+                    return [$"steam://install/{id}", $"steam://nav/games/details/{id}", store];
+                if (action == "client")
+                    return ["steam://open/games", "steam://nav/library"];
+                return [$"steam://rungameid/{id}", $"steam://nav/games/details/{id}", store];
+
+            case "epic":
+                var appName = game.EpicAppName ?? id;
+                if (action == "install")
+                    return [
+                        !string.IsNullOrEmpty(appName) ? $"com.epicgames.launcher://apps/{appName}?action=install&silent=true" : "",
+                        !string.IsNullOrEmpty(id) ? $"com.epicgames.launcher://apps/{id}?action=install&silent=true" : "",
+                        store,
+                    ];
+                if (action == "client")
+                    return [
+                        !string.IsNullOrEmpty(appName) ? $"com.epicgames.launcher://apps/{appName}" : "",
+                        !string.IsNullOrEmpty(id) ? $"com.epicgames.launcher://apps/{id}" : "",
+                        store,
+                    ];
+                return [
+                    !string.IsNullOrEmpty(appName) ? $"com.epicgames.launcher://apps/{appName}?action=launch&silent=true" : "",
+                    !string.IsNullOrEmpty(id) ? $"com.epicgames.launcher://apps/{id}?action=launch&silent=true" : "",
+                    store,
+                ];
+
+            case "gog":
+                if (action == "install") return [store, $"goggalaxy://openGameView/{id}"];
+                return [$"goggalaxy://openGameView/{id}", store];
+
+            case "ea":
+                if (!string.IsNullOrEmpty(id))
+                {
+                    if (action == "install")
+                        return [$"origin2://store/open?offerId={id}", $"origin2://store/open?offerIds={id}", store];
+                    return [$"origin2://game/launch?offerIds={id}", "origin2://library/open", store];
+                }
+                return ["origin2://library/open"];
+
+            case "battlenet":
+                return string.IsNullOrEmpty(id) ? ["battlenet://"] : [$"battlenet://{id}"];
+
+            case "ubisoft":
+                if (!string.IsNullOrEmpty(id))
+                {
+                    if (action == "install") return [$"uplay://launch/{id}/1", store];
+                    return [$"uplay://launch/{id}/0", store];
+                }
+                return ["uplay://"];
+
+            case "itchio":
+                return string.IsNullOrEmpty(store) ? ["https://itch.io/my-purchases"] : [store];
+
+            case "xbox":
+                if (action == "install") return ["msxbox://", "https://www.xbox.com/en-US/games"];
+                if (action == "client")  return ["msxbox://"];
+                return ["https://www.xbox.com/play"];
+
+            default:
+                return string.IsNullOrEmpty(store) ? [] : [store];
+        }
     }
 
     private static IEnumerable<string> GetLauncherCandidates(string platform)

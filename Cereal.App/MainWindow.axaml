@@ -28,33 +28,67 @@
     </Style>
     <Style Selector="Button.tab-close:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#22ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+
+    <!-- Clickable stream tab — flat chrome, reveals the child border styling -->
+    <Style Selector="Button.stream-tab">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+    </Style>
+    <Style Selector="Button.stream-tab /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="CornerRadius" Value="7"/>
+    </Style>
+    <Style Selector="Button.stream-tab:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#12ffffff"/>
     </Style>
   </Window.Styles>
 
-  <Grid RowDefinitions="40,*">
+  <LayoutTransformControl x:Name="RootScaler">
+  <Grid x:Name="RootGrid" RowDefinitions="40,*">
 
-    <!-- ── Tab bar (title bar region, chrome-extended) ── -->
+    <!-- ── Tab bar (index.css .tab-bar 49) — chrome-extended, 40px, blurred, drag region -->
     <Border Grid.Row="0"
-            Background="#cc07070d"
-            BorderBrush="#0fffffff"
+            Background="#f7070710"
+            BorderBrush="#0dffffff"
             BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="Auto,*,Auto">
 
-        <!-- Left: logo -->
-        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="0"
-                    VerticalAlignment="Center" Margin="12,0,0,0">
-          <TextBlock Text="⬡" FontSize="18" Foreground="#d4a853"
-                     VerticalAlignment="Center" Margin="0,0,6,0"/>
-          <TextBlock Text="CEREAL" FontSize="10" FontWeight="Light"
-                     LetterSpacing="4" VerticalAlignment="Center"
-                     Foreground="#80b0aaa0"/>
-        </StackPanel>
+        <!-- Left: Cereal launcher tab (index.css .tab-item / TabBar.tsx CEREAL_ICON) -->
+        <Border Grid.Column="0"
+                Margin="6,4"
+                CornerRadius="6" Padding="10,0,12,0" Height="32"
+                Background="#14ffffff"
+                BoxShadow="inset 0 2 0 0 #d4a853">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <!-- Cereal icon — stylized orb cluster -->
+            <Panel Width="14" Height="14" VerticalAlignment="Center">
+              <Ellipse Width="13" Height="13" Stroke="#d4a853" StrokeThickness="1.3"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <Ellipse Width="2.6" Height="2.6" Fill="#ccd4a853"
+                       HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Margin="3,3,0,0"/>
+              <Ellipse Width="2.6" Height="2.6" Fill="#d4a853"
+                       HorizontalAlignment="Right" VerticalAlignment="Top"
+                       Margin="0,3,2,0"/>
+              <Ellipse Width="2" Height="2" Fill="#b3d4a853"
+                       HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                       Margin="0,0,0,2"/>
+            </Panel>
+            <TextBlock Text="Cereal" FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource ThemeText}"
+                       VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
 
         <!-- Center: stream session tabs -->
         <ItemsControl Grid.Column="1" ItemsSource="{Binding StreamTabs}"
-                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                      Margin="8,0">
+                      HorizontalAlignment="Left" VerticalAlignment="Center"
+                      Margin="2,0">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
               <StackPanel Orientation="Horizontal" Spacing="3"/>
@@ -62,18 +96,29 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:StreamTabViewModel">
-              <Border CornerRadius="6" Padding="8,0,4,0" Height="30"
-                      Background="#1affffff">
-                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding Title}" Foreground="#e8e4de"
-                             FontSize="11" FontWeight="Medium" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding State}" Foreground="#50b0aaa0"
-                             FontSize="10" VerticalAlignment="Center"/>
-                  <Button Classes="tab-close" Content="×"
-                          Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
-                          CommandParameter="{Binding GameId}"/>
-                </StackPanel>
-              </Border>
+              <!-- Stream tab — .tab-item (index.css 51): 32px tall, 7px rounded, subtle bg.
+                   Clicking the tab body re-opens the associated stream panel
+                   (Chiaki for psn/psremote, Xcloud for xbox) — matches the
+                   `onSwitch` behaviour in TabBar.tsx. -->
+              <Button Classes="stream-tab"
+                      Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SwitchToStreamTabCommand}"
+                      CommandParameter="{Binding}"
+                      Padding="0" BorderThickness="0" Cursor="Hand">
+                <Border CornerRadius="7" Padding="10,0,4,0" Height="32"
+                        MinWidth="90" MaxWidth="210"
+                        Background="#0effffff">
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeText2}"
+                               FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding State}" Foreground="#50b0aaa0"
+                               FontSize="10" VerticalAlignment="Center"/>
+                    <Button Classes="tab-close" Content="×"
+                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
+                            CommandParameter="{Binding GameId}"/>
+                  </StackPanel>
+                </Border>
+              </Button>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
@@ -98,20 +143,25 @@
       <!-- Settings panel — slides in from right -->
       <panels:SettingsPanel HorizontalAlignment="Right"
                             Width="480"
-                            IsVisible="{Binding ShowSettings}"/>
+                            IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowSettings}"/>
 
       <!-- Detect panel -->
       <panels:DetectPanel HorizontalAlignment="Right"
                           Width="520"
-                          IsVisible="{Binding ShowDetect}"/>
+                          IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowDetect}"/>
 
       <!-- Chiaki panel -->
       <panels:ChiakiPanel HorizontalAlignment="Right"
                           Width="480"
-                          IsVisible="{Binding ShowChiaki}"/>
+                          IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowChiaki}"/>
+
+      <!-- Platforms panel -->
+      <panels:PlatformsPanel HorizontalAlignment="Right"
+                             Width="520"
+                             IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowPlatforms}"/>
 
       <!-- Xbox Cloud — full screen -->
-      <panels:XcloudPanel IsVisible="{Binding ShowXcloud}"/>
+      <panels:XcloudPanel IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowXcloud}"/>
 
       <!-- Focus panel — full screen game detail (topmost) -->
       <panels:FocusPanel IsVisible="{Binding ShowFocus}"/>
@@ -126,7 +176,7 @@
               ZIndex="60"
               PointerEntered="StreamBar_PointerEntered"
               PointerExited="StreamBar_PointerExited">
-        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="16,0" Height="38">
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="16,0" Height="38">
           <!-- Dot + title -->
           <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
                       VerticalAlignment="Center">
@@ -137,20 +187,58 @@
             </Ellipse>
             <TextBlock Text="{Binding ActiveStreamTab.Title}"
                        FontSize="12" FontWeight="SemiBold"
-                       Foreground="#e8e4de" VerticalAlignment="Center"/>
+                       Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
           </StackPanel>
-          <!-- Platform + state -->
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
-                      VerticalAlignment="Center" Margin="12,0">
-            <Border CornerRadius="4" Padding="6,2" Background="#18ffffff">
-              <TextBlock Text="{Binding ActiveStreamTab.Platform}"
-                         FontSize="10" FontWeight="Bold" Foreground="#b0aaa0"/>
-            </Border>
-            <TextBlock Text="{Binding ActiveStreamTab.State}"
-                       FontSize="11" Foreground="#50b0aaa0" VerticalAlignment="Center"/>
+          <!-- Platform label -->
+          <Border Grid.Column="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0"
+                  Background="#18ffffff" VerticalAlignment="Center">
+            <TextBlock Text="{Binding ActiveStreamTab.PlatformLabel}"
+                       FontSize="10" FontWeight="Bold" Foreground="{DynamicResource ThemeText2}"/>
+          </Border>
+          <!-- Quality stats (PSN Remote Play) -->
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="14"
+                      VerticalAlignment="Center" Margin="14,0"
+                      IsVisible="{Binding ActiveStreamTab.HasQualityStats}">
+            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="{Binding ActiveStreamTab.BitrateLabel}"
+                         FontSize="12" FontWeight="SemiBold"
+                         Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
+              <TextBlock Text="Mbps" FontSize="9" Foreground="#50b0aaa0"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="{Binding ActiveStreamTab.FpsLabel}"
+                         FontSize="12" FontWeight="SemiBold"
+                         Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
+              <TextBlock Text="FPS" FontSize="9" Foreground="#50b0aaa0"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="{Binding ActiveStreamTab.LatencyLabel}"
+                         FontSize="12" FontWeight="SemiBold"
+                         Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
+              <TextBlock Text="ms" FontSize="9" Foreground="#50b0aaa0"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
           </StackPanel>
+          <!-- State label (hidden when showing quality stats) -->
+          <TextBlock Grid.Column="2" Text="{Binding ActiveStreamTab.State}"
+                     FontSize="11" Foreground="#50b0aaa0"
+                     VerticalAlignment="Center" Margin="14,0"
+                     IsVisible="{Binding !ActiveStreamTab.HasQualityStats}"/>
+          <!-- Minimize -->
+          <Button Grid.Column="3"
+                  Width="30" Height="30" Margin="4,0,0,0"
+                  VerticalAlignment="Center"
+                  Background="Transparent" Foreground="#50b0aaa0"
+                  BorderThickness="0" CornerRadius="6" Padding="0"
+                  FontSize="12" Cursor="Hand"
+                  Click="Minimize_Click"
+                  ToolTip.Tip="Minimize">
+            <TextBlock Text="─" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Button>
           <!-- Fullscreen toggle -->
-          <Button Grid.Column="2" x:Name="FullscreenBtn"
+          <Button Grid.Column="4" x:Name="FullscreenBtn"
                   Width="30" Height="30" Margin="4,0,0,0"
                   VerticalAlignment="Center"
                   Background="Transparent" Foreground="#50b0aaa0"
@@ -161,7 +249,7 @@
             <TextBlock Text="⛶" HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Button>
           <!-- Stop button -->
-          <Button Grid.Column="4" Content="Stop" Margin="8,0,0,0"
+          <Button Grid.Column="5" Content="Stop" Margin="8,0,0,0"
                   VerticalAlignment="Center"
                   Background="#33ff4444" Foreground="#ff7070"
                   BorderThickness="0" CornerRadius="6" Padding="12,4"
@@ -197,35 +285,83 @@
         </StackPanel>
       </Panel>
 
-      <!-- ── Media player widget (bottom-center) ── -->
-      <Border HorizontalAlignment="Center" VerticalAlignment="Bottom"
-              Margin="0,0,0,20"
+      <!-- ── Media player widget (opposite edge from toolbar) ── -->
+      <Border HorizontalAlignment="Center"
+              VerticalAlignment="{Binding MediaVerticalAlignment}"
+              Margin="0,20,0,20"
               IsVisible="{Binding Media.HasMedia}"
               CornerRadius="20"
               Background="#e8101018"
               BorderBrush="#1affffff"
               BorderThickness="1"
               ZIndex="40">
-        <StackPanel Orientation="Horizontal" Spacing="0" Margin="6,5">
-          <Button Width="30" Height="30" Content="⏮"
-                  Background="Transparent" Foreground="#40b0aaa0"
-                  BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
-                  Command="{Binding Media.PrevCommand}"/>
-          <StackPanel VerticalAlignment="Center" Spacing="1"
-                      MinWidth="80" MaxWidth="200" Margin="8,0">
-            <TextBlock Text="{Binding Media.Title}"
-                       FontSize="11" FontWeight="Medium" Foreground="#e8e4de"
-                       TextTrimming="CharacterEllipsis"
-                       HorizontalAlignment="Center"/>
-            <TextBlock Text="{Binding Media.Artist}"
-                       FontSize="10" Foreground="#706b63"
-                       TextTrimming="CharacterEllipsis"
-                       HorizontalAlignment="Center"
-                       IsVisible="{Binding Media.Artist,
-                         Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
+       <Panel>
+        <!-- Expanded view -->
+        <Grid Margin="6,5" IsVisible="{Binding !Media.IsCollapsed}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="4"/>
+          </Grid.RowDefinitions>
+          <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="0" Margin="0,0,0,6">
+            <Border Width="34" Height="34" CornerRadius="6" ClipToBounds="True"
+                    Margin="2,0,8,0" VerticalAlignment="Center"
+                    Background="{DynamicResource ThemeCardUp}"
+                    IsVisible="{Binding Media.AlbumArt,
+                      Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+              <Image Source="{Binding Media.AlbumArt}" Stretch="UniformToFill"/>
+            </Border>
+            <Button Width="30" Height="30" Content="⏮"
+                    Background="Transparent" Foreground="#40b0aaa0"
+                    BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
+                    Command="{Binding Media.PrevCommand}"/>
+            <StackPanel VerticalAlignment="Center" Spacing="1"
+                        MinWidth="80" MaxWidth="200" Margin="8,0">
+              <TextBlock Text="{Binding Media.Title}"
+                         FontSize="11" FontWeight="Medium" Foreground="{DynamicResource ThemeText}"
+                         TextTrimming="CharacterEllipsis"
+                         HorizontalAlignment="Center"/>
+              <TextBlock Text="{Binding Media.Artist}"
+                         FontSize="10" Foreground="{DynamicResource ThemeText3}"
+                         TextTrimming="CharacterEllipsis"
+                         HorizontalAlignment="Center"
+                         IsVisible="{Binding Media.Artist,
+                           Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
+            <Button Width="30" Height="30"
+                    Background="Transparent" Foreground="{DynamicResource ThemeText2}"
+                    BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
+                    Command="{Binding Media.PlayPauseCommand}">
+              <Panel>
+                <TextBlock Text="▶" FontSize="13"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding !Media.IsPlaying}"/>
+                <TextBlock Text="⏸" FontSize="13"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding Media.IsPlaying}"/>
+              </Panel>
+            </Button>
+            <Button Width="30" Height="30" Content="⏭"
+                    Background="Transparent" Foreground="#40b0aaa0"
+                    BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
+                    Command="{Binding Media.NextCommand}"/>
+            <Button Width="22" Height="22" Content="▸"
+                    Margin="4,0,0,0" Padding="0"
+                    Background="Transparent" Foreground="#30b0aaa0"
+                    BorderThickness="0" Cursor="Hand" FontSize="10"
+                    ToolTip.Tip="Collapse"
+                    Command="{Binding Media.ToggleCollapseCommand}"/>
           </StackPanel>
+          <ProgressBar Grid.Row="1" Minimum="0" Maximum="100"
+                       Value="{Binding Media.ProgressPercent}"
+                       HorizontalAlignment="Stretch" Margin="8,0,8,6"
+                       Height="4" Background="{DynamicResource ThemeCardUp}" Foreground="{DynamicResource ThemeAccent}"/>
+        </Grid>
+
+        <!-- Collapsed view: play-pause pill only -->
+        <StackPanel Orientation="Horizontal" Spacing="0" Margin="4,3"
+                    IsVisible="{Binding Media.IsCollapsed}">
           <Button Width="30" Height="30"
-                  Background="Transparent" Foreground="#b0aaa0"
+                  Background="Transparent" Foreground="{DynamicResource ThemeText2}"
                   BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
                   Command="{Binding Media.PlayPauseCommand}">
             <Panel>
@@ -237,11 +373,14 @@
                          IsVisible="{Binding Media.IsPlaying}"/>
             </Panel>
           </Button>
-          <Button Width="30" Height="30" Content="⏭"
-                  Background="Transparent" Foreground="#40b0aaa0"
-                  BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
-                  Command="{Binding Media.NextCommand}"/>
+          <Button Width="22" Height="30" Content="◂"
+                  Padding="0"
+                  Background="Transparent" Foreground="#30b0aaa0"
+                  BorderThickness="0" Cursor="Hand" FontSize="10"
+                  ToolTip.Tip="Expand"
+                  Command="{Binding Media.ToggleCollapseCommand}"/>
         </StackPanel>
+       </Panel>
       </Border>
 
       <!-- ── Continue banner (bottom-left) ── -->
@@ -253,17 +392,34 @@
               BorderBrush="#1affffff"
               BorderThickness="1"
               ZIndex="50">
-        <StackPanel Orientation="Horizontal" Spacing="12" Margin="14,10">
+        <StackPanel Orientation="Horizontal" Spacing="12" Margin="10">
+          <!-- Cover thumbnail -->
+          <Border Width="44" Height="58" CornerRadius="6" ClipToBounds="True"
+                  Background="{DynamicResource ThemeCardUp}" VerticalAlignment="Center">
+            <Panel>
+              <Image Source="{Binding ContinueGame.CoverPath}"
+                     Stretch="UniformToFill"
+                     IsVisible="{Binding ContinueGame.HasCover}"/>
+              <TextBlock Text="{Binding ContinueGame.Initial}"
+                         FontSize="20" FontWeight="Bold"
+                         Foreground="{DynamicResource ThemeText}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                         IsVisible="{Binding !ContinueGame.HasCover}"/>
+            </Panel>
+          </Border>
           <StackPanel Spacing="2" VerticalAlignment="Center">
             <TextBlock Text="CONTINUE" FontSize="8" FontWeight="Bold"
                        LetterSpacing="1.5" Foreground="#40b0aaa0"/>
             <TextBlock Text="{Binding ContinueGame.Name}"
                        FontSize="13" FontWeight="SemiBold"
-                       Foreground="#e8e4de" MaxWidth="200"
+                       Foreground="{DynamicResource ThemeText}" MaxWidth="220"
                        TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="{Binding ContinueGame.LastPlayedLabel}"
+                       FontSize="10"
+                       Foreground="#60b0aaa0"/>
           </StackPanel>
           <Button Content="▶  Play" VerticalAlignment="Center"
-                  Background="#d4a853" Foreground="#07070d"
+                  Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
                   FontSize="11" FontWeight="Bold"
                   CornerRadius="8" Padding="14,7" BorderThickness="0" Cursor="Hand"
                   Command="{Binding LaunchGameCommand}"
@@ -274,6 +430,74 @@
                   CornerRadius="14" Padding="0" BorderThickness="0" Cursor="Hand"
                   Command="{Binding DismissContinueBannerCommand}"/>
         </StackPanel>
+      </Border>
+
+      <!-- ── App auto-update banner (App.tsx 1274–1294).
+           Lives just above the toast stack in the bottom-right. -->
+      <Border IsVisible="{Binding ShowAppUpdate}"
+              VerticalAlignment="Bottom" HorizontalAlignment="Right"
+              Margin="0,0,20,84"
+              Width="300"
+              CornerRadius="12" Padding="12,10"
+              Background="#f414141e"
+              BorderBrush="#1affffff" BorderThickness="1"
+              BoxShadow="0 8 32 0 #80000000"
+              ZIndex="201">
+        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
+          <!-- Status dot -->
+          <Border Grid.Column="0" Grid.RowSpan="2" Width="22" Height="22"
+                  CornerRadius="11" Margin="0,0,10,0"
+                  VerticalAlignment="Center">
+            <Border.Background>
+              <SolidColorBrush Color="{DynamicResource ThemeAccentColor}"/>
+            </Border.Background>
+            <TextBlock Text="↑" FontSize="11" FontWeight="Bold"
+                       Foreground="{DynamicResource ThemeVoid}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <!-- Title: swaps between "Downloading update…" / "Update ready" -->
+          <TextBlock Grid.Column="1" Grid.Row="0" FontSize="12" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"
+                     Text="Downloading update…"
+                     IsVisible="{Binding AppUpdateDownloading}"/>
+          <TextBlock Grid.Column="1" Grid.Row="0" FontSize="12" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"
+                     Text="Update ready"
+                     IsVisible="{Binding AppUpdateReady}"/>
+          <!-- Subtitle: version / "Restart to apply" -->
+          <TextBlock Grid.Column="1" Grid.Row="1" FontSize="11"
+                     Foreground="{DynamicResource ThemeText3}"
+                     TextTrimming="CharacterEllipsis"
+                     IsVisible="{Binding AppUpdateDownloading}">
+            <Run Text="Downloading v"/>
+            <Run Text="{Binding AppUpdateVersion}"/>
+          </TextBlock>
+          <TextBlock Grid.Column="1" Grid.Row="1" FontSize="11"
+                     Foreground="{DynamicResource ThemeText3}"
+                     TextTrimming="CharacterEllipsis"
+                     IsVisible="{Binding AppUpdateReady}">
+            <Run Text="v"/>
+            <Run Text="{Binding AppUpdateVersion}"/>
+            <Run Text=" — Restart to apply"/>
+          </TextBlock>
+          <!-- Action: Restart when ready, else dismiss × -->
+          <Button Grid.Column="2" Grid.RowSpan="2" Content="Restart"
+                  IsVisible="{Binding AppUpdateReady}"
+                  VerticalAlignment="Center"
+                  Background="{DynamicResource ThemeAccent}"
+                  Foreground="{DynamicResource ThemeVoid}"
+                  FontWeight="Bold" FontSize="11"
+                  CornerRadius="6" Padding="10,5"
+                  BorderThickness="0" Cursor="Hand"
+                  Command="{Binding InstallAppUpdateCommand}"/>
+          <Button Grid.Column="2" Grid.RowSpan="2" Content="✕"
+                  IsVisible="{Binding !AppUpdateReady}"
+                  VerticalAlignment="Center"
+                  Background="Transparent" Foreground="{DynamicResource ThemeText3}"
+                  FontSize="11"
+                  BorderThickness="0" Cursor="Hand"
+                  Command="{Binding DismissAppUpdateCommand}"/>
+        </Grid>
       </Border>
 
       <!-- ── Toast stack (bottom-right) ── -->
@@ -293,52 +517,130 @@
                     BorderBrush="#1affffff"
                     BorderThickness="1">
               <TextBlock Text="{Binding Message}"
-                         FontSize="12" Foreground="#b0aaa0"
+                         FontSize="12" Foreground="{DynamicResource ThemeText2}"
                          MaxWidth="300" TextWrapping="Wrap"/>
             </Border>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
-      <!-- ── Search overlay (Ctrl+K) ── -->
-      <Panel IsVisible="{Binding ShowSearch}" ZIndex="300">
-        <!-- Backdrop -->
-        <Border Background="#cc07070d"
-                PointerPressed="SearchBackdrop_PointerPressed"/>
-        <!-- Card -->
-        <Border HorizontalAlignment="Center" VerticalAlignment="Top"
-                Margin="0,80,0,0" Width="640" MaxHeight="540"
-                CornerRadius="14"
-                Background="#e8101018"
-                BorderBrush="#1affffff"
-                BorderThickness="1"
-                ClipToBounds="True"
-                PointerPressed="ContentCard_PointerPressedNoop">
-          <StackPanel>
-            <!-- Search input -->
-            <Border Padding="16,12" BorderBrush="#0fffffff" BorderThickness="0,0,0,1">
-              <Grid ColumnDefinitions="Auto,*,Auto">
-                <TextBlock Grid.Column="0" Text="⌕" FontSize="18"
-                           Foreground="#40b0aaa0" VerticalAlignment="Center"
-                           Margin="0,0,10,0"/>
-                <TextBox Grid.Column="1"
-                         Text="{Binding SearchQuery}"
-                         Watermark="Search games…"
-                         BorderThickness="0" Background="Transparent"
-                         Foreground="#e8e4de" CaretBrush="#d4a853"
-                         FontSize="14" Padding="0"
-                         AttachedToVisualTree="SearchBox_AttachedToVisualTree"/>
-                <TextBlock Grid.Column="2" Text="ESC" FontSize="10"
-                           Foreground="#28b0aaa0" VerticalAlignment="Center"
-                           Margin="10,0,0,0"/>
-              </Grid>
-            </Border>
+      <!-- ── Media player (SMTC now-playing widget) — Electron MediaPlayer.tsx parity.
+           Positioned bottom-left, shows thumbnail + title/artist + transport controls. -->
+      <Border DataContext="{Binding Media}"
+              VerticalAlignment="Bottom" HorizontalAlignment="Left"
+              Margin="16,0,0,16"
+              CornerRadius="22"
+              Background="#e8101018"
+              BorderBrush="#1affffff" BorderThickness="1"
+              BoxShadow="0 12 40 0 #80000000"
+              IsVisible="{Binding HasMedia}"
+              ZIndex="55">
+        <!-- Collapsed compact pill -->
+        <Panel>
+          <Border IsVisible="{Binding IsCollapsed}"
+                  CornerRadius="22" Padding="10,8" Cursor="Hand"
+                  PointerPressed="MediaCollapsedPill_Click">
+            <TextBlock Text="♪" FontSize="14" Foreground="{DynamicResource ThemeAccent}"/>
+          </Border>
 
-            <!-- Platform chips (when results span multiple platforms) -->
-            <ItemsControl ItemsSource="{Binding SearchActivePlatforms}"
-                          Margin="16,10,16,0"
-                          IsVisible="{Binding SearchActivePlatforms,
-                            Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+          <!-- Expanded player -->
+          <Border IsVisible="{Binding !IsCollapsed}" Padding="8,6">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <!-- Album art / note icon -->
+              <Border Width="38" Height="38" CornerRadius="6" ClipToBounds="True"
+                      Background="#14ffffff" Cursor="Hand"
+                      PointerPressed="MediaArt_Click"
+                      ToolTip.Tip="Collapse">
+                <Panel>
+                  <Image Source="{Binding AlbumArt}" Stretch="UniformToFill"
+                         IsVisible="{Binding AlbumArt, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+                  <TextBlock Text="♪" FontSize="18" HorizontalAlignment="Center"
+                             VerticalAlignment="Center" Foreground="#50b0aaa0"
+                             IsVisible="{Binding AlbumArt, Converter={x:Static conv:ObjectConverters.IsNull}}"/>
+                </Panel>
+              </Border>
+
+              <!-- Title + artist -->
+              <StackPanel Spacing="1" VerticalAlignment="Center" MaxWidth="180">
+                <TextBlock Text="{Binding Title}" FontSize="11" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeText}"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding Artist}" FontSize="10"
+                           Foreground="#80b0aaa0" TextTrimming="CharacterEllipsis"/>
+              </StackPanel>
+
+              <!-- Controls -->
+              <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                <Button Width="26" Height="26" Padding="0" Background="Transparent"
+                        BorderThickness="0" Foreground="{DynamicResource ThemeText2}"
+                        CornerRadius="13" Cursor="Hand" ToolTip.Tip="Previous"
+                        Command="{Binding PrevCommand}">
+                  <TextBlock Text="⏮" FontSize="12" HorizontalAlignment="Center"/>
+                </Button>
+                <Button Width="30" Height="30" Padding="0"
+                        Background="#1fd4a853"
+                        Foreground="{DynamicResource ThemeAccent}"
+                        BorderThickness="0" CornerRadius="15" Cursor="Hand"
+                        ToolTip.Tip="Play / Pause"
+                        Command="{Binding PlayPauseCommand}">
+                  <Panel>
+                    <TextBlock Text="⏸" FontSize="12" HorizontalAlignment="Center"
+                               IsVisible="{Binding IsPlaying}"/>
+                    <TextBlock Text="▶" FontSize="12" HorizontalAlignment="Center"
+                               IsVisible="{Binding !IsPlaying}"/>
+                  </Panel>
+                </Button>
+                <Button Width="26" Height="26" Padding="0" Background="Transparent"
+                        BorderThickness="0" Foreground="{DynamicResource ThemeText2}"
+                        CornerRadius="13" Cursor="Hand" ToolTip.Tip="Next"
+                        Command="{Binding NextCommand}">
+                  <TextBlock Text="⏭" FontSize="12" HorizontalAlignment="Center"/>
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- Thin progress bar at the bottom of the expanded player -->
+          <ProgressBar VerticalAlignment="Bottom" Height="2"
+                       Minimum="0" Maximum="100"
+                       Value="{Binding ProgressPercent}"
+                       Background="Transparent"
+                       Foreground="{DynamicResource ThemeAccent}"
+                       IsVisible="{Binding !IsCollapsed}"/>
+        </Panel>
+      </Border>
+
+      <!-- ── Search overlay (Ctrl+K) — index.css 456-459: fullscreen blur, centered 32px input -->
+      <Panel IsVisible="{Binding ShowSearch}" ZIndex="300">
+        <!-- Backdrop fills everything -->
+        <Border Background="#eb07070d"
+                PointerPressed="SearchBackdrop_PointerPressed"/>
+        <!-- Centered column — input + results (60% width) -->
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top"
+                    Margin="0,140,0,0" Width="700"
+                    PointerPressed="ContentCard_PointerPressedNoop">
+          <!-- Big 32px light search input with underline (index.css 457) -->
+          <Border BorderBrush="#17ffffff" BorderThickness="0,0,0,1"
+                  Padding="0,0,0,16">
+            <TextBox Text="{Binding SearchQuery}"
+                     Watermark="Search your library…"
+                     BorderThickness="0" Background="Transparent"
+                     Foreground="{DynamicResource ThemeText}"
+                     CaretBrush="{DynamicResource ThemeAccent}"
+                     FontSize="32" FontWeight="Light"
+                     LetterSpacing="1"
+                     HorizontalAlignment="Stretch"
+                     HorizontalContentAlignment="Center"
+                     Padding="0"
+                     AttachedToVisualTree="SearchBox_AttachedToVisualTree"/>
+          </Border>
+
+          <!-- Platform chips (when results span multiple platforms) -->
+          <ItemsControl ItemsSource="{Binding SearchActivePlatforms}"
+                        Margin="0,16,0,0"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding SearchActivePlatforms,
+                          Converter={x:Static conv:ObjectConverters.IsNotNull}}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <WrapPanel Orientation="Horizontal"/>
@@ -354,7 +656,7 @@
                     <Button.Styles>
                       <Style Selector="Button">
                         <Setter Property="Background" Value="#10ffffff"/>
-                        <Setter Property="Foreground" Value="#b0aaa0"/>
+                        <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
                         <Setter Property="BorderBrush" Value="#10ffffff"/>
                       </Style>
                     </Button.Styles>
@@ -398,13 +700,13 @@
                                     VerticalAlignment="Center">
                           <TextBlock Text="{Binding Name}"
                                      FontSize="13" FontWeight="SemiBold"
-                                     Foreground="#e8e4de"
+                                     Foreground="{DynamicResource ThemeText}"
                                      TextTrimming="CharacterEllipsis"/>
                           <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="{Binding PlatformLabel}"
                                        FontSize="11" Foreground="#50b0aaa0"/>
                             <TextBlock Text="{Binding PlaytimeLabel}"
-                                       FontSize="11" Foreground="#3d3a35"
+                                       FontSize="11" Foreground="{DynamicResource ThemeText4}"
                                        IsVisible="{Binding PlaytimeLabel,
                                          Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
                           </StackPanel>
@@ -412,7 +714,7 @@
                         <!-- Launch button -->
                         <Button Grid.Column="2" Content="▶"
                                 VerticalAlignment="Center"
-                                Background="#d4a853" Foreground="#07070d"
+                                Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
                                 FontSize="11" FontWeight="Bold"
                                 CornerRadius="6" Padding="10,6"
                                 BorderThickness="0" Cursor="Hand"
@@ -428,14 +730,14 @@
             <!-- Empty state -->
             <TextBlock IsVisible="{Binding HasNoSearchResults}"
                        Text="No matches"
-                       FontSize="13" Foreground="#3d3a35"
+                       FontSize="13" Foreground="{DynamicResource ThemeText4}"
                        HorizontalAlignment="Center"
                        Margin="0,20"/>
-          </StackPanel>
-        </Border>
+        </StackPanel>
       </Panel>
 
     </Panel>
 
   </Grid>
+  </LayoutTransformControl>
 </Window>

@@ -12,7 +12,8 @@ param(
 $config = if ($Release) { 'Release' } else { 'Debug' }
 $proj   = Join-Path $PSScriptRoot 'Cereal.App\Cereal.App.csproj'
 $out    = Join-Path $PSScriptRoot 'out\win-x64'
-$dotnet = 'D:\CODE\important files\dotnet-sdk-9.0.306-win-x64\dotnet.exe'
+$dotnetLocal = 'D:\CODE\important files\dotnet-sdk-9.0.306-win-x64\dotnet.exe'
+$dotnet = if (Test-Path $dotnetLocal) { $dotnetLocal } else { 'dotnet' }
 
 Write-Host "Publishing self-contained ($config)..." -ForegroundColor Cyan
 & $dotnet publish $proj -c $config -r win-x64 --self-contained -o $out

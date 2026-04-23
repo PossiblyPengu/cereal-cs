@@ -1,40 +1,23 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:orbit="clr-namespace:Cereal.App.Controls.Orbit"
              x:Class="Cereal.App.Views.OrbitView">
 
-  <Grid RowDefinitions="*,Auto">
+  <Grid>
+    <!-- Fullscreen parallax star layers behind the world. -->
+    <orbit:ParallaxStarBackground x:Name="Parallax"/>
 
-    <!-- WebView fills the canvas area -->
-    <ContentControl Grid.Row="0" x:Name="WebViewHost"
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"/>
+    <!-- Native Avalonia orbit (pan/zoom host). Content is added in code-behind. -->
+    <orbit:OrbitWorld x:Name="World"/>
 
-    <!-- Loading overlay (shown until WebView navigates) -->
-    <Border Grid.Row="0" x:Name="LoadingOverlay"
-            Background="#0d0d22" IsVisible="True">
-      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
-        <TextBlock Text="Initializing Orbit View…"
-                   FontSize="16" Foreground="#66ccccff"
-                   HorizontalAlignment="Center"/>
-        <TextBlock Text="(Requires Microsoft Edge WebView2 on Windows)"
-                   FontSize="11" Foreground="#33ccccff"
-                   HorizontalAlignment="Center"/>
-      </StackPanel>
-    </Border>
-
-    <!-- Error overlay -->
-    <Border Grid.Row="0" x:Name="ErrorOverlay"
-            Background="#0d0d22" IsVisible="False">
+    <!-- Fallback error overlay (kept for parity with the old view) -->
+    <Border x:Name="ErrorOverlay" Background="#0d0d22" IsVisible="False">
       <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
         <TextBlock x:Name="ErrorText"
                    FontSize="14" Foreground="#cc6666"
                    HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="400"/>
-        <TextBlock Text="WebView2 can be installed from microsoft.com/edge"
-                   FontSize="11" Foreground="#55ccccff"
-                   HorizontalAlignment="Center"/>
       </StackPanel>
     </Border>
-
   </Grid>
 
 </UserControl>

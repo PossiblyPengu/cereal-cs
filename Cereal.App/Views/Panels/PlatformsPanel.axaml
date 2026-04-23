@@ -1,0 +1,212 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cereal.App.ViewModels"
+             xmlns:conv="using:Cereal.App"
+             x:Class="Cereal.App.Views.Panels.PlatformsPanel"
+             x:DataType="vm:PlatformsPanelViewModel"
+             Background="Transparent">
+
+  <UserControl.Styles>
+    <Style Selector="Button.pp-primary">
+      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.pp-flat">
+      <Setter Property="Background" Value="#14ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="#10ffffff"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.pp-flat:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#22ffffff"/>
+    </Style>
+    <Style Selector="Button.pp-danger">
+      <Setter Property="Background" Value="#33ff4444"/>
+      <Setter Property="Foreground" Value="#ff7070"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- Connection dot -->
+    <Style Selector="Ellipse.conn-dot">
+      <Setter Property="Width" Value="8"/>
+      <Setter Property="Height" Value="8"/>
+      <Setter Property="Fill" Value="#50b0aaa0"/>
+    </Style>
+    <Style Selector="Ellipse.conn-dot.ok">   <Setter Property="Fill" Value="#22c55e"/></Style>
+    <Style Selector="Ellipse.conn-dot.warn"> <Setter Property="Fill" Value="#d4a853"/></Style>
+    <Style Selector="Ellipse.conn-dot.off">  <Setter Property="Fill" Value="#50b0aaa0"/></Style>
+
+    <Style Selector="TextBox.pp">
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+      <Setter Property="BorderBrush" Value="#20ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="8,4"/>
+      <Setter Property="FontSize" Value="11"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Border Background="#f207070d"
+          BorderBrush="#1affffff"
+          BorderThickness="1,0,0,0">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24,20">
+
+      <!-- Header -->
+      <StackPanel Grid.Row="0" Margin="0,0,0,16">
+        <TextBlock Text="PLATFORMS" FontSize="9" FontWeight="Bold"
+                   LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,6"/>
+        <TextBlock Text="Connect your game platforms" FontSize="22" FontWeight="SemiBold"
+                   Foreground="{DynamicResource ThemeText}"/>
+        <TextBox Classes="pp" Text="{Binding Filter}" Watermark="Filter platforms…" Margin="0,12,0,0"/>
+      </StackPanel>
+
+      <!-- Platform list -->
+      <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding FilteredPlatforms}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="10"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PlatformRowViewModel">
+
+              <Border CornerRadius="12"
+                      Background="#0affffff"
+                      BorderBrush="#14ffffff"
+                      BorderThickness="1"
+                      Padding="14,12">
+                <StackPanel Spacing="10">
+
+                  <!-- Header: icon + name + dot -->
+                  <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                    <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8"
+                            Background="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                            VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Icon}" FontSize="13" FontWeight="Bold"
+                                 Foreground="White"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                 Foreground="{DynamicResource ThemeText}"/>
+                      <TextBlock Text="{Binding StatusLabel}" FontSize="10" Foreground="#50b0aaa0"/>
+                    </StackPanel>
+                    <Ellipse Grid.Column="2" Classes="conn-dot"
+                             Classes.ok="{Binding DotOk}"
+                             Classes.warn="{Binding DotWarn}"
+                             VerticalAlignment="Center"/>
+                  </Grid>
+
+                  <!-- Note -->
+                  <TextBlock Text="{Binding Note}" FontSize="10" Foreground="#60b0aaa0"
+                             TextWrapping="Wrap"
+                             IsVisible="{Binding Note, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
+
+                  <!-- PSN: open Chiaki configurator -->
+                  <Button Classes="pp-flat" Content="Configure chiaki-ng"
+                          Command="{Binding OpenChiakiCommand}"
+                          IsVisible="{Binding IsPsn}"
+                          HorizontalAlignment="Stretch"/>
+
+                  <!-- Sign-in button (hidden when connected) -->
+                  <Button Classes="pp-primary" Command="{Binding SignInCommand}"
+                          IsVisible="{Binding ShowSignIn}"
+                          HorizontalAlignment="Stretch">
+                    <Button.Content>
+                      <TextBlock>
+                        <Run Text="Sign in with "/>
+                        <Run Text="{Binding Name}"/>
+                      </TextBlock>
+                    </Button.Content>
+                  </Button>
+
+                  <!-- Connected row: import + disconnect -->
+                  <Grid IsVisible="{Binding IsConnected}"
+                        ColumnDefinitions="*,Auto" >
+                    <Button Grid.Column="0" Classes="pp-primary"
+                            Content="Import Library"
+                            Command="{Binding ImportCommand}"
+                            IsEnabled="{Binding !IsImporting}"
+                            HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
+                    <Button Grid.Column="1" Classes="pp-danger" Content="Disconnect"
+                            Command="{Binding DisconnectCommand}"/>
+                  </Grid>
+
+                  <!-- Local-detect-only providers: "Rescan" button -->
+                  <Button Classes="pp-flat" Content="Rescan installed games"
+                          Command="{Binding ImportCommand}"
+                          IsVisible="{Binding ShowRescan}"
+                          HorizontalAlignment="Stretch"/>
+
+                  <!-- Xbox Cloud Gaming shortcut -->
+                  <Button Classes="pp-flat" Content="Xbox Cloud Gaming"
+                          Command="{Binding OpenXcloudCommand}"
+                          IsVisible="{Binding IsXbox}"
+                          HorizontalAlignment="Stretch"/>
+
+                  <!-- API key row -->
+                  <Border IsVisible="{Binding SupportsApiKey}"
+                          BorderBrush="#10ffffff" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{Binding ApiKeyLabel}" FontSize="10" FontWeight="Bold"
+                                 LetterSpacing="1" Foreground="#40b0aaa0"/>
+                      <TextBlock Text="{Binding ApiKeyHelp}" FontSize="10"
+                                 TextWrapping="Wrap" Foreground="#50b0aaa0"/>
+                      <Button Classes="pp-flat" HorizontalAlignment="Left"
+                              Content="Get your key"
+                              Command="{Binding OpenApiKeyUrlCommand}"
+                              IsVisible="{Binding ApiKeyUrl, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Grid.Column="0" Classes="pp" PasswordChar="•"
+                                 Text="{Binding ApiKeyInput}"
+                                 Watermark="Paste API key"/>
+                        <Button Grid.Column="1" Classes="pp-flat" Content="Paste"
+                                Margin="6,0,0,0"
+                                Command="{Binding PasteApiKeyCommand}"/>
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto,Auto" >
+                        <Button Grid.Column="0" Classes="pp-primary" Content="Save"
+                                Command="{Binding SaveApiKeyCommand}"
+                                HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Classes="pp-danger" Content="Delete"
+                                Command="{Binding DeleteApiKeyCommand}"
+                                IsVisible="{Binding HasSavedApiKey}"/>
+                      </Grid>
+                      <TextBlock Text="Key saved ✓" FontSize="10" Foreground="#22c55e"
+                                 IsVisible="{Binding HasSavedApiKey}"/>
+                    </StackPanel>
+                  </Border>
+
+                </StackPanel>
+              </Border>
+
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+      <!-- Status bar -->
+      <TextBlock Grid.Row="2" Text="{Binding StatusMessage}"
+                 FontSize="11" Foreground="{DynamicResource ThemeText2}" Margin="0,12,0,0"
+                 IsVisible="{Binding StatusMessage, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
+    </Grid>
+  </Border>
+</UserControl>

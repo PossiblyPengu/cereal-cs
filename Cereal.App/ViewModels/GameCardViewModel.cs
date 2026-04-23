@@ -42,6 +42,7 @@ public partial class GameCardViewModel : ObservableObject
     public bool HasDeveloper => !string.IsNullOrEmpty(Game.Developer);
     public bool HasPublisher => !string.IsNullOrEmpty(Game.Publisher);
     public bool HasReleaseDate => !string.IsNullOrEmpty(Game.ReleaseDate);
+    public bool HasAnyInfoItem => HasDeveloper || HasPublisher || HasReleaseDate;
     public bool HasDescription => !string.IsNullOrEmpty(Game.Description);
     public bool HasNotes => !string.IsNullOrEmpty(Game.Notes);
     public bool HasCategories => Game.Categories?.Count > 0;
@@ -112,6 +113,7 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(HasDeveloper));
         OnPropertyChanged(nameof(HasPublisher));
         OnPropertyChanged(nameof(HasReleaseDate));
+        OnPropertyChanged(nameof(HasAnyInfoItem));
         OnPropertyChanged(nameof(HasDescription));
         OnPropertyChanged(nameof(HasNotes));
         OnPropertyChanged(nameof(HasCategories));

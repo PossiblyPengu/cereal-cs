@@ -36,11 +36,24 @@ public class PathService
         Directory.CreateDirectory(LogsDir);
     }
 
-    public string GetCoverPath(string gameId) =>
-        Path.Combine(CoversDir, $"{SanitizeId(gameId)}.jpg");
+    // Cover/header files are written by CoverService using `cover_<id>.<ext>` and
+    // `header_<id>.<ext>` so we can round-trip any image extension. Resolve an
+    // existing file if there is one, else fall back to the canonical `.jpg` path.
+    public string GetCoverPath(string gameId) => ResolveOrDefault(CoversDir, "cover_", gameId);
+    public string GetHeaderPath(string gameId) => ResolveOrDefault(HeadersDir, "header_", gameId);
 
-    public string GetHeaderPath(string gameId) =>
-        Path.Combine(HeadersDir, $"{SanitizeId(gameId)}.jpg");
+    private static string ResolveOrDefault(string dir, string prefix, string gameId)
+    {
+        var safe = SanitizeId(gameId);
+        try
+        {
+            var matches = Directory.EnumerateFiles(dir, $"{prefix}{safe}.*");
+            var first = matches.FirstOrDefault();
+            if (first is not null) return first;
+        }
+        catch { /* dir missing is fine */ }
+        return Path.Combine(dir, $"{prefix}{safe}.jpg");
+    }
 
     public string GetResourcePath(string relativePath) =>
         Path.Combine(ResourcesDir, relativePath);

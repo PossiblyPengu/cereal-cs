@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyDescriptionAttribute(("Universal game launcher aggregating Steam, Epic, GOG, Battle.net, EA, Ubisoft, it" +
     "ch.io, Xbox, PlayStation"))]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f16f10f9bbd2672e95d53feb127f8b8e960e4179")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+21724acfb050adafd952b640587595c7a68a4611")]
 [assembly: System.Reflection.AssemblyProductAttribute("Cereal")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Cereal.App")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

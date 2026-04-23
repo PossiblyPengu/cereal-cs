@@ -1,0 +1,377 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cereal.App.ViewModels"
+        x:Class="Cereal.App.Views.Dialogs.StartupWizardDialog"
+        x:DataType="vm:StartupWizardViewModel"
+        Title="Welcome to Cereal"
+        Width="620" Height="560"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="False"
+        Background="{DynamicResource ThemeVoid}">
+
+  <Window.Styles>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="20,10"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="#14ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="#10ffffff"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.chip">
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="#18ffffff"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.chip.active">
+      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="ToggleSwitch.pp">
+      <Setter Property="OnContent" Value=""/>
+      <Setter Property="OffContent" Value=""/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="*,Auto" Margin="48,36">
+
+    <!-- Step content area -->
+    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <Panel>
+
+        <!-- Step 0: Welcome -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=0}"
+                    VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14">
+          <TextBlock Text="⬡" FontSize="56" Foreground="{DynamicResource ThemeAccent}"
+                     HorizontalAlignment="Center"/>
+          <TextBlock Text="Welcome to Cereal" FontSize="26" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
+          <TextBlock Text="Your universal game launcher — Steam, Epic, GOG, PlayStation, Xbox and more in one place."
+                     FontSize="13" Foreground="{DynamicResource ThemeText2}"
+                     TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"
+                     MaxWidth="420"/>
+        </StackPanel>
+
+        <!-- Step 1: Default view -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=1}"
+                    VerticalAlignment="Center" Spacing="16">
+          <TextBlock Text="Default view" FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"/>
+          <TextBlock Text="How should your library be displayed by default?"
+                     FontSize="13" Foreground="{DynamicResource ThemeText2}"/>
+          <StackPanel Spacing="10">
+            <Border CornerRadius="10" Padding="16,14"
+                    Background="{Binding DefaultView, Converter={x:Static vm:WizardStepConverter.ViewCard}, ConverterParameter=cards}"
+                    BorderBrush="#18ffffff" BorderThickness="1" Cursor="Hand"
+                    PointerPressed="SelectCards_Click">
+              <StackPanel Spacing="4">
+                <TextBlock Text="⊞  Grid" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeText}"/>
+                <TextBlock Text="Classic cover-art grid, sorted by platform."
+                           FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
+              </StackPanel>
+            </Border>
+            <Border CornerRadius="10" Padding="16,14"
+                    Background="{Binding DefaultView, Converter={x:Static vm:WizardStepConverter.ViewCard}, ConverterParameter=orbit}"
+                    BorderBrush="#18ffffff" BorderThickness="1" Cursor="Hand"
+                    PointerPressed="SelectOrbit_Click">
+              <StackPanel Spacing="4">
+                <TextBlock Text="◉  Galaxy" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeText}"/>
+                <TextBlock Text="Immersive orbit view — games as stars in a galaxy."
+                           FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Step 2: Performance & Layout -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=2}"
+                    VerticalAlignment="Top" Spacing="16">
+          <TextBlock Text="Performance &amp; layout" FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"/>
+          <TextBlock Text="Tune rendering quality and UI layout. You can change these later in Settings."
+                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="STAR DENSITY" FontSize="10" FontWeight="Bold" LetterSpacing="1"
+                       Foreground="#40b0aaa0"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="chip" Content="Low"    Click="Density_Low"
+                      Classes.active="{Binding StarDensity, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=low}"/>
+              <Button Classes="chip" Content="Normal" Click="Density_Normal"
+                      Classes.active="{Binding StarDensity, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=normal}"/>
+              <Button Classes="chip" Content="High"   Click="Density_High"
+                      Classes.active="{Binding StarDensity, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=high}"/>
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="UI SCALE" FontSize="10" FontWeight="Bold" LetterSpacing="1"
+                       Foreground="#40b0aaa0"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="chip" Content="90%"  Click="Scale_90"
+                      Classes.active="{Binding UiScale, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=90%}"/>
+              <Button Classes="chip" Content="100%" Click="Scale_100"
+                      Classes.active="{Binding UiScale, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=100%}"/>
+              <Button Classes="chip" Content="110%" Click="Scale_110"
+                      Classes.active="{Binding UiScale, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=110%}"/>
+              <Button Classes="chip" Content="125%" Click="Scale_125"
+                      Classes.active="{Binding UiScale, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=125%}"/>
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="TOOLBAR POSITION" FontSize="10" FontWeight="Bold" LetterSpacing="1"
+                       Foreground="#40b0aaa0"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="chip" Content="Top"    Click="Toolbar_Top"
+                      Classes.active="{Binding ToolbarPosition, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=top}"/>
+              <Button Classes="chip" Content="Bottom" Click="Toolbar_Bottom"
+                      Classes.active="{Binding ToolbarPosition, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=bottom}"/>
+              <Button Classes="chip" Content="Left"   Click="Toolbar_Left"
+                      Classes.active="{Binding ToolbarPosition, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=left}"/>
+              <Button Classes="chip" Content="Right"  Click="Toolbar_Right"
+                      Classes.active="{Binding ToolbarPosition, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=right}"/>
+            </StackPanel>
+          </StackPanel>
+
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="2">
+              <TextBlock Text="Animations" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
+              <TextBlock Text="Orbit drift and UI transitions."
+                         FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowAnimations}"/>
+          </Grid>
+        </StackPanel>
+
+        <!-- Step 3: Connect Accounts -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=3}"
+                    VerticalAlignment="Top" Spacing="12">
+          <TextBlock Text="Connect accounts" FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"/>
+          <TextBlock Text="Sign in to import your game libraries. Skip any you don't use."
+                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" >
+            <Border Grid.Row="0" Grid.Column="0" CornerRadius="10" Padding="12,10" Margin="0,0,6,6"
+                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="Steam" FontSize="13" FontWeight="SemiBold"
+                             Foreground="{DynamicResource ThemeText}"/>
+                  <TextBlock Text="Import via OpenID + Web API" FontSize="11" Foreground="#50b0aaa0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="ghost" Content="Sign in"
+                        Click="AuthSteam_Click" Padding="12,6"/>
+              </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="1" CornerRadius="10" Padding="12,10" Margin="6,0,0,6"
+                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="GOG" FontSize="13" FontWeight="SemiBold"
+                             Foreground="{DynamicResource ThemeText}"/>
+                  <TextBlock Text="OAuth2 sign-in" FontSize="11" Foreground="#50b0aaa0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="ghost" Content="Sign in"
+                        Click="AuthGog_Click" Padding="12,6"/>
+              </Grid>
+            </Border>
+            <Border Grid.Row="1" Grid.Column="0" CornerRadius="10" Padding="12,10" Margin="0,6,6,0"
+                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="Epic Games" FontSize="13" FontWeight="SemiBold"
+                             Foreground="{DynamicResource ThemeText}"/>
+                  <TextBlock Text="OAuth2 sign-in" FontSize="11" Foreground="#50b0aaa0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="ghost" Content="Sign in"
+                        Click="AuthEpic_Click" Padding="12,6"/>
+              </Grid>
+            </Border>
+            <Border Grid.Row="1" Grid.Column="1" CornerRadius="10" Padding="12,10" Margin="6,6,0,0"
+                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="Xbox" FontSize="13" FontWeight="SemiBold"
+                             Foreground="{DynamicResource ThemeText}"/>
+                  <TextBlock Text="Microsoft account sign-in" FontSize="11" Foreground="#50b0aaa0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="ghost" Content="Sign in"
+                        Click="AuthXbox_Click" Padding="12,6"/>
+              </Grid>
+            </Border>
+          </Grid>
+
+          <TextBlock Text="{Binding $parent[Window].((vm:StartupWizardViewModel)DataContext).Step, StringFormat=' '}"
+                     FontSize="1" Opacity="0"/>
+          <TextBlock Name="AuthStatus" FontSize="11" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+
+          <TextBlock Text="🔒  Your library stays local — Cereal never uploads your account info."
+                     FontSize="11" Foreground="#40b0aaa0" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Step 4: Behavior -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=4}"
+                    VerticalAlignment="Top" Spacing="14">
+          <TextBlock Text="Behavior" FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"/>
+          <TextBlock Text="How Cereal behaves in the background and while gaming."
+                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Minimize on game launch" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
+              <TextBlock Text="Hide Cereal's window when you start a game."
+                         FontSize="11" Foreground="#50b0aaa0"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding MinimizeOnLaunch}"/>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Close to system tray" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
+              <TextBlock Text="Keep running in the background when you close the window."
+                         FontSize="11" Foreground="#50b0aaa0"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}"/>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Discord rich presence" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
+              <TextBlock Text="Show what you're playing on your Discord profile."
+                         FontSize="11" Foreground="#50b0aaa0"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordPresence}"/>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Auto-sync playtime" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
+              <TextBlock Text="Sync Steam playtime data when Cereal starts."
+                         FontSize="11" Foreground="#50b0aaa0"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoSyncPlaytime}"/>
+          </Grid>
+        </StackPanel>
+
+        <!-- Step 5: PlayStation Remote Play -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=5}"
+                    VerticalAlignment="Top" Spacing="12">
+          <TextBlock Text="PlayStation Remote Play" FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"/>
+          <TextBlock Text="Optional — stream PS4/PS5 games to your PC via chiaki-ng."
+                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+
+          <Border CornerRadius="10" Padding="12" Background="#0affffff"
+                  BorderBrush="#14ffffff" BorderThickness="1">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0">
+                <TextBlock Text="chiaki-ng" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeText}"/>
+                <TextBlock Name="ChiakiStatus" FontSize="11" Foreground="{DynamicResource ThemeText2}"
+                           Text="Checking…"/>
+              </StackPanel>
+              <Button Grid.Column="1" Name="ChiakiDownloadBtn" Classes="primary"
+                      Content="Download" Click="ChiakiDownload_Click"
+                      Padding="14,6"/>
+            </Grid>
+          </Border>
+
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <TextBlock Grid.Column="0" Text="Registered consoles" FontSize="12"
+                       Foreground="#50b0aaa0" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Classes="ghost" Content="Open configurator"
+                    Click="OpenChiaki_Click" Padding="12,6"/>
+          </Grid>
+
+          <TextBlock Text="💡  Your PC and PlayStation must be on the same local network. Find the pairing PIN on your console under Settings → System → Remote Play → Link Device."
+                     FontSize="11" Foreground="#60b0aaa0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- Step 6: SteamGridDB -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=6}"
+                    VerticalAlignment="Center" Spacing="14">
+          <TextBlock Text="Artwork (optional)" FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}"/>
+          <TextBlock Text="Add a SteamGridDB API key to automatically download high-quality cover art."
+                     FontSize="13" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Grid.Column="0" x:Name="WizardSgdbKeyBox"
+                     Text="{Binding SteamGridDbKey}" Watermark="Paste your API key here…"
+                     Background="#10ffffff" BorderBrush="#18ffffff" Foreground="{DynamicResource ThemeText}"
+                     CornerRadius="8" Padding="12,10" FontSize="13"/>
+            <Button Grid.Column="1" Content="Paste" Margin="8,0,0,0"
+                    Background="#10ffffff" Foreground="{DynamicResource ThemeText2}"
+                    BorderBrush="#18ffffff" CornerRadius="8" Padding="14,10" FontSize="12"
+                    Click="PasteSgdbKey_Click"/>
+          </Grid>
+          <TextBlock Text="Get a key at steamgriddb.com/profile/api. Skip to do this later."
+                     FontSize="11" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- Step 7: Done -->
+        <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=7}"
+                    VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14">
+          <TextBlock Text="✓" FontSize="48" Foreground="#22c55e"
+                     HorizontalAlignment="Center"/>
+          <TextBlock Text="You're all set!" FontSize="26" FontWeight="Bold"
+                     Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
+          <TextBlock Text="Use Detect in the nav bar to scan your installed games."
+                     FontSize="13" Foreground="{DynamicResource ThemeText2}"
+                     TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+        </StackPanel>
+
+      </Panel>
+    </ScrollViewer>
+
+    <!-- Bottom nav -->
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,16,0,0">
+
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush0}"/>
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush1}"/>
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush2}"/>
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush3}"/>
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush4}"/>
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush5}"/>
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush6}"/>
+        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush7}"/>
+      </StackPanel>
+
+      <Border Grid.Column="1"/>
+
+      <Button Grid.Column="2" Classes="ghost" Content="Back"
+              Margin="0,0,10,0"
+              IsVisible="{Binding CanGoBack}"
+              Command="{Binding BackCommand}"/>
+
+      <Button Grid.Column="3" Classes="primary"
+              Content="{Binding NextLabel}"
+              Command="{Binding NextCommand}"/>
+    </Grid>
+
+  </Grid>
+</Window>

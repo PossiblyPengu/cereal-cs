@@ -28,7 +28,10 @@ public partial class ArtPickerDialog : Window
     private ArtResult? _selected;
     private string _initialQuery;
 
-    public ArtPickerDialog(string initialQuery = "")
+    // Parameterless ctor is required for Avalonia's runtime XAML loader.
+    public ArtPickerDialog() : this("") { }
+
+    public ArtPickerDialog(string initialQuery)
     {
         InitializeComponent();
         _initialQuery = initialQuery;

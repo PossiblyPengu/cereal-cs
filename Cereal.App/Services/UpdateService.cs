@@ -12,7 +12,7 @@ public sealed class UpdateAvailableArgs : EventArgs
 
 public sealed class UpdateService
 {
-    private const string GitHubRepo = "your-username/cereal-cs"; // TODO: set before release
+    private const string GitHubRepo = "PossiblyPengu/cereal-cs";
     private UpdateManager? _mgr;
     private UpdateInfo? _pendingUpdate;
 

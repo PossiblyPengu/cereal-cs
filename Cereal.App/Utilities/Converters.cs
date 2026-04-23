@@ -74,6 +74,12 @@ namespace Cereal.App
             => throw new NotSupportedException();
     }
 
+    // ─── Shortcuts used in XAML ──────────────────────────────────────────────
+    public static class Converters
+    {
+        public static IValueConverter StringIsNotEmpty { get; } = StringConverters.IsNotNullOrEmpty;
+    }
+
     internal sealed class BoolToObjectConverter : IValueConverter
     {
         public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

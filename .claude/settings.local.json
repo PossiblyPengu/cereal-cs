@@ -55,7 +55,8 @@
       "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1)",
       "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1 | Where-Object { $_ -match \"error|Error|warning CS|Build succeeded|Build FAILED\" } | Select-Object -Last 20)",
       "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1 | Where-Object { $_ -match \"error CS|Build succeeded|Build FAILED|AVLN\" } | Select-Object -Last 15)",
-      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1 | Where-Object { $_ -match \"error CS|Build succeeded|Build FAILED\" } | Select-Object -Last 10)"
+      "PowerShell(& \"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"D:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --no-restore 2>&1 | Where-Object { $_ -match \"error CS|Build succeeded|Build FAILED\" } | Select-Object -Last 10)",
+      "Bash(python -c ' *)"
     ]
   }
 }

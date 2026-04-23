@@ -157,6 +157,66 @@ public sealed class ChiakiService : IDisposable
         return ("missing", null, null);
     }
 
+    // ─── Install management ──────────────────────────────────────────────────
+
+    public bool Uninstall()
+    {
+        // Stop anything running first.
+        try
+        {
+            foreach (var id in _sessions.Keys.ToList()) StopSession(id);
+        }
+        catch { /* best-effort */ }
+
+        var dir = Path.Combine(_paths.AppDataDir, "chiaki-ng");
+        if (!Directory.Exists(dir)) return false;
+        try
+        {
+            Directory.Delete(dir, recursive: true);
+            Log.Information("[chiaki] Uninstalled bundled chiaki-ng");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[chiaki] Failed to delete {Dir}", dir);
+            return false;
+        }
+    }
+
+    public async Task<(bool Updated, string? Version, string? Error)> CheckAndUpdateAsync()
+    {
+        // Reuses the auto-setup script. Treats script success as "up to date" or "updated".
+        var scriptPath = _paths.GetResourcePath("scripts/setup-chiaki.ps1");
+        if (!File.Exists(scriptPath))
+            return (false, GetBundledVersion(), "setup-chiaki.ps1 missing");
+
+        var installDir = Path.Combine(_paths.AppDataDir, "chiaki-ng");
+        var psi = new ProcessStartInfo("powershell")
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        psi.ArgumentList.Add("-ExecutionPolicy"); psi.ArgumentList.Add("Bypass");
+        psi.ArgumentList.Add("-File");            psi.ArgumentList.Add(scriptPath);
+        psi.ArgumentList.Add("-InstallDir");      psi.ArgumentList.Add(installDir);
+
+        try
+        {
+            using var p = Process.Start(psi)!;
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+            await p.WaitForExitAsync(cts.Token);
+            if (p.ExitCode != 0)
+                return (false, GetBundledVersion(), $"Exit {p.ExitCode}");
+            return (true, GetBundledVersion(), null);
+        }
+        catch (Exception ex)
+        {
+            return (false, GetBundledVersion(), ex.Message);
+        }
+    }
+
     // ─── CLI args ────────────────────────────────────────────────────────────
 
     private string[] BuildArgs(Game game, ChiakiConfig config)

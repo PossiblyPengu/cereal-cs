@@ -4,6 +4,13 @@ namespace Cereal.App.Models;
 
 public class Database
 {
+    // Bump whenever the on-disk shape changes; DatabaseService runs one-time
+    // migrations between these versions.
+    public const int CurrentSchemaVersion = 1;
+
+    [JsonPropertyName("schemaVersion")]
+    public int SchemaVersion { get; set; } = CurrentSchemaVersion;
+
     [JsonPropertyName("games")]
     public List<Game> Games { get; set; } = [];
 

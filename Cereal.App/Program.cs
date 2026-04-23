@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.WebView.Desktop;
+using Cereal.App.Services;
 using Serilog;
 using Velopack;
 
@@ -7,6 +8,9 @@ namespace Cereal.App;
 
 class Program
 {
+    // Held for the lifetime of the primary process.
+    public static SingleInstanceGuard? InstanceGuard { get; private set; }
+
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
@@ -16,6 +20,16 @@ class Program
         // Velopack MUST run before anything else. It handles update squirrel events
         // (install/uninstall hooks) and may exit the process immediately.
         VelopackApp.Build().Run();
+
+        // Single-instance guard — if another Cereal is already running, signal it
+        // and exit immediately. Primary instance keeps the mutex for its lifetime.
+        InstanceGuard = new SingleInstanceGuard();
+        if (!InstanceGuard.IsPrimary)
+        {
+            SingleInstanceGuard.SignalWake();
+            InstanceGuard.Dispose();
+            return;
+        }
 
         // Bootstrap Serilog to a file next to the database so logs survive crashes.
         var logPath = Path.Combine(

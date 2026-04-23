@@ -12,7 +12,7 @@
     <!-- ── Nav pill chip ── -->
     <Style Selector="Button.chip">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#706b63"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="CornerRadius" Value="14"/>
@@ -23,18 +23,18 @@
     </Style>
     <Style Selector="Button.chip:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#08ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
     </Style>
     <Style Selector="Button.chip.active">
       <Setter Property="Background" Value="#1fd4a853"/>
       <Setter Property="BorderBrush" Value="#4dd4a853"/>
-      <Setter Property="Foreground" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
 
     <!-- ── Nav pill icon button ── -->
     <Style Selector="Button.nav-btn">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#706b63"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Width" Value="30"/>
       <Setter Property="Height" Value="30"/>
@@ -44,13 +44,13 @@
     </Style>
     <Style Selector="Button.nav-btn:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#08ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="#e8e4de"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
 
     <!-- ── View toggle button ── -->
     <Style Selector="Button.view-btn">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#3d3a35"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText4}"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Width" Value="26"/>
       <Setter Property="Height" Value="26"/>
@@ -59,17 +59,17 @@
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.view-btn:pointerover /template/ ContentPresenter">
-      <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
     </Style>
     <Style Selector="Button.view-btn.active">
       <Setter Property="Background" Value="#1fd4a853"/>
-      <Setter Property="Foreground" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
 
     <!-- ── Game card ── -->
     <Style Selector="Border.game-card">
       <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="Background" Value="#101018"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeCard}"/>
       <Setter Property="BorderBrush" Value="#0fffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="ClipToBounds" Value="True"/>
@@ -113,8 +113,8 @@
     <Style Selector="TextBox.search">
       <Setter Property="Background" Value="#08ffffff"/>
       <Setter Property="BorderBrush" Value="#0fffffff"/>
-      <Setter Property="Foreground" Value="#e8e4de"/>
-      <Setter Property="CaretBrush" Value="#d4a853"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+      <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
       <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="10,5"/>
       <Setter Property="FontSize" Value="12"/>
@@ -124,10 +124,24 @@
       <Setter Property="BorderBrush" Value="#4dd4a853"/>
     </Style>
 
+    <!-- ── Stream pill button (index.css 707-710) ── -->
+    <Style Selector="Button.stream-pill-btn">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="14"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.stream-pill-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+
     <!-- Play / ghost hover buttons -->
     <Style Selector="Button.btn-play-hover">
-      <Setter Property="Background" Value="#d4a853"/>
-      <Setter Property="Foreground" Value="#07070d"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
       <Setter Property="FontSize" Value="10"/>
       <Setter Property="FontWeight" Value="Bold"/>
       <Setter Property="CornerRadius" Value="6"/>
@@ -137,7 +151,7 @@
     </Style>
     <Style Selector="Button.btn-ghost-hover">
       <Setter Property="Background" Value="#14ffffff"/>
-      <Setter Property="Foreground" Value="#b0aaa0"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="FontSize" Value="10"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="CornerRadius" Value="6"/>
@@ -157,17 +171,33 @@
                   IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
       <StackPanel Margin="32,60,32,40">
 
-        <!-- Empty state -->
+        <!-- Empty state — matches Electron App.tsx 1158-1168 (:/ icon, title, text, two action buttons) -->
         <StackPanel IsVisible="{Binding !GameGroups.Count}"
                     VerticalAlignment="Center" HorizontalAlignment="Center"
-                    Margin="0,80,0,0" Spacing="12">
-          <TextBlock Text="⬡" FontSize="48" Foreground="#1de8e4de"
-                     HorizontalAlignment="Center"/>
-          <TextBlock Text="No games found" FontSize="16" FontWeight="SemiBold"
-                     Foreground="#706b63" HorizontalAlignment="Center"/>
-          <TextBlock Text="Use Detect to scan your installed platforms."
-                     FontSize="13" Foreground="#3d3a35"
-                     HorizontalAlignment="Center"/>
+                    Margin="0,80,0,0" Spacing="14">
+          <TextBlock Text=":/" FontSize="48" Foreground="#33e8e4de"
+                     FontWeight="Light" LetterSpacing="4"
+                     HorizontalAlignment="Center" Margin="0,0,0,2"/>
+          <TextBlock Text="No games yet" FontSize="16" FontWeight="SemiBold"
+                     Foreground="{DynamicResource ThemeText3}" HorizontalAlignment="Center"/>
+          <TextBlock Text="Add games manually or detect from installed platforms."
+                     FontSize="13" Foreground="{DynamicResource ThemeText4}"
+                     HorizontalAlignment="Center" MaxWidth="320"
+                     TextWrapping="Wrap" TextAlignment="Center"/>
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center"
+                      Margin="0,6,0,0">
+            <Button Content="Add Game"
+                    Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
+                    CornerRadius="10" Padding="20,9" FontSize="13" FontWeight="Bold"
+                    BorderThickness="0" Cursor="Hand"
+                    Command="{Binding ShowAddGameCommand}"/>
+            <Button Content="Detect"
+                    Background="Transparent" Foreground="{DynamicResource ThemeText2}"
+                    BorderBrush="#1affffff" BorderThickness="1"
+                    CornerRadius="10" Padding="20,9" FontSize="13"
+                    Cursor="Hand"
+                    Command="{Binding OpenDetectCommand}"/>
+          </StackPanel>
         </StackPanel>
 
         <!-- Platform groups -->
@@ -182,10 +212,10 @@
                   <Ellipse Width="8" Height="8" Fill="{Binding PlatformColor}"
                            VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding PlatformLabel}"
-                             FontSize="13" FontWeight="SemiBold" Foreground="#b0aaa0"
+                             FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText2}"
                              LetterSpacing="0.5" VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding CountLabel}"
-                             FontSize="11" Foreground="#3d3a35" VerticalAlignment="Center"/>
+                             FontSize="11" Foreground="{DynamicResource ThemeText4}" VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Cards wrap panel -->
@@ -207,7 +237,7 @@
                           <!-- Cover image area -->
                           <Panel Grid.Row="0">
                             <!-- Fallback background -->
-                            <Border Background="#16161f">
+                            <Border Background="{DynamicResource ThemeCardUp}">
                               <TextBlock Text="{Binding Initial}"
                                          FontSize="48" FontWeight="Light"
                                          Foreground="#1de8e4de"
@@ -231,31 +261,32 @@
                               </Border.Background>
                             </Border>
 
-                            <!-- Platform badge top-left: colored letter -->
+                            <!-- Platform badge top-left (index.css 800): 2px 8px padding, 9px bold letter -->
                             <Border HorizontalAlignment="Left" VerticalAlignment="Top"
-                                    Margin="6" CornerRadius="3" Padding="5,2"
-                                    Background="#88000000">
+                                    Margin="8" CornerRadius="4" Padding="8,2"
+                                    Background="#8c000000">
                               <TextBlock Text="{Binding PlatformLetter}"
                                          FontSize="9" FontWeight="Bold"
                                          Foreground="{Binding PlatformColor}"/>
                             </Border>
 
-                            <!-- Favorite star top-right -->
+                            <!-- Favorite star top-right (index.css 798) — gold circle with star -->
                             <Border HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Margin="6" Width="22" Height="22"
+                                    Margin="8" Width="22" Height="22"
                                     CornerRadius="11"
                                     Background="#e6d4a853"
+                                    BoxShadow="0 2 8 0 #4cd4a853"
                                     IsVisible="{Binding IsFavorite}">
-                              <TextBlock Text="★" FontSize="9" Foreground="#07070d"
+                              <TextBlock Text="★" FontSize="10" Foreground="{DynamicResource ThemeVoid}"
                                          HorizontalAlignment="Center"
                                          VerticalAlignment="Center"/>
                             </Border>
 
-                            <!-- Not-installed badge bottom-right -->
+                            <!-- Not-installed badge bottom-right (index.css 765) -->
                             <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                    Margin="6" Width="22" Height="22"
+                                    Margin="8" Width="22" Height="22"
                                     CornerRadius="11"
-                                    Background="#bb000000"
+                                    Background="#bf000000"
                                     BorderBrush="#26ffffff" BorderThickness="1"
                                     IsVisible="{Binding IsNotInstalled}">
                               <TextBlock Text="↓" FontSize="10" Foreground="#99ffffff"
@@ -285,10 +316,10 @@
                             <StackPanel Spacing="2">
                               <TextBlock Text="{Binding Name}"
                                          FontSize="12" FontWeight="SemiBold"
-                                         Foreground="#e8e4de"
+                                         Foreground="{DynamicResource ThemeText}"
                                          TextTrimming="CharacterEllipsis"/>
                               <TextBlock Text="{Binding PlaytimeLabel}"
-                                         FontSize="10" Foreground="#706b63"/>
+                                         FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
                             </StackPanel>
                           </Border>
 
@@ -311,31 +342,44 @@
                      IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
-    <!-- ── Floating nav pill ── -->
-    <Border VerticalAlignment="Top" HorizontalAlignment="Center"
-            Margin="0,8,0,0"
+    <!-- ─────────────────────────────────────────────────────────
+         Floating nav pill — direct port of App.tsx 944-1156.
+         Order: brand · All/Fav/Recent · plat-chips · filter ·
+         view-toggle · theme-picker · layout-picker · add + settings.
+         Detect / Chiaki / Xcloud are NOT on the nav in Electron —
+         Detect is on the empty-state and Chiaki/Xcloud live on the
+         bottom-right `.stream-pill`.
+    ───────────────────────────────────────────────────────── -->
+    <Border VerticalAlignment="{Binding ToolbarVerticalAlignment}" HorizontalAlignment="Center"
+            Margin="0,8,0,8"
             CornerRadius="22"
             Background="#d20d0d16"
             BorderBrush="#17ffffff"
             BorderThickness="1"
-            Padding="8,4">
-      <!-- BoxShadow only works on Border with a brush set -->
+            BoxShadow="0 8 32 0 #b3000000, inset 0 2 0 0 #0dffffff"
+            Padding="10,4">
       <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
 
-        <!-- Brand -->
-        <TextBlock Text="CEREAL" FontSize="10" FontWeight="Light"
-                   LetterSpacing="4" Foreground="#80d4a853"
-                   VerticalAlignment="Center" Margin="6,0,10,0"/>
+        <!-- Brand "Cereal" — gradient matching index.css 126 -->
+        <TextBlock Text="Cereal" FontSize="11" FontWeight="Light"
+                   LetterSpacing="4"
+                   VerticalAlignment="Center" Margin="6,0,10,0">
+          <TextBlock.Foreground>
+            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+              <GradientStop Color="#d4a853" Offset="0"/>
+              <GradientStop Color="#b0aaa0" Offset="1"/>
+            </LinearGradientBrush>
+          </TextBlock.Foreground>
+        </TextBlock>
 
-        <!-- Separator -->
-        <Border Width="1" Height="16" Background="#0fffffff" Margin="2,0"/>
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
 
-        <!-- Quick-filter chips -->
+        <!-- Quick-filter chips: All / Fav / Recent (App.tsx 947-949) -->
         <Button Classes="chip" Content="All"
                 Classes.active="{Binding QuickFilter, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=all}"
                 Command="{Binding SetQuickFilterCommand}"
                 CommandParameter="all"/>
-        <Button Classes="chip" Content="Favs"
+        <Button Classes="chip" Content="Fav"
                 Classes.active="{Binding QuickFilter, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=favorites}"
                 Command="{Binding SetQuickFilterCommand}"
                 CommandParameter="favorites"/>
@@ -344,7 +388,7 @@
                 Command="{Binding SetQuickFilterCommand}"
                 CommandParameter="recent"/>
 
-        <!-- Platform chips -->
+        <!-- Platform chips (App.tsx 950-964): colored letter · label · count -->
         <ItemsControl ItemsSource="{Binding PlatformChips}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
@@ -353,24 +397,25 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:PlatformChipViewModel">
-              <Button Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).TogglePlatformFilterCommand}"
-                      CommandParameter="{Binding Id}"
-                      Padding="10,4" CornerRadius="14" FontSize="10" FontWeight="Medium"
-                      Cursor="Hand" BorderThickness="1">
-                <Button.Styles>
-                  <Style Selector="Button">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="Foreground" Value="#706b63"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
-                  </Style>
-                  <Style Selector="Button:pointerover /template/ ContentPresenter">
-                    <Setter Property="Background" Value="#08ffffff"/>
-                    <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
-                  </Style>
-                </Button.Styles>
-                <StackPanel Orientation="Horizontal" Spacing="4">
+              <Button Classes="chip"
+                      Classes.active="{Binding IsActive}"
+                      ToolTip.Tip="{Binding Label}"
+                      Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).TogglePlatformFilterCommand}"
+                      CommandParameter="{Binding Id}">
+                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                  <!-- Colored letter badge stands in for the SVG icon each Electron chip has -->
+                  <TextBlock Text="{Binding Letter}"
+                             FontSize="11" FontWeight="Bold"
+                             Width="14" Height="14"
+                             TextAlignment="Center"
+                             Foreground="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                             VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding Count}" FontSize="9" Foreground="#3d3a35"
+                  <TextBlock Text="{Binding Count}"
+                             IsVisible="{Binding HasCount}"
+                             FontSize="9" FontWeight="Medium"
+                             Foreground="{DynamicResource ThemeText4}"
+                             Margin="2,0,0,0"
                              VerticalAlignment="Center"/>
                 </StackPanel>
               </Button>
@@ -378,14 +423,29 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <!-- Separator -->
         <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
 
-        <!-- Sort / Filter flyout -->
+        <!-- Sort / Filter flyout (with count badge, App.tsx 967-974) -->
         <Button Classes="nav-btn" ToolTip.Tip="Sort &amp; Filter">
+          <Panel>
+            <TextBlock Text="⚏" FontSize="14" VerticalAlignment="Center"
+                       HorizontalAlignment="Center"/>
+            <!-- Gold count badge top-right when any filter is active -->
+            <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="0,-4,-4,0" MinWidth="14" Height="14"
+                    CornerRadius="7" Padding="3,0"
+                    Background="{DynamicResource ThemeAccent}"
+                    BoxShadow="0 4 12 0 #73000000"
+                    IsVisible="{Binding HasActiveFilters}">
+              <TextBlock Text="{Binding ActiveFilterCount}"
+                         FontSize="8" FontWeight="Bold"
+                         Foreground="{DynamicResource ThemeVoid}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+          </Panel>
           <Button.Flyout>
             <Flyout Placement="Bottom">
-              <Border Background="#1a1a24" BorderBrush="#1affffff" BorderThickness="1"
+              <Border Background="{DynamicResource ThemeSurface}" BorderBrush="#1affffff" BorderThickness="1"
                       CornerRadius="10" Padding="16,14" MinWidth="220">
                 <StackPanel Spacing="12">
 
@@ -399,7 +459,7 @@
                       <Button.Styles>
                         <Style Selector="Button">
                           <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
                           <Setter Property="BorderBrush" Value="#10ffffff"/>
                         </Style>
                       </Button.Styles>
@@ -410,7 +470,7 @@
                       <Button.Styles>
                         <Style Selector="Button">
                           <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
                           <Setter Property="BorderBrush" Value="#10ffffff"/>
                         </Style>
                       </Button.Styles>
@@ -421,7 +481,7 @@
                       <Button.Styles>
                         <Style Selector="Button">
                           <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
                           <Setter Property="BorderBrush" Value="#10ffffff"/>
                         </Style>
                       </Button.Styles>
@@ -432,7 +492,18 @@
                       <Button.Styles>
                         <Style Selector="Button">
                           <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="#b0aaa0"/>
+                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+                          <Setter Property="BorderBrush" Value="#10ffffff"/>
+                        </Style>
+                      </Button.Styles>
+                    </Button>
+                    <Button Content="Installed" Margin="0,0,4,4" Padding="8,4" FontSize="10"
+                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                            Command="{Binding SetSortCommand}" CommandParameter="installed">
+                      <Button.Styles>
+                        <Style Selector="Button">
+                          <Setter Property="Background" Value="#10ffffff"/>
+                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
                           <Setter Property="BorderBrush" Value="#10ffffff"/>
                         </Style>
                       </Button.Styles>
@@ -444,15 +515,15 @@
 
                   <!-- Show hidden toggle -->
                   <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <CheckBox IsChecked="{Binding ShowHidden}" Foreground="#b0aaa0"/>
-                    <TextBlock Text="Show hidden games" FontSize="12" Foreground="#b0aaa0"
+                    <CheckBox IsChecked="{Binding ShowHidden}" Foreground="{DynamicResource ThemeText2}"/>
+                    <TextBlock Text="Show hidden games" FontSize="12" Foreground="{DynamicResource ThemeText2}"
                                VerticalAlignment="Center"/>
                   </StackPanel>
 
                   <!-- Installed only -->
                   <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <CheckBox IsChecked="{Binding ShowInstalledOnly}" Foreground="#b0aaa0"/>
-                    <TextBlock Text="Installed only" FontSize="12" Foreground="#b0aaa0"
+                    <CheckBox IsChecked="{Binding ShowInstalledOnly}" Foreground="{DynamicResource ThemeText2}"/>
+                    <TextBlock Text="Installed only" FontSize="12" Foreground="{DynamicResource ThemeText2}"
                                VerticalAlignment="Center"/>
                   </StackPanel>
 
@@ -475,7 +546,7 @@
                           <Button.Styles>
                             <Style Selector="Button">
                               <Setter Property="Background" Value="#10ffffff"/>
-                              <Setter Property="Foreground" Value="#b0aaa0"/>
+                              <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
                               <Setter Property="BorderBrush" Value="#10ffffff"/>
                             </Style>
                           </Button.Styles>
@@ -492,7 +563,7 @@
                     <Button.Styles>
                       <Style Selector="Button">
                         <Setter Property="Background" Value="#10ffffff"/>
-                        <Setter Property="Foreground" Value="#706b63"/>
+                        <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
                         <Setter Property="BorderBrush" Value="#10ffffff"/>
                       </Style>
                     </Button.Styles>
@@ -502,77 +573,175 @@
               </Border>
             </Flyout>
           </Button.Flyout>
-          <TextBlock Text="⚏" FontSize="14" VerticalAlignment="Center"
-                     HorizontalAlignment="Center"/>
         </Button>
 
-        <!-- Separator -->
-        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
-
-        <!-- View toggle: cards icon -->
-        <Border Padding="2" CornerRadius="8" Background="#08ffffff" Margin="2,0">
+        <!-- View toggle (App.tsx 1029-1032): orbit first, cards second -->
+        <Border Padding="2" CornerRadius="8" Background="#08ffffff"
+                BorderBrush="#0fffffff" BorderThickness="1"
+                Margin="4,0">
           <StackPanel Orientation="Horizontal" Spacing="1">
             <Button Classes="view-btn"
-                    Command="{Binding ToggleViewModeCommand}"
-                    ToolTip.Tip="Card view">
-              <Button.Styles>
-                <Style Selector="Button.view-btn">
-                  <Setter Property="Background" Value="Transparent"/>
-                  <Setter Property="Foreground" Value="#3d3a35"/>
-                </Style>
-              </Button.Styles>
-              <TextBlock Text="⊞" FontSize="13"/>
+                    Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
+                    Command="{Binding SetViewModeCommand}"
+                    CommandParameter="orbit"
+                    ToolTip.Tip="Orbit view">
+              <TextBlock Text="◉" FontSize="12"/>
             </Button>
             <Button Classes="view-btn"
-                    Command="{Binding ToggleViewModeCommand}"
-                    ToolTip.Tip="Orbit view">
-              <TextBlock Text="◉" FontSize="13"/>
+                    Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
+                    Command="{Binding SetViewModeCommand}"
+                    CommandParameter="cards"
+                    ToolTip.Tip="Card view">
+              <TextBlock Text="⊞" FontSize="12"/>
             </Button>
           </StackPanel>
         </Border>
 
-        <!-- Separator -->
         <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
 
-        <!-- Add game -->
+        <!-- Theme picker (App.tsx 1034-1091) — dots + custom accent input -->
+        <Button Classes="nav-btn" ToolTip.Tip="Theme">
+          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <Ellipse Width="10" Height="10" Fill="{DynamicResource ThemeAccent}"/>
+            <TextBlock Text="▾" FontSize="8" VerticalAlignment="Center"
+                       Foreground="{DynamicResource ThemeText3}"/>
+          </StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="Bottom">
+              <Border Background="{DynamicResource ThemeSurface}"
+                      BorderBrush="#1affffff" BorderThickness="1"
+                      CornerRadius="12" Padding="10">
+                <StackPanel Spacing="6" Width="140">
+                  <ItemsControl ItemsSource="{Binding ThemeSwatches}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ThemeSwatchViewModel">
+                        <Button Width="22" Height="22" Margin="3"
+                                Background="{Binding AccentBrush}"
+                                BorderBrush="{Binding BorderBrush}"
+                                BorderThickness="2"
+                                CornerRadius="11"
+                                ToolTip.Tip="{Binding Label}"
+                                Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SetThemeCommand}"
+                                CommandParameter="{Binding Id}"/>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Border Height="1" Background="#14ffffff"/>
+                  <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                    <TextBox Grid.Column="0" Text="{Binding AccentColor}"
+                             Watermark="#d4a853"
+                             Background="#0affffff" BorderBrush="#18ffffff"
+                             Foreground="{DynamicResource ThemeText}"
+                             CornerRadius="5" Padding="6,3" FontSize="10"/>
+                    <TextBlock Grid.Column="1" Text="Accent" FontSize="9"
+                               Margin="6,0,0,0" Foreground="#50b0aaa0"
+                               VerticalAlignment="Center"/>
+                  </Grid>
+                </StackPanel>
+              </Border>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+
+        <!-- Toolbar position picker (port of App.tsx 1122–1150) -->
+        <Button Classes="nav-btn" ToolTip.Tip="Toolbar position">
+          <TextBlock Text="⚏" FontSize="13" VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+          <Button.Flyout>
+            <Flyout Placement="Bottom">
+              <Border Background="{DynamicResource ThemeSurface}"
+                      BorderBrush="#1affffff" BorderThickness="1"
+                      CornerRadius="10" Padding="6">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <Button Classes="nav-btn" ToolTip.Tip="Top"
+                          Command="{Binding SetToolbarPositionCommand}" CommandParameter="top">
+                    <TextBlock Text="▁" FontSize="14"/>
+                  </Button>
+                  <Button Classes="nav-btn" ToolTip.Tip="Bottom"
+                          Command="{Binding SetToolbarPositionCommand}" CommandParameter="bottom">
+                    <TextBlock Text="▔" FontSize="14"/>
+                  </Button>
+                  <Button Classes="nav-btn" ToolTip.Tip="Left"
+                          Command="{Binding SetToolbarPositionCommand}" CommandParameter="left">
+                    <TextBlock Text="▏" FontSize="14"/>
+                  </Button>
+                  <Button Classes="nav-btn" ToolTip.Tip="Right"
+                          Command="{Binding SetToolbarPositionCommand}" CommandParameter="right">
+                    <TextBlock Text="▕" FontSize="14"/>
+                  </Button>
+                </StackPanel>
+              </Border>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
+
+        <!-- Trailing nav-actions: Add + Settings (App.tsx 1152-1155) -->
         <Button Classes="nav-btn" ToolTip.Tip="Add game"
                 Command="{Binding ShowAddGameCommand}">
           <TextBlock Text="＋" FontSize="15" VerticalAlignment="Center"
                      HorizontalAlignment="Center"/>
         </Button>
-
-        <!-- Search -->
-        <TextBox Classes="search" Text="{Binding SearchText}"
-                 Watermark="Search…" Margin="2,0"/>
-
-        <!-- Settings -->
-        <Button Classes="nav-btn" ToolTip.Tip="Settings"
+        <Button Classes="nav-btn" ToolTip.Tip="Settings (Ctrl+,)"
                 Command="{Binding OpenSettingsCommand}">
           <TextBlock Text="⚙" FontSize="14" VerticalAlignment="Center"
                      HorizontalAlignment="Center"/>
         </Button>
 
-        <!-- Detect / scan -->
-        <Button Classes="nav-btn" ToolTip.Tip="Scan for games"
-                Command="{Binding OpenDetectCommand}">
-          <TextBlock Text="⊕" FontSize="14" VerticalAlignment="Center"
-                     HorizontalAlignment="Center"/>
-        </Button>
+      </StackPanel>
+    </Border>
 
-        <!-- PlayStation (Chiaki) -->
-        <Button Classes="nav-btn" ToolTip.Tip="PlayStation (Chiaki)"
+    <!-- ─────────────────────────────────────────────────────────
+         Stream pill (App.tsx 922-935) — floats bottom-right only
+         in cards mode and only offers the two streamable platforms.
+         Remote Play opens the Chiaki panel; Cloud Gaming opens the
+         xCloud panel. Detect / Connect live in the empty state and
+         Settings panel respectively; they deliberately do NOT have
+         a dedicated nav-pill button in the Electron original.
+    ───────────────────────────────────────────────────────── -->
+    <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
+            Margin="0,0,16,16"
+            CornerRadius="22" Padding="6,4"
+            Background="#d20d0d16"
+            BorderBrush="#17ffffff" BorderThickness="1"
+            BoxShadow="0 8 32 0 #b3000000, inset 0 2 0 0 #0dffffff"
+            ZIndex="50"
+            IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button Classes="stream-pill-btn" ToolTip.Tip="PlayStation Remote Play"
                 Command="{Binding OpenChiakiCommand}">
-          <TextBlock Text="🎮" FontSize="13" VerticalAlignment="Center"
-                     HorizontalAlignment="Center"/>
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Border Width="22" Height="22" CornerRadius="11"
+                    Background="#33003087"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+              <TextBlock Text="P" FontSize="11" FontWeight="Bold"
+                         Foreground="#4d8fff"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <TextBlock Text="Remote Play" FontSize="11" FontWeight="SemiBold"
+                       VerticalAlignment="Center"/>
+          </StackPanel>
         </Button>
-
-        <!-- Xbox Cloud -->
-        <Button Classes="nav-btn" ToolTip.Tip="Xbox Cloud Gaming"
+        <Button Classes="stream-pill-btn" ToolTip.Tip="Xbox Cloud Gaming"
                 Command="{Binding OpenXcloudCommand}">
-          <TextBlock Text="☁" FontSize="14" VerticalAlignment="Center"
-                     HorizontalAlignment="Center"/>
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Border Width="22" Height="22" CornerRadius="11"
+                    Background="#33107c10"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+              <TextBlock Text="X" FontSize="11" FontWeight="Bold"
+                         Foreground="#34d399"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <TextBlock Text="Cloud Gaming" FontSize="11" FontWeight="SemiBold"
+                       VerticalAlignment="Center"/>
+          </StackPanel>
         </Button>
-
       </StackPanel>
     </Border>
 
@@ -582,7 +751,42 @@
             CornerRadius="20" Padding="14,6"
             Background="#d20d0d16"
             IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
-      <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="#706b63"/>
+      <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
+    </Border>
+
+    <!-- ── Subtle progress pill (bottom-right) — mirrors Electron's subtle-pill ── -->
+    <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
+            Margin="0,0,22,22" CornerRadius="14" Padding="12,8"
+            Background="#ec0d0d16" BorderBrush="#18ffffff" BorderThickness="1"
+            MinWidth="220"
+            BoxShadow="0 8 24 0 #80000000"
+            IsVisible="{Binding ShowProgressPill}">
+      <StackPanel Spacing="6">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <!-- Spinner (inactive) / check (done) -->
+          <Border Width="14" Height="14" CornerRadius="7"
+                  Background="{DynamicResource ThemeAccent}"
+                  IsVisible="{Binding ProgressPillDone}">
+            <TextBlock Text="✓" FontSize="10" FontWeight="Bold"
+                       Foreground="{DynamicResource ThemeVoid}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <Border Width="14" Height="14" CornerRadius="7"
+                  BorderBrush="{DynamicResource ThemeAccent}" BorderThickness="2"
+                  IsVisible="{Binding !ProgressPillDone}"/>
+
+          <TextBlock Text="{Binding ProgressPillText}" FontSize="11"
+                     Foreground="{DynamicResource ThemeText2}"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <ProgressBar Minimum="0" Maximum="1" Height="3"
+                     Value="{Binding ProgressPillPercent}"
+                     Background="#14ffffff"
+                     Foreground="{DynamicResource ThemeAccent}"
+                     CornerRadius="2"
+                     IsVisible="{Binding !ProgressPillDone}"/>
+      </StackPanel>
     </Border>
 
   </Panel>

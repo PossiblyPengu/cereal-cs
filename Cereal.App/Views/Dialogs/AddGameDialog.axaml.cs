@@ -3,6 +3,8 @@ using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Cereal.App.Models;
+using Cereal.App.Services.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace Cereal.App.Views.Dialogs;
@@ -166,6 +168,70 @@ public partial class AddGameDialog : Window
         var text = this.FindControl<TextBox>("CoverBox")!.Text;
         if (!string.IsNullOrWhiteSpace(text))
             _ = LoadPreviewAsync(text);
+    }
+
+    private async void FetchMeta_Click(object? sender, RoutedEventArgs e)
+    {
+        var name = this.FindControl<TextBox>("NameBox")!.Text?.Trim() ?? "";
+        var statusTb = this.FindControl<TextBlock>("FetchMetaStatus")!;
+        var btn = this.FindControl<Button>("FetchMetaBtn")!;
+        if (string.IsNullOrEmpty(name))
+        {
+            statusTb.Text = "Enter a name first";
+            return;
+        }
+
+        try
+        {
+            btn.IsEnabled = false;
+            statusTb.Text = "Fetching…";
+            var platform = (this.FindControl<ComboBox>("PlatformBox")!.SelectedItem as ComboBoxItem)
+                ?.Content?.ToString();
+
+            var svc = App.Services.GetRequiredService<MetadataService>();
+            var meta = await svc.FetchForNameAsync(name, platform);
+            if (meta is null)
+            {
+                statusTb.Text = "No match found";
+                return;
+            }
+
+            // Only overwrite fields the user hasn't already filled in.
+            void Fill(string id, string? value)
+            {
+                if (string.IsNullOrEmpty(value)) return;
+                var tb = this.FindControl<TextBox>(id)!;
+                if (string.IsNullOrWhiteSpace(tb.Text)) tb.Text = value;
+            }
+
+            Fill("DescBox", meta.Description);
+            Fill("DevBox", meta.Developer);
+            Fill("PubBox", meta.Publisher);
+            Fill("ReleaseDateBox", meta.ReleaseDate);
+            Fill("WebsiteBox", meta.Website);
+            if (meta.Metacritic is int mc) Fill("MetacriticBox", mc.ToString());
+
+            var coverBox = this.FindControl<TextBox>("CoverBox")!;
+            var cover = meta.SgdbCoverUrl ?? meta.CoverUrl;
+            if (!string.IsNullOrEmpty(cover) && string.IsNullOrWhiteSpace(coverBox.Text))
+            {
+                coverBox.Text = cover;
+                _ = LoadPreviewAsync(cover);
+            }
+
+            var headerBox = this.FindControl<TextBox>("HeaderBox")!;
+            if (!string.IsNullOrEmpty(meta.HeaderUrl) && string.IsNullOrWhiteSpace(headerBox.Text))
+                headerBox.Text = meta.HeaderUrl;
+
+            this.FindControl<Expander>("MetaExpander")!.IsExpanded = true;
+            statusTb.Text = $"Filled from {meta.Source}";
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[AddGame] FetchMeta failed");
+            statusTb.Text = "Fetch failed";
+        }
+        finally { btn.IsEnabled = true; }
     }
 
     private void Cancel_Click(object? sender, RoutedEventArgs e) => Close(null);

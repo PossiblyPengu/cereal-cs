@@ -208,7 +208,7 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
         catch (Exception ex) { return (null, ex.Message); }
     }
 
-    private static string? FindSteamRoot()
+    public static string? FindSteamRoot()
     {
         var candidates = new List<string>();
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

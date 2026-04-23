@@ -25,6 +25,17 @@
     <AvaloniaResource Include="Assets\icon.svg"/>
   </ItemGroup>
 
+  <!--
+    Resources (PowerShell helpers consumed at runtime). ChiakiService looks
+    these up under `{exeDir}/resources/…`, so we map the project-level
+    `Resources\…` into lowercase `resources\…` in the output.
+  -->
+  <ItemGroup>
+    <None Include="Resources\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <Link>resources\%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.9" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.9" />
@@ -43,7 +54,9 @@
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.7" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
-    <PackageReference Include="Velopack" Version="0.0.988" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+    <PackageReference Include="Velopack" Version="0.0.1015" />
     <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
     <PackageReference Include="WebView.Avalonia.Desktop" Version="11.0.0.1" />
   </ItemGroup>
