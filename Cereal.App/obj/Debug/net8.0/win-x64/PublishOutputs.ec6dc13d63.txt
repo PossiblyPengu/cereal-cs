@@ -261,4 +261,6 @@ E:\CODE\cereal-cs\out\win-x64\Avalonia.WebView.Windows.dll
 E:\CODE\cereal-cs\out\win-x64\Microsoft.Web.WebView2.Core.dll
 E:\CODE\cereal-cs\out\win-x64\av_libglesv2.dll
 E:\CODE\cereal-cs\out\win-x64\libHarfBuzzSharp.dll
-E:\CODE\cer
+E:\CODE\cereal-cs\out\win-x64\libSkiaSharp.dll
+E:\CODE\cereal-cs\out\win-x64\e_sqlite3.dll
+E:\CODE\cereal-cs\out\win-x64\WebView2Loader.dll
