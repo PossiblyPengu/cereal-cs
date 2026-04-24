@@ -13,7 +13,7 @@
         SystemDecorations="None"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="-1"
-        Background="#07070d">
+        Background="{DynamicResource ThemeVoid}">
 
   <Window.Styles>
     <Style Selector="Button.win-ctrl">
@@ -27,11 +27,11 @@
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.win-ctrl:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#12ffffff"/>
+      <Setter Property="Background" Value="#0dffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
     <Style Selector="Button.win-ctrl:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#20ffffff"/>
+      <Setter Property="Background" Value="#18ffffff"/>
     </Style>
     <Style Selector="Button.win-ctrl.close:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#c42b1c"/>
@@ -45,62 +45,54 @@
       <Setter Property="BoxShadow" Value="inset 0 0 0 2 #4dd4a853"/>
     </Style>
 
-    <!-- Stream tab close button -->
+    <!-- Tab strip: close affordance always visible; lift on row hover -->
     <Style Selector="Button.tab-close">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Width" Value="16"/>
-      <Setter Property="Height" Value="16"/>
+      <Setter Property="Width" Value="22"/>
+      <Setter Property="Height" Value="22"/>
       <Setter Property="Margin" Value="2,0,0,0"/>
       <Setter Property="Padding" Value="0"/>
-      <Setter Property="Foreground" Value="#4db0aaa0"/>
-      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Foreground" Value="#6d706b63"/>
+      <Setter Property="CornerRadius" Value="5"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="Opacity" Value="0"/>
-      <Setter Property="Transitions">
-        <Transitions>
-          <DoubleTransition Property="Opacity" Duration="0:0:0.1"/>
-        </Transitions>
-      </Setter>
+      <Setter Property="Opacity" Value="0.55"/>
     </Style>
     <Style Selector="Button.tab-close:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#22ffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
     <Style Selector="Button.tab-close:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#2affffff"/>
+      <Setter Property="Background" Value="#30ffffff"/>
     </Style>
     <Style Selector="Button.tab-close:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
     </Style>
-    <Style Selector="Button.stream-tab:pointerover Button.tab-close">
+    <Style Selector="Button.chrome-tab:pointerover Button.tab-close">
       <Setter Property="Opacity" Value="1"/>
     </Style>
 
-    <!-- Clickable stream tab — flat chrome, reveals the child border styling -->
-    <Style Selector="Button.stream-tab">
+    <Style Selector="Button.chrome-tab">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Margin" Value="0,0,2,0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.chrome-tab /template/ ContentPresenter">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Padding" Value="0"/>
     </Style>
-    <Style Selector="Button.stream-tab /template/ ContentPresenter">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Padding" Value="0"/>
-      <Setter Property="CornerRadius" Value="7"/>
+    <Style Selector="Button.chrome-tab:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#08000000"/>
     </Style>
-    <Style Selector="Button.stream-tab Button.tab-close:focus-visible">
-      <Setter Property="Opacity" Value="1"/>
+    <Style Selector="Button.chrome-tab:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#0e000000"/>
     </Style>
-    <Style Selector="Button.stream-tab:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#18ffffff"/>
-    </Style>
-    <Style Selector="Button.stream-tab:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#22ffffff"/>
-    </Style>
-    <Style Selector="Button.stream-tab:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    <Style Selector="Button.chrome-tab:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
     </Style>
 
     <!-- index.css .search-esc -->
@@ -137,119 +129,139 @@
   </Window.Styles>
 
   <LayoutTransformControl x:Name="RootScaler">
-  <Grid x:Name="RootGrid" RowDefinitions="40,*">
+  <Grid x:Name="RootGrid" RowDefinitions="44,*">
 
-    <!-- ── Tab bar (index.css .tab-bar 49) — chrome-extended, 40px, blurred, drag region -->
+    <!-- Title bar — same base as content (ThemeVoid); no seam line into main app -->
     <Border Grid.Row="0"
             PointerPressed="TitleBar_PointerPressed"
-            Background="#f7070710"
-            BorderBrush="#0dffffff"
-            BorderThickness="0,0,0,1">
+            Background="{DynamicResource ThemeVoid}">
       <Grid ColumnDefinitions="Auto,*,Auto">
 
-        <!-- Left: Cereal launcher tab (index.css .tab-item / TabBar.tsx CEREAL_ICON) -->
+        <!-- Launcher / library -->
         <Button Grid.Column="0"
+                Classes="chrome-tab"
                 Command="{Binding OpenLauncherTabCommand}"
-                Padding="0" BorderThickness="0" Cursor="Hand">
-          <Border Margin="6,4"
-                  CornerRadius="6" Padding="10,0,12,0" Height="32"
-                  Background="#14ffffff"
-                  BoxShadow="inset 0 2 0 0 #d4a853">
-            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-              <!-- Cereal icon — stylized orb cluster -->
-              <Panel Width="14" Height="14" VerticalAlignment="Center">
-                <Ellipse Width="13" Height="13" Stroke="#d4a853" StrokeThickness="1.3"
-                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Ellipse Width="2.6" Height="2.6" Fill="#ccd4a853"
-                         HorizontalAlignment="Left" VerticalAlignment="Top"
-                         Margin="3,3,0,0"/>
-                <Ellipse Width="2.6" Height="2.6" Fill="#d4a853"
-                         HorizontalAlignment="Right" VerticalAlignment="Top"
-                         Margin="0,3,2,0"/>
-                <Ellipse Width="2" Height="2" Fill="#b3d4a853"
-                         HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                         Margin="0,0,0,2"/>
-              </Panel>
-              <TextBlock Text="Cereal" FontSize="11" FontWeight="SemiBold"
-                         Foreground="{DynamicResource ThemeText}"
-                         VerticalAlignment="Center"/>
-            </StackPanel>
-          </Border>
+                Margin="8,0,0,0"
+                VerticalAlignment="Center">
+          <DockPanel VerticalAlignment="Center">
+            <Rectangle DockPanel.Dock="Bottom" Height="2" Margin="8,0,8,0" RadiusX="1" RadiusY="1"
+                       Fill="{DynamicResource ThemeAccent}" Opacity="0.65"
+                       IsVisible="{Binding IsLibraryTabActive}"/>
+            <Border MinWidth="112" Height="32" CornerRadius="8"
+                    Background="{Binding IsLibraryTabActive, Converter={x:Static conv:TabConverters.PanelPillBackground}}"
+                    BorderBrush="{Binding IsLibraryTabActive, Converter={x:Static conv:TabConverters.PanelPillBorder}}"
+                    BorderThickness="1" Padding="12,0,12,0">
+              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Panel Width="14" Height="14" VerticalAlignment="Center">
+                  <Ellipse Width="13" Height="13" Stroke="#d4a853" StrokeThickness="1.2"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  <Ellipse Width="2.4" Height="2.4" Fill="#9ad4a853"
+                           HorizontalAlignment="Left" VerticalAlignment="Top" Margin="3,3,0,0"/>
+                  <Ellipse Width="2.4" Height="2.4" Fill="#d4a853"
+                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,3,2,0"/>
+                  <Ellipse Width="2" Height="2" Fill="#7ad4a853"
+                           HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                </Panel>
+                <StackPanel Spacing="1" VerticalAlignment="Center">
+                  <TextBlock Text="Cereal" FontSize="12" FontWeight="SemiBold"
+                             Foreground="{DynamicResource ThemeText}"/>
+                  <TextBlock Text="Library" FontSize="9" Foreground="#5a706b63"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </DockPanel>
         </Button>
 
-        <!-- Center: stream session tabs -->
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="3"
+        <!-- Panel + stream tabs -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal"
                     HorizontalAlignment="Left" VerticalAlignment="Center"
-                    Margin="2,0">
+                    Margin="4,0,6,0">
           <ItemsControl ItemsSource="{Binding PanelTabs}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="3"/>
+                <StackPanel Orientation="Horizontal"/>
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:PanelTabViewModel">
-                <Button Classes="stream-tab"
+                <Button Classes="chrome-tab"
                         Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SwitchToPanelTabCommand}"
-                        CommandParameter="{Binding Id}"
-                        Padding="0" BorderThickness="0" Cursor="Hand">
-                  <Border CornerRadius="7" Padding="10,0,8,0" Height="32"
-                          MinWidth="90" MaxWidth="200"
-                          Background="#0dffffff">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeText2}"
-                                 FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
-                                 TextTrimming="CharacterEllipsis"/>
-                      <Button Classes="tab-close"
-                              Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ClosePanelTabCommand}"
-                              CommandParameter="{Binding Id}">
-                        <PathIcon Width="8" Height="8"
-                                  Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  Data="M1,1 L7,7 M7,1 L1,7"/>
-                      </Button>
-                    </StackPanel>
-                  </Border>
+                        CommandParameter="{Binding Id}">
+                  <DockPanel>
+                    <Rectangle DockPanel.Dock="Bottom" Height="2" Margin="8,0,8,0" RadiusX="1" RadiusY="1"
+                               Fill="{DynamicResource ThemeAccent}" Opacity="0.65"
+                               IsVisible="{Binding IsActive}"/>
+                    <Border MinWidth="92" MaxWidth="210" Height="32" CornerRadius="8"
+                            Background="{Binding IsActive, Converter={x:Static conv:TabConverters.PanelPillBackground}}"
+                            BorderBrush="{Binding IsActive, Converter={x:Static conv:TabConverters.PanelPillBorder}}"
+                            BorderThickness="1" Padding="12,0,4,0">
+                      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeText}"
+                                   FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   MaxWidth="148" TextTrimming="CharacterEllipsis"/>
+                        <Button Classes="tab-close"
+                                Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ClosePanelTabCommand}"
+                                CommandParameter="{Binding Id}">
+                          <PathIcon Width="7" Height="7"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    Data="M1,1 L7,7 M7,1 L1,7"/>
+                        </Button>
+                      </StackPanel>
+                    </Border>
+                  </DockPanel>
                 </Button>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
-          <ItemsControl ItemsSource="{Binding StreamTabs}"
-                      HorizontalAlignment="Left" VerticalAlignment="Center"
-                      Margin="2,0">
+          <Border Width="1" Height="18" Margin="6,0,8,0" Background="#0a000000"
+                  CornerRadius="1" VerticalAlignment="Center"
+                  IsVisible="{Binding ShowTabGroupSeparator}"/>
+
+          <ItemsControl ItemsSource="{Binding StreamTabs}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="3"/>
+                <StackPanel Orientation="Horizontal"/>
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:StreamTabViewModel">
-                <!-- Stream tab — .tab-item (index.css 51): 32px tall, 7px rounded, subtle bg.
-                     Clicking the tab body re-opens the associated stream panel
-                     (Chiaki for psn/psremote, Xcloud for xbox) — matches the
-                     `onSwitch` behaviour in TabBar.tsx. -->
-                <Button Classes="stream-tab"
+                <Button Classes="chrome-tab"
                         Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SwitchToStreamTabCommand}"
-                        CommandParameter="{Binding}"
-                        Padding="0" BorderThickness="0" Cursor="Hand">
-                  <Border CornerRadius="7" Padding="10,0,8,0" Height="32"
-                          MinWidth="90" MaxWidth="210"
-                          Background="#0dffffff">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeText2}"
-                                 FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
-                                 TextTrimming="CharacterEllipsis"/>
-                      <TextBlock Text="{Binding State}" Foreground="#50b0aaa0"
-                                 FontSize="10" VerticalAlignment="Center"/>
-                      <Button Classes="tab-close"
-                              Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
-                              CommandParameter="{Binding GameId}">
-                        <PathIcon Width="8" Height="8"
-                                  Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  Data="M1,1 L7,7 M7,1 L1,7"/>
-                      </Button>
-                    </StackPanel>
-                  </Border>
+                        CommandParameter="{Binding}">
+                  <Grid ColumnDefinitions="2,*" MinWidth="100" MaxWidth="240">
+                    <Border Grid.Column="0" CornerRadius="8,0,0,8" VerticalAlignment="Stretch"
+                            Opacity="0.45"
+                            Background="{Binding StreamAccentColor, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"/>
+                    <DockPanel Grid.Column="1">
+                      <Rectangle DockPanel.Dock="Bottom" Height="2" Margin="6,0,8,0" RadiusX="1" RadiusY="1"
+                                 Fill="{Binding StreamAccentColor, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                                 Opacity="0.5"
+                                 IsVisible="{Binding IsSessionLive}"/>
+                      <Border Height="32" CornerRadius="0,8,8,0"
+                              Background="{Binding IsSessionLive, Converter={x:Static conv:TabConverters.StreamPillBackground}}"
+                              BorderBrush="#08000000"
+                              BorderThickness="1" Padding="10,0,4,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                          <StackPanel Spacing="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding DisplayTitle}"
+                                       Foreground="{DynamicResource ThemeText}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       MaxWidth="120" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding State}" Foreground="#5588706b63"
+                                       FontSize="9" Margin="0,1,0,0"/>
+                          </StackPanel>
+                          <Button Classes="tab-close"
+                                  Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
+                                  CommandParameter="{Binding GameId}">
+                            <PathIcon Width="7" Height="7"
+                                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Data="M1,1 L7,7 M7,1 L1,7"/>
+                          </Button>
+                        </StackPanel>
+                      </Border>
+                    </DockPanel>
+                  </Grid>
                 </Button>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -314,6 +326,12 @@
       <panels:PlatformsPanel HorizontalAlignment="Right"
                              Width="560"
                              IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowPlatforms}"/>
+
+      <panels:PlatformAuthPanel HorizontalAlignment="Right"
+                                Width="560"
+                                ZIndex="2"
+                                DataContext="{Binding $parent[Window].((vm:MainViewModel)DataContext)}"
+                                IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowPlatformAuth}"/>
 
       <!-- Xbox Cloud — full screen -->
       <panels:XcloudPanel IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowXcloud}"/>

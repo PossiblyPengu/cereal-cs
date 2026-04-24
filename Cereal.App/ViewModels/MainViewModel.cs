@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -217,22 +217,44 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _showChiaki;
     [ObservableProperty] private bool _showXcloud;
     [ObservableProperty] private bool _showPlatforms;
+    [ObservableProperty] private bool _showPlatformAuth;
+    /// <summary>OAuth URL for the in-app WebView (Steam, GOG, Epic, Xbox).</summary>
+    [ObservableProperty] private string? _platformAuthUrl;
+    [ObservableProperty] private string _platformAuthTabTitle = "Sign in";
     [ObservableProperty] private bool _showFocus;
     [ObservableProperty] private bool _showSearch;
     [ObservableProperty] private string? _zoomScreenshotUrl;
     [ObservableProperty] private bool _isRefreshingGameInfo;
     [ObservableProperty] private string _searchQuery = "";
     [ObservableProperty] private string? _searchPlatformFilter;
-    public bool AnyPanelOpen => ShowSettings || ShowDetect || ShowChiaki || ShowXcloud || ShowPlatforms;
+    public bool AnyPanelOpen => ShowSettings || ShowDetect || ShowChiaki || ShowXcloud || ShowPlatforms || ShowPlatformAuth;
+    public bool IsLibraryTabActive => !AnyPanelOpen;
+    public string? ActivePanelTabId
+    {
+        get
+        {
+            if (ShowSettings) return "settings";
+            if (ShowDetect) return "detect";
+            if (ShowPlatforms) return "platforms";
+            if (ShowPlatformAuth) return "platformauth";
+            if (ShowChiaki) return "chiaki";
+            if (ShowXcloud) return "xcloud";
+            return null;
+        }
+    }
+    public bool ShowTabGroupSeparator => HasOpenPanelStripTabs && StreamTabs.Count > 0;
+    private bool HasOpenPanelStripTabs => ShowSettings || ShowDetect || ShowPlatforms || ShowPlatformAuth || ShowChiaki || ShowXcloud;
     public IEnumerable<PanelTabViewModel> PanelTabs
     {
         get
         {
-            if (ShowSettings) yield return new PanelTabViewModel("settings", "Settings");
-            if (ShowDetect) yield return new PanelTabViewModel("detect", "Detect");
-            if (ShowPlatforms) yield return new PanelTabViewModel("platforms", "Platforms");
-            if (ShowChiaki) yield return new PanelTabViewModel("chiaki", "Remote Play");
-            if (ShowXcloud) yield return new PanelTabViewModel("xcloud", "Cloud Gaming");
+            var a = ActivePanelTabId;
+            if (ShowSettings) yield return new PanelTabViewModel("settings", "Settings", a == "settings");
+            if (ShowDetect) yield return new PanelTabViewModel("detect", "Detect", a == "detect");
+            if (ShowPlatforms) yield return new PanelTabViewModel("platforms", "Platforms", a == "platforms");
+            if (ShowPlatformAuth) yield return new PanelTabViewModel("platformauth", PlatformAuthTabTitle, a == "platformauth");
+            if (ShowChiaki) yield return new PanelTabViewModel("chiaki", "Remote Play", a == "chiaki");
+            if (ShowXcloud) yield return new PanelTabViewModel("xcloud", "Cloud Gaming", a == "xcloud");
         }
     }
     public string RefreshInfoButtonLabel => IsRefreshingGameInfo ? "Fetching..." : "Refresh Info";
@@ -242,6 +264,8 @@ public partial class MainViewModel : ObservableObject
     partial void OnShowChiakiChanged(bool value) => NotifyTabsChanged();
     partial void OnShowXcloudChanged(bool value) => NotifyTabsChanged();
     partial void OnShowPlatformsChanged(bool value) => NotifyTabsChanged();
+    partial void OnShowPlatformAuthChanged(bool value) => NotifyTabsChanged();
+    partial void OnPlatformAuthTabTitleChanged(string value) => NotifyTabsChanged();
 
     // Continue banner
     [ObservableProperty] private bool _showContinueBanner;
@@ -390,6 +414,7 @@ public partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(IsStreaming));
             OnPropertyChanged(nameof(IsStreamConnecting));
             OnPropertyChanged(nameof(ShowChiakiEmbedHost));
+            OnPropertyChanged(nameof(ShowTabGroupSeparator));
         };
 
         // Controller input from GamepadService is delivered on the UI thread.
@@ -460,6 +485,7 @@ public partial class MainViewModel : ObservableObject
             if (ShowDetect)      { ShowDetect = false; return; }
             if (ShowChiaki)      { ShowChiaki = false; return; }
             if (ShowXcloud)      { ShowXcloud = false; return; }
+            if (ShowPlatformAuth) { DismissInAppAuthPanel(); return; }
             if (ShowPlatforms)   { ShowPlatforms = false; return; }
             if (!string.IsNullOrEmpty(ZoomScreenshotUrl)) { ZoomScreenshotUrl = null; return; }
             return;
@@ -1197,12 +1223,37 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand] private void CloseXcloud()   { ShowXcloud  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void OpenPlatforms() { ShowPlatforms = true;  OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void ClosePlatforms(){ ShowPlatforms = false; OnPropertyChanged(nameof(AnyPanelOpen)); }
+
+    /// <summary>Embeds the OAuth page in a side panel and a title-bar tab (replaces the default browser for platform sign-in).</summary>
+    public void OpenPlatformSignInWeb(string url, string? tabTitle = null)
+    {
+        PlatformAuthUrl = url;
+        PlatformAuthTabTitle = tabTitle ?? "Sign in";
+        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = false;
+        ShowPlatformAuth = true;
+        OnPropertyChanged(nameof(AnyPanelOpen));
+        NotifyTabsChanged();
+    }
+
+    /// <summary>Closes the in-app auth WebView after the flow ends or the user dismisses the tab.</summary>
+    public void DismissInAppAuthPanel()
+    {
+        if (!ShowPlatformAuth) return;
+        ShowPlatformAuth = false;
+        PlatformAuthUrl = null;
+        if (!ShowSettings && !ShowDetect && !ShowChiaki && !ShowXcloud)
+            ShowPlatforms = true;
+        OnPropertyChanged(nameof(AnyPanelOpen));
+        NotifyTabsChanged();
+    }
+
+    [RelayCommand] private void ClosePlatformAuth() => DismissInAppAuthPanel();
     [RelayCommand] private void CloseFocus()    { ShowFocus = false; SelectedGame = null; }
 
     [RelayCommand]
     private void OpenLauncherTab()
     {
-        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = false;
+        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = ShowPlatformAuth = false;
         ShowFocus = false;
         OnPropertyChanged(nameof(AnyPanelOpen));
     }
@@ -1214,6 +1265,7 @@ public partial class MainViewModel : ObservableObject
         ShowSettings = tabId == "settings";
         ShowDetect = tabId == "detect";
         ShowPlatforms = tabId == "platforms";
+        ShowPlatformAuth = tabId == "platformauth";
         ShowChiaki = tabId == "chiaki";
         ShowXcloud = tabId == "xcloud";
         OnPropertyChanged(nameof(AnyPanelOpen));
@@ -1228,6 +1280,7 @@ public partial class MainViewModel : ObservableObject
             case "settings": ShowSettings = false; break;
             case "detect": ShowDetect = false; break;
             case "platforms": ShowPlatforms = false; break;
+            case "platformauth": ShowPlatformAuth = false; PlatformAuthUrl = null; if (!ShowSettings && !ShowDetect && !ShowChiaki && !ShowXcloud) ShowPlatforms = true; break;
             case "chiaki": ShowChiaki = false; break;
             case "xcloud": ShowXcloud = false; break;
         }
@@ -1237,8 +1290,10 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void CloseAllPanels()
     {
-        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = false;
+        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = ShowPlatformAuth = false;
+        PlatformAuthUrl = null;
         OnPropertyChanged(nameof(AnyPanelOpen));
+        NotifyTabsChanged();
     }
 
     public void EscapePressed()
@@ -1250,6 +1305,7 @@ public partial class MainViewModel : ObservableObject
         if (ShowDetect)   { ShowDetect  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
         if (ShowChiaki)   { ShowChiaki  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
         if (ShowXcloud)   { ShowXcloud  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        if (ShowPlatformAuth) { DismissInAppAuthPanel(); return; }
         if (ShowPlatforms){ ShowPlatforms = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
     }
 
@@ -1268,7 +1324,8 @@ public partial class MainViewModel : ObservableObject
     {
         if (tab is null) return;
         // Close any other open overlay panels so only the stream re-opens.
-        ShowSettings = ShowDetect = ShowPlatforms = false;
+        ShowSettings = ShowDetect = ShowPlatforms = ShowPlatformAuth = false;
+        PlatformAuthUrl = null;
         if (tab.Platform is "psn" or "psremote")
         {
             ShowXcloud = false;
@@ -1473,6 +1530,9 @@ public partial class MainViewModel : ObservableObject
     private void NotifyTabsChanged()
     {
         OnPropertyChanged(nameof(AnyPanelOpen));
+        OnPropertyChanged(nameof(IsLibraryTabActive));
+        OnPropertyChanged(nameof(ActivePanelTabId));
+        OnPropertyChanged(nameof(ShowTabGroupSeparator));
         OnPropertyChanged(nameof(PanelTabs));
     }
 }
@@ -1514,6 +1574,15 @@ public partial class StreamTabViewModel : ObservableObject
     public string FpsLabel => Fps is double f ? ((int)Math.Round(f)).ToString() : "—";
     public string LatencyLabel => LatencyMs is double l ? ((int)Math.Round(l)).ToString() : "—";
 
+    public string StreamAccentColor => Platform switch
+    {
+        "xbox" => "#2ea043",
+        "psn" or "psremote" => "#1e8fff",
+        _ => "#6a6578",
+    };
+
+    public bool IsSessionLive => State is "streaming" or "connecting" or "launching";
+
     public StreamTabViewModel(string gameId, string title, string platform)
     {
         _gameId = gameId;
@@ -1523,6 +1592,7 @@ public partial class StreamTabViewModel : ObservableObject
 
     partial void OnTitleChanged(string value) => OnPropertyChanged(nameof(DisplayTitle));
     partial void OnDetectedTitleChanged(string? value) => OnPropertyChanged(nameof(DisplayTitle));
+    partial void OnStateChanged(string value) => OnPropertyChanged(nameof(IsSessionLive));
 
     partial void OnBitrateMbpsChanged(double? value)
     {
@@ -1545,10 +1615,12 @@ public sealed class PanelTabViewModel
 {
     public string Id { get; }
     public string Title { get; }
+    public bool IsActive { get; }
 
-    public PanelTabViewModel(string id, string title)
+    public PanelTabViewModel(string id, string title, bool isActive = false)
     {
         Id = id;
         Title = title;
+        IsActive = isActive;
     }
 }

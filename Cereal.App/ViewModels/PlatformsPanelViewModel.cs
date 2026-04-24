@@ -54,6 +54,10 @@ public partial class PlatformsPanelViewModel : ObservableObject
 
     public event EventHandler? ChiakiRequested;
     public event EventHandler? XcloudRequested;
+    /// <summary>Fired to open the in-app WebView (MainWindow tab + side panel) before waiting on the callback.</summary>
+    public event Action<string, string>? InAppAuthNavigate;
+    /// <summary>Fired when the OAuth wait ends or should tear down the WebView (success, failure, or cancel).</summary>
+    public event Action? InAppAuthFlowEnded;
 
     public PlatformsPanelViewModel(AuthService auth, GameService games, DatabaseService db,
         CoverService covers, CredentialService creds,
@@ -114,11 +118,13 @@ public partial class PlatformsPanelViewModel : ObservableObject
                 _       => throw new NotSupportedException("Sign-in not supported for " + platform),
             };
 
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            var tabTitle = InAppAuthTabTitle(platform);
+            InAppAuthNavigate?.Invoke(url, tabTitle);
             StatusMessage = $"Waiting for {platform} sign-in…";
 
             var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
             var account = await _auth.WaitForCallbackAsync(platform, ct: cts.Token);
+            InAppAuthFlowEnded?.Invoke();
             StatusMessage = $"{platform} connected as {account.Username ?? account.AccountId}.";
 
             // Auto-import after sign-in
@@ -126,10 +132,20 @@ public partial class PlatformsPanelViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            InAppAuthFlowEnded?.Invoke();
             Log.Warning(ex, "[platforms] Sign-in failed for {Platform}", platform);
             StatusMessage = $"Sign-in failed: {ex.Message}";
         }
     }
+
+    private static string InAppAuthTabTitle(string platform) => platform switch
+    {
+        "steam" => "Steam sign-in",
+        "gog"   => "GOG sign-in",
+        "epic"  => "Epic sign-in",
+        "xbox"  => "Xbox sign-in",
+        _       => "Sign in",
+    };
 
     internal async Task ImportAsync(string platform)
         => await ImportAsync(platform, null);

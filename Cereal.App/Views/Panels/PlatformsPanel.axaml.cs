@@ -35,6 +35,16 @@ public partial class PlatformsPanel : UserControl
                     m.OpenXcloudCommand.Execute(null);
                 }
             };
+            vm.InAppAuthNavigate += (url, title) =>
+            {
+                if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel m)
+                    m.OpenPlatformSignInWeb(url, title);
+            };
+            vm.InAppAuthFlowEnded += () =>
+            {
+                if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel m)
+                    m.DismissInAppAuthPanel();
+            };
         }
     }
 

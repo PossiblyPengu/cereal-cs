@@ -5,7 +5,7 @@
              xmlns:views="using:Cereal.App.Views"
              x:Class="Cereal.App.Views.MainView"
              x:DataType="vm:MainViewModel"
-             Background="Transparent">
+             Background="{DynamicResource ThemeVoid}">
 
   <UserControl.Resources>
     <DataTemplate x:Key="GameCardDataTemplate" x:DataType="vm:GameCardViewModel">

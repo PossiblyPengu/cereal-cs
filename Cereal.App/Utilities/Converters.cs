@@ -146,4 +146,18 @@ namespace Cereal.App
 
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
     }
+
+    /// <summary>Title-bar tab pills — active uses ThemeSurface tint (same family as nav glass / panels).</summary>
+    public static class TabConverters
+    {
+        public static IValueConverter PanelPillBackground { get; } = new BoolToBrushConverter(
+            new SolidColorBrush(Color.Parse("#180d0d16")),
+            Brushes.Transparent);
+        public static IValueConverter PanelPillBorder { get; } = new BoolToBrushConverter(
+            new SolidColorBrush(Color.Parse("#30d4a853")),
+            Brushes.Transparent);
+        public static IValueConverter StreamPillBackground { get; } = new BoolToBrushConverter(
+            new SolidColorBrush(Color.Parse("#1a0d0d16")),
+            new SolidColorBrush(Color.Parse("#080d0d16")));
+    }
 }
