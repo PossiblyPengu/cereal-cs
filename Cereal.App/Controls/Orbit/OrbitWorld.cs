@@ -56,6 +56,15 @@ public class OrbitWorld : Border
         {
             Width = WorldWidth,
             Height = WorldHeight,
+            // Keep layout size fixed at 3000×2000. If the parent only offers the
+            // viewport size, a stretched canvas would shrink the arrange rect and
+            // break FitAll() centering (camera math assumes world 0,0 = control 0,0 + cam).
+            MinWidth = WorldWidth,
+            MaxWidth = WorldWidth,
+            MinHeight = WorldHeight,
+            MaxHeight = WorldHeight,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Top,
             RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Absolute),
             // Order matters: scale first (from 0,0), then translate.
             RenderTransform = new TransformGroup

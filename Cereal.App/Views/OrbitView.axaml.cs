@@ -141,6 +141,10 @@ public partial class OrbitView : UserControl
         if (_world is null) return;
         _galaxyIntroTimer?.Stop();
         var scale = new ScaleTransform(3.8, 3.8);
+        // Match Vite .galaxy-viewport (scale from center); do not leave a
+        // permanent RenderTransformOrigin on OrbitWorld or FitAll/ pointer math
+        // can see the control as un-centered relative to the inner canvas.
+        _world.RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative);
         _world.RenderTransform = scale;
         _world.Opacity = 0;
         var start = DateTime.UtcNow;
@@ -158,7 +162,8 @@ public partial class OrbitView : UserControl
             {
                 _galaxyIntroTimer?.Stop();
                 _world.Opacity = 1;
-                scale.ScaleX = scale.ScaleY = 1;
+                _world.RenderTransform = null;
+                _world.RenderTransformOrigin = default;
             }
         };
         _galaxyIntroTimer.Start();

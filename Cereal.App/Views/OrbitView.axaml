@@ -11,9 +11,7 @@
     <orbit:ParallaxStarBackground x:Name="Parallax"/>
 
     <!-- Native Avalonia orbit (pan/zoom host). Content is added in code-behind. -->
-    <orbit:OrbitWorld x:Name="World"
-                      RenderTransformOrigin="50%,50%"
-                      Opacity="1"/>
+    <orbit:OrbitWorld x:Name="World" Opacity="1"/>
 
     <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
             Margin="0,0,18,18" CornerRadius="22"
