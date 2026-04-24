@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
+using Avalonia.Threading;
 
 namespace Cereal.App.Controls.Orbit;
 
@@ -19,6 +20,26 @@ namespace Cereal.App.Controls.Orbit;
 internal static class NebulaCluster
 {
     public readonly record struct ClusterCenter(double X, double Y);
+
+    /// <summary>Default hub for platforms not in <see cref="Centers"/> (matches Vite <c>CLUSTER_CENTERS[plat] || {'x':1500,'y':1000}</c>).</summary>
+    public static readonly ClusterCenter DefaultHub = new(1500, 1000);
+
+    /// <summary>
+    /// Map stored <see cref="Cereal.App.Models.Game.Platform"/> values to keys used in
+    /// <see cref="Centers"/> so each provider's games orbit the correct sun.
+    /// </summary>
+    public static string NormalizeOrbitPlatform(string? platform)
+    {
+        if (string.IsNullOrWhiteSpace(platform)) return "custom";
+        var s = platform.Trim().ToLowerInvariant();
+        return s switch
+        {
+            "psremote" => "psn",
+            "playstation" => "psn",
+            "xcloud" => "xbox",
+            _ => s,
+        };
+    }
 
     // Hard-coded cluster positions — copied verbatim from the original JS
     // (CLUSTER_CENTERS in the old OrbitHtml template).
@@ -69,8 +90,9 @@ internal static class NebulaCluster
 
     public static void Build(Canvas world, string platform, bool animations)
     {
-        if (!Centers.TryGetValue(platform, out var c)) return;
-        Build(world, platform, c.X, c.Y, animations);
+        var key = NormalizeOrbitPlatform(platform);
+        if (!Centers.TryGetValue(key, out var c)) return;
+        Build(world, key, c.X, c.Y, animations);
     }
 
     public static void Build(Canvas world, string platform, double cx, double cy, bool animations)
@@ -256,67 +278,23 @@ internal static class NebulaCluster
 
         if (!animations) return;
 
-        // Pulse: 4s ease-in-out alternate, opacity .3 → .5, scale 1 → 1.12
-        // (matches the @keyframes coronaPulse in the original CSS).
-        var pulse = new Animation
+        // Use a timer-driven pulse to avoid transform-animation target casting
+        // issues seen with some Avalonia runtime combinations.
+        var scale = new ScaleTransform(1, 1);
+        corona.RenderTransform = scale;
+        corona.RenderTransformOrigin = RelativePoint.Center;
+        var start = DateTime.UtcNow;
+        var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) =>
         {
-            Duration = TimeSpan.FromSeconds(4),
-            IterationCount = new IterationCount(ulong.MaxValue),
-            PlaybackDirection = PlaybackDirection.Alternate,
-            Easing = new SineEaseInOut(),
-            Children =
-            {
-                new KeyFrame
-                {
-                    Cue = new Cue(0d),
-                    Setters =
-                    {
-                        new Setter(Ellipse.OpacityProperty, 0.30),
-                    },
-                },
-                new KeyFrame
-                {
-                    Cue = new Cue(1d),
-                    Setters =
-                    {
-                        new Setter(Ellipse.OpacityProperty, 0.50),
-                    },
-                },
-            },
-        };
-
-        corona.RenderTransform = new ScaleTransform(1, 1);
-        var scalePulse = new Animation
-        {
-            Duration = TimeSpan.FromSeconds(4),
-            IterationCount = new IterationCount(ulong.MaxValue),
-            PlaybackDirection = PlaybackDirection.Alternate,
-            Easing = new SineEaseInOut(),
-            Children =
-            {
-                new KeyFrame
-                {
-                    Cue = new Cue(0d),
-                    Setters =
-                    {
-                        new Setter(ScaleTransform.ScaleXProperty, 1.0),
-                        new Setter(ScaleTransform.ScaleYProperty, 1.0),
-                    },
-                },
-                new KeyFrame
-                {
-                    Cue = new Cue(1d),
-                    Setters =
-                    {
-                        new Setter(ScaleTransform.ScaleXProperty, 1.12),
-                        new Setter(ScaleTransform.ScaleYProperty, 1.12),
-                    },
-                },
-            },
-        };
-
-        _ = pulse.RunAsync(corona);
-        _ = scalePulse.RunAsync((ScaleTransform)corona.RenderTransform!);
+            var t = (DateTime.UtcNow - start).TotalSeconds;
+            var s = (Math.Sin(t / 4d * Math.PI * 2d) + 1d) / 2d; // 0..1
+            corona.Opacity = 0.30 + (0.20 * s);
+            var sc = 1.0 + (0.12 * s);
+            scale.ScaleX = sc;
+            scale.ScaleY = sc;
+        });
+        timer.Start();
+        corona.DetachedFromVisualTree += (_, _) => timer.Stop();
     }
 
     // ─── Sun core (letter disc) ─────────────────────────────────────────────

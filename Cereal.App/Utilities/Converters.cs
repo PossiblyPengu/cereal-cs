@@ -1,6 +1,7 @@
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Cereal.App
@@ -55,7 +56,7 @@ namespace Cereal.App
     {
         public static IValueConverter ToObject { get; } = new BoolToObjectConverter();
         public static IValueConverter IsSearchHighlighted { get; } = new BoolToBrushConverter(
-            new SolidColorBrush(Color.FromArgb(0x14, 0xff, 0xff, 0xff)),
+            new SolidColorBrush(Color.FromArgb(0x08, 0xff, 0xff, 0xff)),
             Brushes.Transparent);
     }
 
@@ -72,6 +73,53 @@ namespace Cereal.App
             => value is true ? _trueBrush : _falseBrush;
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
             => throw new NotSupportedException();
+    }
+
+    /// <summary>index.css .search-plat-chip — MultiBinding: [0]=SearchPlatformFilter, [1]=chip key (__all or platform id).</summary>
+    public static class SearchChipConverters
+    {
+        public static IMultiValueConverter Appearance { get; } = new SearchPlatformChipAppearanceConverter();
+    }
+
+    internal sealed class SearchPlatformChipAppearanceConverter : IMultiValueConverter
+    {
+        private static readonly IBrush AccentSoft = new SolidColorBrush(Color.Parse("#1FD4A853"));
+        private static readonly IBrush AccentBorder = new SolidColorBrush(Color.Parse("#4dd4a853"));
+        private static readonly IBrush AccentFg = new SolidColorBrush(Color.Parse("#d4a853"));
+        private static readonly IBrush MutedFg = new SolidColorBrush(Color.Parse("#3d3a35"));
+
+        public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+        {
+            var part = parameter as string ?? "bg";
+            if (values.Count < 2)
+                return part == "fg" ? MutedFg : Brushes.Transparent;
+
+            var filter = values[0] as string;
+            var key = values[1]?.ToString();
+            if (string.IsNullOrEmpty(key))
+                return part == "fg" ? MutedFg : Brushes.Transparent;
+
+            var active = key == "__all"
+                ? string.IsNullOrEmpty(filter)
+                : string.Equals(filter, key, StringComparison.Ordinal);
+
+            if (!active)
+            {
+                return part switch
+                {
+                    "fg" => MutedFg,
+                    "border" => Brushes.Transparent,
+                    _ => Brushes.Transparent,
+                };
+            }
+
+            return part switch
+            {
+                "fg" => AccentFg,
+                "border" => AccentBorder,
+                _ => AccentSoft,
+            };
+        }
     }
 
     // ─── Shortcuts used in XAML ──────────────────────────────────────────────

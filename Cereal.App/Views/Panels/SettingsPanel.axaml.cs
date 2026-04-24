@@ -22,6 +22,7 @@ public partial class SettingsPanel : UserControl
             App.Services.GetRequiredService<CoverService>(),
             App.Services.GetRequiredService<CredentialService>(),
             App.Services.GetRequiredService<ThemeService>(),
+            App.Services.GetRequiredService<DatabaseService>(),
             App.Services.GetRequiredService<GameService>(),
             App.Services.GetRequiredService<UpdateService>(),
             App.Services.GetRequiredService<IEnumerable<IProvider>>());

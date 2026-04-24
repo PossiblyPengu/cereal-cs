@@ -239,7 +239,7 @@ public sealed class MetadataService
         if (force) InvalidateCache(game);
         var meta = await FetchAsync(game, ct);
         if (meta is null) return false;
-        var changed = Apply(game, meta);
+        var changed = force ? ApplyForce(game, meta) : Apply(game, meta);
         if (changed)
         {
             // Persist the game back to DB
@@ -248,6 +248,40 @@ public sealed class MetadataService
             _db.Save();
         }
         return changed;
+    }
+
+    private static bool ApplyForce(Game game, FetchedMetadata meta)
+    {
+        var prevCover = game.CoverUrl;
+        var prevHeader = game.HeaderUrl;
+
+        game.CoverUrl = !string.IsNullOrWhiteSpace(meta.CoverUrl)
+            ? meta.CoverUrl
+            : game.CoverUrl;
+        game.SgdbCoverUrl = !string.IsNullOrWhiteSpace(meta.SgdbCoverUrl)
+            ? meta.SgdbCoverUrl
+            : game.SgdbCoverUrl;
+        game.Description = !string.IsNullOrWhiteSpace(meta.Description) ? meta.Description : game.Description;
+        game.Developer = !string.IsNullOrWhiteSpace(meta.Developer) ? meta.Developer : game.Developer;
+        game.Publisher = !string.IsNullOrWhiteSpace(meta.Publisher) ? meta.Publisher : game.Publisher;
+        game.ReleaseDate = !string.IsNullOrWhiteSpace(meta.ReleaseDate) ? meta.ReleaseDate : game.ReleaseDate;
+        game.HeaderUrl = !string.IsNullOrWhiteSpace(meta.HeaderUrl)
+            ? meta.HeaderUrl
+            : (!string.IsNullOrWhiteSpace(meta.CoverUrl) ? meta.CoverUrl : game.HeaderUrl);
+        if (meta.Screenshots.Count > 0) game.Screenshots = [.. meta.Screenshots];
+        if (meta.Metacritic.HasValue) game.Metacritic = meta.Metacritic;
+        game.Website = !string.IsNullOrWhiteSpace(meta.Website) ? meta.Website : game.Website;
+        if (meta.Genres.Count > 0) game.Categories = [.. meta.Genres.Distinct(StringComparer.OrdinalIgnoreCase)];
+
+        if (!string.Equals(prevCover, game.CoverUrl, StringComparison.Ordinal))
+            game.LocalCoverPath = null;
+        if (!string.Equals(prevHeader, game.HeaderUrl, StringComparison.Ordinal))
+            game.LocalHeaderPath = null;
+        if (!string.Equals(prevCover, game.CoverUrl, StringComparison.Ordinal) ||
+            !string.Equals(prevHeader, game.HeaderUrl, StringComparison.Ordinal))
+            game.ImgStamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        return true;
     }
 
     // ─── Batch: fetch metadata for ALL games (with progress + throttle) ───────

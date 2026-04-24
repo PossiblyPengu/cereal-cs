@@ -105,7 +105,9 @@ public sealed class LaunchService
                 var result = await TryOpenUriAsync(uri, ct);
                 if (result.Success)
                 {
-                    RecordSessionStart(game);
+                    // Mirror original launcher behavior: URI/client launches still
+                    // mark last-played and set Discord presence.
+                    RecordSessionStart(game, process: null, setDiscordPresence: true);
                     MaybeMinimize();
                     return result;
                 }
@@ -119,7 +121,7 @@ public sealed class LaunchService
             try
             {
                 Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
-                RecordSessionStart(game);
+                RecordSessionStart(game, process: null, setDiscordPresence: true);
                 MaybeMinimize();
                 return new LaunchResult { Success = true, Opened = exe };
             }
@@ -129,10 +131,10 @@ public sealed class LaunchService
         return new LaunchResult { Success = false, Error = "Could not open game or platform client" };
     }
 
-    private async Task<LaunchResult> LaunchExeAsync(Game game, string exe, CancellationToken ct)
+    private Task<LaunchResult> LaunchExeAsync(Game game, string exe, CancellationToken ct)
     {
         if (!File.Exists(exe))
-            return new LaunchResult { Success = false, Error = $"Executable not found: {exe}" };
+            return Task.FromResult(new LaunchResult { Success = false, Error = $"Executable not found: {exe}" });
 
         var psi = new ProcessStartInfo(exe)
         {
@@ -140,11 +142,10 @@ public sealed class LaunchService
             WorkingDirectory = Path.GetDirectoryName(exe) ?? ".",
         };
         var p = Process.Start(psi);
-        if (p is null) return new LaunchResult { Success = false, Error = "Failed to start process" };
+        if (p is null) return Task.FromResult(new LaunchResult { Success = false, Error = "Failed to start process" });
 
-        RecordSessionStart(game, p);
+        RecordSessionStart(game, p, setDiscordPresence: true);
         MaybeMinimize();
-        SetDiscordPresence(game);
 
         // Track playtime when process exits
         _ = Task.Run(async () =>
@@ -154,17 +155,19 @@ public sealed class LaunchService
             RecordSessionEnd(game.Id);
         }, ct);
 
-        return new LaunchResult { Success = true, Opened = exe };
+        return Task.FromResult(new LaunchResult { Success = true, Opened = exe });
     }
 
     // ─── Session tracking ─────────────────────────────────────────────────────
 
-    private void RecordSessionStart(Game game, Process? process = null)
+    private void RecordSessionStart(Game game, Process? process, bool setDiscordPresence)
     {
-        _sessions[game.Id] = (DateTime.UtcNow, process);
+        if (process is not null)
+            _sessions[game.Id] = (DateTime.UtcNow, process);
+        // Launchers/URIs: last-played is still useful; playtime is only finalized when a game process exits.
         game.LastPlayed = DateTime.UtcNow.ToString("O");
         _games.Update(game);
-        SetDiscordPresence(game);
+        if (setDiscordPresence) SetDiscordPresence(game);
         Log.Information("[launch] {Name} ({Platform}) started", game.Name, game.Platform);
     }
 
@@ -199,18 +202,27 @@ public sealed class LaunchService
         var platform = NormalizePlatform(game.Platform);
         var id = game.PlatformId ?? "";
         var store = game.StoreUrl ?? "";
+        var steamIdFromUrl = TryExtractStoreId(store, @"/app/(\d+)");
+        var steamId = !string.IsNullOrEmpty(id) ? id : steamIdFromUrl;
+        var epicNamespace = game.EpicNamespace ?? "";
+        var epicCatalogItemId = game.EpicCatalogItemId ?? "";
+        var eaOfferId = game.EaOfferId ?? id;
+        var ubiGameId = game.UbisoftGameId ?? id;
 
         switch (platform)
         {
             case "steam":
-                if (action == "install" && !string.IsNullOrEmpty(id))
-                    return [$"steam://install/{id}", $"steam://nav/games/details/{id}", store];
+                if (action == "install" && !string.IsNullOrEmpty(steamId))
+                    return [$"steam://install/{steamId}", $"steam://nav/games/details/{steamId}", store];
                 if (action == "client")
                     return ["steam://open/games", "steam://nav/library"];
-                return [$"steam://rungameid/{id}", $"steam://nav/games/details/{id}", store];
+                return [$"steam://rungameid/{steamId}", $"steam://nav/games/details/{steamId}", store];
 
             case "epic":
                 var appName = game.EpicAppName ?? id;
+                var epicNsCat = !string.IsNullOrEmpty(epicNamespace) && !string.IsNullOrEmpty(epicCatalogItemId)
+                    ? $"com.epicgames.launcher://apps/{epicNamespace}%3A{epicCatalogItemId}?action=launch&silent=true"
+                    : "";
                 if (action == "install")
                     return [
                         !string.IsNullOrEmpty(appName) ? $"com.epicgames.launcher://apps/{appName}?action=install&silent=true" : "",
@@ -226,6 +238,7 @@ public sealed class LaunchService
                 return [
                     !string.IsNullOrEmpty(appName) ? $"com.epicgames.launcher://apps/{appName}?action=launch&silent=true" : "",
                     !string.IsNullOrEmpty(id) ? $"com.epicgames.launcher://apps/{id}?action=launch&silent=true" : "",
+                    epicNsCat,
                     store,
                 ];
 
@@ -234,11 +247,11 @@ public sealed class LaunchService
                 return [$"goggalaxy://openGameView/{id}", store];
 
             case "ea":
-                if (!string.IsNullOrEmpty(id))
+                if (!string.IsNullOrEmpty(eaOfferId))
                 {
                     if (action == "install")
-                        return [$"origin2://store/open?offerId={id}", $"origin2://store/open?offerIds={id}", store];
-                    return [$"origin2://game/launch?offerIds={id}", "origin2://library/open", store];
+                        return [$"origin2://store/open?offerId={eaOfferId}", $"origin2://store/open?offerIds={eaOfferId}", store];
+                    return [$"origin2://game/launch?offerIds={eaOfferId}", "origin2://library/open", store];
                 }
                 return ["origin2://library/open"];
 
@@ -246,10 +259,10 @@ public sealed class LaunchService
                 return string.IsNullOrEmpty(id) ? ["battlenet://"] : [$"battlenet://{id}"];
 
             case "ubisoft":
-                if (!string.IsNullOrEmpty(id))
+                if (!string.IsNullOrEmpty(ubiGameId))
                 {
-                    if (action == "install") return [$"uplay://launch/{id}/1", store];
-                    return [$"uplay://launch/{id}/0", store];
+                    if (action == "install") return [$"uplay://launch/{ubiGameId}/1", store];
+                    return [$"uplay://launch/{ubiGameId}/0", store];
                 }
                 return ["uplay://"];
 
@@ -257,7 +270,7 @@ public sealed class LaunchService
                 return string.IsNullOrEmpty(store) ? ["https://itch.io/my-purchases"] : [store];
 
             case "xbox":
-                if (action == "install") return ["msxbox://", "https://www.xbox.com/en-US/games"];
+                if (action == "install") return ["msxbox://", "xbox://", "https://www.xbox.com/en-US/games"];
                 if (action == "client")  return ["msxbox://"];
                 return ["https://www.xbox.com/play"];
 
@@ -281,12 +294,28 @@ public sealed class LaunchService
                             $@"{pf}\Epic Games\Launcher\Portal\Binaries\Win64\EpicGamesLauncher.exe"],
             "gog"       => [$@"{pf86}\GOG Galaxy\GalaxyClient.exe",$@"{pf}\GOG Galaxy\GalaxyClient.exe"],
             "ea"        => [$@"{pf}\Electronic Arts\EA Desktop\EA Desktop\EADesktop.exe",
-                            $@"{pf86}\Origin\Origin.exe"],
+                            $@"{pf86}\Origin\Origin.exe",
+                            $@"{local}\Electronic Arts\EA Desktop\EA Desktop\EADesktop.exe"],
             "battlenet" => [$@"{pf}\Battle.net\Battle.net.exe",    $@"{pf86}\Battle.net\Battle.net.exe"],
             "ubisoft"   => [$@"{pf}\Ubisoft\Ubisoft Game Launcher\UbisoftConnect.exe",
                             $@"{pf86}\Ubisoft\Ubisoft Game Launcher\UbisoftConnect.exe"],
+            "itchio"    => [$@"{local}\itch\app-25.6.0\itch.exe", $@"{local}\itch\app-25.5.0\itch.exe", $@"{local}\itch\app-25.4.0\itch.exe"],
             _           => [],
         };
+    }
+
+    private static string TryExtractStoreId(string? storeUrl, string pattern)
+    {
+        if (string.IsNullOrWhiteSpace(storeUrl)) return "";
+        try
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(storeUrl, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return m.Success && m.Groups.Count > 1 ? m.Groups[1].Value : "";
+        }
+        catch
+        {
+            return "";
+        }
     }
 
     private static async Task<LaunchResult> TryOpenUriAsync(string uri, CancellationToken ct)

@@ -1,14 +1,37 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cereal.App.ViewModels"
              xmlns:orbit="clr-namespace:Cereal.App.Controls.Orbit"
-             x:Class="Cereal.App.Views.OrbitView">
+             x:Class="Cereal.App.Views.OrbitView"
+             x:Name="Root"
+             x:DataType="vm:MainViewModel">
 
   <Grid>
     <!-- Fullscreen parallax star layers behind the world. -->
     <orbit:ParallaxStarBackground x:Name="Parallax"/>
 
     <!-- Native Avalonia orbit (pan/zoom host). Content is added in code-behind. -->
-    <orbit:OrbitWorld x:Name="World"/>
+    <orbit:OrbitWorld x:Name="World"
+                      RenderTransformOrigin="50%,50%"
+                      Opacity="1"/>
+
+    <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
+            Margin="0,0,18,18" CornerRadius="22"
+            Background="#cc0d0d16" BorderBrush="#22ffffff" BorderThickness="1"
+            Padding="8,4"
+            RenderTransformOrigin="0.5,0.5">
+      <Border.RenderTransform>
+        <ScaleTransform ScaleX="{Binding ToolbarScale}" ScaleY="{Binding ToolbarScale}"/>
+      </Border.RenderTransform>
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button Content="Fit all" Click="FitAll_Click" Padding="10,0" Height="30" FontSize="11"/>
+        <Button Content="-" Click="ZoomOut_Click" Width="30" Height="30"/>
+        <TextBlock Text="{Binding ElementName=Root, Path=ZoomPercentLabel}"
+                   MinWidth="30" TextAlignment="Center"
+                   VerticalAlignment="Center" Foreground="#e6ffffff" FontSize="10"/>
+        <Button Content="+" Click="ZoomIn_Click" Width="30" Height="30"/>
+      </StackPanel>
+    </Border>
 
     <!-- Fallback error overlay (kept for parity with the old view) -->
     <Border x:Name="ErrorOverlay" Background="#0d0d22" IsVisible="False">

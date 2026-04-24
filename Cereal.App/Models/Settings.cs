@@ -5,13 +5,13 @@ namespace Cereal.App.Models;
 public class Settings
 {
     [JsonPropertyName("defaultView")]
-    public string DefaultView { get; set; } = "cards";
+    public string DefaultView { get; set; } = "orbit";
 
     [JsonPropertyName("theme")]
     public string Theme { get; set; } = "midnight";
 
     [JsonPropertyName("accentColor")]
-    public string AccentColor { get; set; } = "#7c6af7";
+    public string AccentColor { get; set; } = "#d4a853";
 
     [JsonPropertyName("navPosition")]
     public string NavPosition { get; set; } = "top";
@@ -26,7 +26,7 @@ public class Settings
     public bool ShowAnimations { get; set; } = true;
 
     [JsonPropertyName("autoSyncPlaytime")]
-    public bool AutoSyncPlaytime { get; set; } = true;
+    public bool AutoSyncPlaytime { get; set; } = false;
 
     [JsonPropertyName("minimizeOnLaunch")]
     public bool MinimizeOnLaunch { get; set; } = false;
@@ -47,7 +47,7 @@ public class Settings
     public string? DefaultTab { get; set; }
 
     [JsonPropertyName("discordPresence")]
-    public bool DiscordPresence { get; set; } = true;
+    public bool DiscordPresence { get; set; } = false;
 
     [JsonPropertyName("metadataSource")]
     public string MetadataSource { get; set; } = "steam";

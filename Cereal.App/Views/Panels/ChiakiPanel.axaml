@@ -14,6 +14,7 @@
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontWeight" Value="Medium"/>
       <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="BorderThickness" Value="0,0,0,2"/>
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="CornerRadius" Value="0"/>
@@ -27,12 +28,16 @@
       <Setter Property="Background" Value="#08ffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
     </Style>
+    <Style Selector="Button.chiaki-tab:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
+    </Style>
 
     <Style Selector="Button.ch-sm">
       <Setter Property="Background" Value="#14ffffff"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="BorderBrush" Value="#10ffffff"/>
@@ -42,6 +47,12 @@
       <Setter Property="Background" Value="#20ffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
+    <Style Selector="Button.ch-sm:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.ch-sm:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+    </Style>
 
     <Style Selector="Button.ch-primary">
       <Setter Property="Background" Value="#d4a853"/>
@@ -49,6 +60,7 @@
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -56,18 +68,31 @@
     <Style Selector="Button.ch-primary:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#e8b85e"/>
     </Style>
+    <Style Selector="Button.ch-primary:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.ch-primary:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+    </Style>
 
     <Style Selector="Button.ch-danger">
       <Setter Property="Background" Value="#33ff4444"/>
       <Setter Property="Foreground" Value="#ff7070"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="Padding" Value="6,5"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.ch-danger:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#55ff4444"/>
+    </Style>
+    <Style Selector="Button.ch-danger:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.ch-danger:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
 
     <Style Selector="TextBox.ch-input">
@@ -77,6 +102,7 @@
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="MinHeight" Value="32"/>
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="CaretBrush" Value="#d4a853"/>
     </Style>
@@ -86,10 +112,13 @@
 
   </UserControl.Styles>
 
+  <Border Background="{DynamicResource ThemeSurface}"
+          BorderBrush="#14ffffff"
+          BorderThickness="1,0,0,0">
   <Grid RowDefinitions="Auto,Auto,*">
 
     <!-- Status bar -->
-    <Border Grid.Row="0" Margin="16,12,16,0" CornerRadius="8" Padding="10,7"
+    <Border Grid.Row="0" Margin="14,10,14,0" CornerRadius="8" Padding="10,6"
             Background="{Binding StatusBg}">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <Ellipse Width="6" Height="6" Fill="{Binding StatusDot}" VerticalAlignment="Center"/>
@@ -102,7 +131,7 @@
     </Border>
 
     <!-- Tabs -->
-    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="16,8,16,0">
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="14,8,14,0">
       <Button Classes="chiaki-tab" Content="Consoles"
               Classes.active="{Binding IsTabConsoles}"
               Click="TabConsoles_Click"/>
@@ -117,7 +146,7 @@
     <!-- Tab content -->
     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="16,10,16,16" Spacing="10">
+      <StackPanel Margin="14,10,14,14" Spacing="10">
 
         <!-- ── Consoles tab ── -->
         <StackPanel IsVisible="{Binding IsTabConsoles}" Spacing="10">
@@ -132,7 +161,7 @@
 
           <!-- Add console form -->
           <Border IsVisible="{Binding ShowAddConsoleForm}"
-                  Background="#0dffffff" CornerRadius="8" Padding="12">
+                  Background="#12ffffff" BorderBrush="#18ffffff" BorderThickness="1" CornerRadius="10" Padding="12">
             <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,12,*">
                 <StackPanel Grid.Column="0" Spacing="4">
@@ -159,7 +188,7 @@
 
           <!-- Empty state -->
           <Border IsVisible="{Binding HasNoConsoles}"
-                  Background="#08ffffff" CornerRadius="8" Padding="16">
+                  Background="#0dffffff" BorderBrush="#14ffffff" BorderThickness="1" CornerRadius="10" Padding="16">
             <TextBlock FontSize="12" Foreground="#50b0aaa0" TextWrapping="Wrap"
                        TextAlignment="Center">
               No consoles registered. Use the Discover tab to find consoles on your network,
@@ -171,7 +200,7 @@
           <ItemsControl ItemsSource="{Binding Consoles}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:ChiakiConsoleViewModel">
-                <Border Background="#0dffffff" CornerRadius="8" Padding="12" Margin="0,0,0,6">
+                <Border Background="#12ffffff" BorderBrush="#18ffffff" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,6">
                   <Grid ColumnDefinitions="Auto,*,Auto">
 
                     <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
@@ -183,7 +212,7 @@
 
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                       <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock Text="{Binding Nickname}" FontSize="13"
+                        <TextBlock Text="{Binding Nickname}" FontSize="12"
                                    FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                         <Border IsVisible="{Binding IsLive}"
                                 Background="#1a22c55e" CornerRadius="4" Padding="5,1">
@@ -215,9 +244,13 @@
                               IsVisible="{Binding !IsLive}"
                               Tag="{Binding .}"
                               Click="WakeConsole_Click"/>
-                      <Button Classes="ch-danger" Content="✕"
+                      <Button Classes="ch-danger"
                               Tag="{Binding .}"
-                              Click="RemoveConsole_Click"/>
+                              Click="RemoveConsole_Click">
+                        <PathIcon Width="10" Height="10"
+                                  Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Data="M1,1 L9,9 M9,1 L1,9"/>
+                      </Button>
                     </StackPanel>
 
                   </Grid>
@@ -245,7 +278,7 @@
           <ItemsControl ItemsSource="{Binding DiscoveredConsoles}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:DiscoveredConsoleViewModel">
-                <Border Background="#0dffffff" CornerRadius="8" Padding="12" Margin="0,0,0,6">
+                <Border Background="#12ffffff" BorderBrush="#18ffffff" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,6">
                   <Grid ColumnDefinitions="Auto,*,Auto">
 
                     <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
@@ -256,7 +289,7 @@
                     </Border>
 
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Name}" FontSize="13"
+                      <TextBlock Text="{Binding Name}" FontSize="12"
                                  FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="{Binding Host}" FontSize="11" Foreground="#50b0aaa0"/>
@@ -293,7 +326,7 @@
           </ItemsControl>
 
           <Border IsVisible="{Binding ShowDiscoverEmpty}"
-                  Background="#08ffffff" CornerRadius="8" Padding="16">
+                  Background="#0dffffff" BorderBrush="#14ffffff" BorderThickness="1" CornerRadius="10" Padding="16">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
               <TextBlock Text="Click Scan Network to find PlayStation consoles."
                          FontSize="12" Foreground="#50b0aaa0" TextAlignment="Center"/>
@@ -310,7 +343,7 @@
           <TextBlock Text="Register your PlayStation for Remote Play. One-time setup per console."
                      FontSize="12" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
 
-          <Border Background="#0dffffff" CornerRadius="8" Padding="12">
+          <Border Background="#12ffffff" BorderBrush="#18ffffff" BorderThickness="1" CornerRadius="10" Padding="12">
             <StackPanel Spacing="8">
               <TextBlock Text="SETUP STEPS" FontSize="9" FontWeight="Bold"
                          LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,4"/>
@@ -379,4 +412,5 @@
     </ScrollViewer>
 
   </Grid>
+  </Border>
 </UserControl>

@@ -38,6 +38,8 @@ public partial class AddGameDialog : Window
         this.FindControl<TextBox>("HeaderBox")!.Text = g.HeaderUrl ?? g.LocalHeaderPath ?? "";
         this.FindControl<TextBox>("PlatformIdBox")!.Text = g.PlatformId ?? "";
         this.FindControl<TextBox>("ExeBox")!.Text = g.ExecutablePath ?? "";
+        this.FindControl<TextBox>("CategoriesBox")!.Text =
+            g.Categories is { Count: > 0 } ? string.Join(", ", g.Categories) : "";
 
         // Metadata
         this.FindControl<TextBox>("DescBox")!.Text = g.Description ?? "";
@@ -62,6 +64,8 @@ public partial class AddGameDialog : Window
 
         if (!string.IsNullOrEmpty(g.CoverUrl) || !string.IsNullOrEmpty(g.LocalCoverPath))
             _ = LoadPreviewAsync(g.CoverUrl ?? g.LocalCoverPath!);
+        if (!string.IsNullOrEmpty(g.HeaderUrl) || !string.IsNullOrEmpty(g.LocalHeaderPath))
+            _ = LoadPreviewAsync(g.HeaderUrl ?? g.LocalHeaderPath!, "HeaderPreview");
     }
 
     private void PlatformBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -137,7 +141,11 @@ public partial class AddGameDialog : Window
                 FileTypeFilter = [new FilePickerFileType("Images") { Patterns = ["*.jpg", "*.jpeg", "*.png", "*.webp"] }],
             });
             if (files.Count > 0)
-                this.FindControl<TextBox>("HeaderBox")!.Text = files[0].Path.LocalPath;
+            {
+                var path = files[0].Path.LocalPath;
+                this.FindControl<TextBox>("HeaderBox")!.Text = path;
+                _ = LoadPreviewAsync(path, "HeaderPreview");
+            }
         }
         catch (Exception ex) { Log.Warning(ex, "[AddGame] BrowseHeader failed"); }
     }
@@ -160,7 +168,10 @@ public partial class AddGameDialog : Window
         var dlg = new ArtPickerDialog(name);
         var result = await dlg.ShowDialog<string?>(this);
         if (result is not null)
+        {
             this.FindControl<TextBox>("HeaderBox")!.Text = result;
+            _ = LoadPreviewAsync(result, "HeaderPreview");
+        }
     }
 
     private void CoverBox_TextChanged(object? sender, TextChangedEventArgs e)
@@ -168,6 +179,13 @@ public partial class AddGameDialog : Window
         var text = this.FindControl<TextBox>("CoverBox")!.Text;
         if (!string.IsNullOrWhiteSpace(text))
             _ = LoadPreviewAsync(text);
+    }
+
+    private void HeaderBox_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        var text = this.FindControl<TextBox>("HeaderBox")!.Text;
+        if (!string.IsNullOrWhiteSpace(text))
+            _ = LoadPreviewAsync(text, "HeaderPreview");
     }
 
     private async void FetchMeta_Click(object? sender, RoutedEventArgs e)
@@ -221,7 +239,10 @@ public partial class AddGameDialog : Window
 
             var headerBox = this.FindControl<TextBox>("HeaderBox")!;
             if (!string.IsNullOrEmpty(meta.HeaderUrl) && string.IsNullOrWhiteSpace(headerBox.Text))
+            {
                 headerBox.Text = meta.HeaderUrl;
+                _ = LoadPreviewAsync(meta.HeaderUrl, "HeaderPreview");
+            }
 
             this.FindControl<Expander>("MetaExpander")!.IsExpanded = true;
             statusTb.Text = $"Filled from {meta.Source}";
@@ -251,6 +272,7 @@ public partial class AddGameDialog : Window
         var cover = this.FindControl<TextBox>("CoverBox")!.Text?.Trim();
         var header = this.FindControl<TextBox>("HeaderBox")!.Text?.Trim();
         var platformId = this.FindControl<TextBox>("PlatformIdBox")!.Text?.Trim();
+        var cats = this.FindControl<TextBox>("CategoriesBox")!.Text?.Trim();
         var notes = this.FindControl<TextBox>("NotesBox")!.Text?.Trim();
         var desc = this.FindControl<TextBox>("DescBox")!.Text?.Trim();
         var dev = this.FindControl<TextBox>("DevBox")!.Text?.Trim();
@@ -279,6 +301,12 @@ public partial class AddGameDialog : Window
         game.CoverUrl = string.IsNullOrEmpty(cover) ? null : cover;
         game.HeaderUrl = string.IsNullOrEmpty(header) ? null : header;
         game.PlatformId = string.IsNullOrEmpty(platformId) ? null : platformId;
+        game.Categories = string.IsNullOrWhiteSpace(cats)
+            ? []
+            : cats.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
         game.Notes = string.IsNullOrEmpty(notes) ? null : notes;
         game.Description = string.IsNullOrEmpty(desc) ? null : desc;
         game.Developer = string.IsNullOrEmpty(dev) ? null : dev;
@@ -297,7 +325,7 @@ public partial class AddGameDialog : Window
         tb.IsVisible = true;
     }
 
-    private async Task LoadPreviewAsync(string url)
+    private async Task LoadPreviewAsync(string url, string imageName = "CoverPreview")
     {
         try
         {
@@ -315,7 +343,7 @@ public partial class AddGameDialog : Window
                 bmp = new Bitmap(ms);
             }
 
-            var preview = this.FindControl<Image>("CoverPreview")!;
+            var preview = this.FindControl<Image>(imageName)!;
             preview.Source = bmp;
             preview.IsVisible = true;
         }

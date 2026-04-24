@@ -1,4 +1,6 @@
 ﻿using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
+using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cereal.App.Models;
@@ -21,7 +23,7 @@ public partial class MainViewModel : ObservableObject
     public MediaViewModel Media { get; }
 
     [ObservableProperty] private string _searchText = "";
-    [ObservableProperty] private string _viewMode = "cards";
+    [ObservableProperty] private string _viewMode = "orbit";
     [ObservableProperty] private GameCardViewModel? _selectedGame;
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _statusMessage;
@@ -30,15 +32,61 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<string> _activeCategoryFilters = [];
     [ObservableProperty] private bool _showHidden;
     [ObservableProperty] private bool _showInstalledOnly;
+    [ObservableProperty] private bool _hideSteamSoftware = true;
     [ObservableProperty] private string _sortOrder = "name";
     [ObservableProperty] private string _quickFilter = "all";
-    // "top" | "bottom" — drives VerticalAlignment of the floating nav pill.
+    // "top" | "bottom" | "left" | "right" — drives nav pill placement.
     [ObservableProperty] private string _toolbarPosition = "top";
 
+    /// <summary>Matches Electron <c>--tb-scale</c> (App.tsx): shrinks floating chrome on narrow windows.</summary>
+    [ObservableProperty] private double _toolbarScale = 1.0;
+
+    public static double ComputeToolbarScale(double windowWidth) =>
+        Math.Clamp((windowWidth - 600.0) / 1000.0 * 0.35 + 0.65, 0.65, 1.0);
+
     public Avalonia.Layout.VerticalAlignment ToolbarVerticalAlignment =>
-        string.Equals(ToolbarPosition, "bottom", StringComparison.OrdinalIgnoreCase)
-            ? Avalonia.Layout.VerticalAlignment.Bottom
-            : Avalonia.Layout.VerticalAlignment.Top;
+        ToolbarPosition?.ToLowerInvariant() switch
+        {
+            "bottom" => Avalonia.Layout.VerticalAlignment.Bottom,
+            "left" or "right" => Avalonia.Layout.VerticalAlignment.Center,
+            _ => Avalonia.Layout.VerticalAlignment.Top,
+        };
+
+    public Avalonia.Layout.HorizontalAlignment ToolbarHorizontalAlignment =>
+        ToolbarPosition?.ToLowerInvariant() switch
+        {
+            "left" => Avalonia.Layout.HorizontalAlignment.Left,
+            "right" => Avalonia.Layout.HorizontalAlignment.Right,
+            _ => Avalonia.Layout.HorizontalAlignment.Center,
+        };
+
+    public Avalonia.Layout.Orientation ToolbarOrientation =>
+        ToolbarPosition is "left" or "right"
+            ? Avalonia.Layout.Orientation.Vertical
+            : Avalonia.Layout.Orientation.Horizontal;
+
+    /// <summary>index.css <c>.nav-pill.pos-*</c> offsets (top clears ~46px title band like Electron).</summary>
+    public Avalonia.Thickness ToolbarMargin =>
+        ToolbarPosition?.ToLowerInvariant() switch
+        {
+            "left" => new Avalonia.Thickness(6, 0, 0, 0),
+            "right" => new Avalonia.Thickness(0, 0, 6, 0),
+            "bottom" => new Avalonia.Thickness(0, 8, 0, 6),
+            _ => new Avalonia.Thickness(0, 46, 0, 8),
+        };
+
+    public CornerRadius NavPillCornerRadius =>
+        ToolbarPosition is "left" or "right"
+            ? new CornerRadius(16)
+            : new CornerRadius(22);
+
+    public Avalonia.Thickness NavPillPadding =>
+        ToolbarPosition is "left" or "right"
+            ? new Avalonia.Thickness(6, 10, 6, 10)
+            : new Avalonia.Thickness(10, 4, 10, 4);
+
+    public double NavPillMinWidth =>
+        ToolbarPosition is "left" or "right" ? 68 : 0;
 
     // Put the now-playing widget on the opposite edge from the toolbar so they
     // never overlap (toolbar at bottom → media at top, and vice versa).
@@ -48,15 +96,36 @@ public partial class MainViewModel : ObservableObject
             : Avalonia.Layout.VerticalAlignment.Bottom;
 
     public Avalonia.Thickness StreamBarBorderThickness =>
-        string.Equals(ToolbarPosition, "bottom", StringComparison.OrdinalIgnoreCase)
-            ? new Avalonia.Thickness(0, 1, 0, 0)
-            : new Avalonia.Thickness(0, 0, 0, 1);
+        ToolbarPosition?.ToLowerInvariant() switch
+        {
+            "bottom" => new Avalonia.Thickness(0, 1, 0, 0),
+            "left" => new Avalonia.Thickness(0, 0, 1, 0),
+            "right" => new Avalonia.Thickness(1, 0, 0, 0),
+            _ => new Avalonia.Thickness(0, 0, 0, 1),
+        };
+
+    // Left-aligned widget margin: top-16 when media is at top, bottom-16 when at bottom.
+    public Avalonia.Thickness MediaWidgetMargin =>
+        ToolbarPosition?.ToLowerInvariant() switch
+        {
+            "bottom" => new Avalonia.Thickness(16, 16, 0, 0),
+            "left" => new Avalonia.Thickness(72, 0, 0, 16),
+            "right" => new Avalonia.Thickness(16, 0, 72, 16),
+            _ => new Avalonia.Thickness(16, 0, 0, 16),
+        };
 
     partial void OnToolbarPositionChanged(string value)
     {
         OnPropertyChanged(nameof(ToolbarVerticalAlignment));
+        OnPropertyChanged(nameof(ToolbarHorizontalAlignment));
+        OnPropertyChanged(nameof(ToolbarOrientation));
+        OnPropertyChanged(nameof(ToolbarMargin));
+        OnPropertyChanged(nameof(NavPillCornerRadius));
+        OnPropertyChanged(nameof(NavPillPadding));
+        OnPropertyChanged(nameof(NavPillMinWidth));
         OnPropertyChanged(nameof(MediaVerticalAlignment));
         OnPropertyChanged(nameof(StreamBarBorderThickness));
+        OnPropertyChanged(nameof(MediaWidgetMargin));
     }
 
     public IEnumerable<string> AllCategories =>
@@ -71,27 +140,77 @@ public partial class MainViewModel : ObservableObject
         ActivePlatformFilters.Count
         + ActiveCategoryFilters.Count
         + (string.IsNullOrEmpty(SearchText) ? 0 : 1)
-        + (ShowInstalledOnly ? 0 : 0)
+        + (ShowInstalledOnly ? 1 : 0)
+        + (!HideSteamSoftware ? 1 : 0)
         + (SortOrder != "name" && !string.IsNullOrEmpty(SortOrder) ? 1 : 0);
 
     public bool HasActiveFilters => ActiveFilterCount > 0;
 
     public ObservableCollection<GameCardViewModel> VisibleGames { get; } = [];
-    public ObservableCollection<PlatformGroupViewModel> GameGroups { get; } = [];
+    public ObservableCollection<CardLayoutEntry> CardLayoutRows { get; } = [];
     public ObservableCollection<PlatformChipViewModel> PlatformChips { get; } = [];
 
-    private CancellationTokenSource? _progressiveRenderCts;
+    /// <summary>Full filtered card list for the library; <see cref="VisibleGames"/> is a scroll-expanded prefix.</summary>
+    private List<GameCardViewModel>? _libraryCardsFull;
+    private int _libraryCardsVisibleCount;
 
-    private void RebuildGroups(IEnumerable<GameCardViewModel> cards)
+    /// <summary>Visible card width (150) + horizontal gap (14); must match the cards grid in MainView.</summary>
+    public const int LibraryCardCellWidth = 164;
+
+    private int _libraryColumnCount = 6;
+    /// <summary>Horizontal strip count for wrapping cards; updated from the cards scroll width.</summary>
+    public int LibraryColumnCount
     {
-        GameGroups.Clear();
-        foreach (var grp in cards.GroupBy(c => c.Platform ?? "custom").OrderBy(g => g.Key))
+        get => _libraryColumnCount;
+        set
         {
-            var group = new PlatformGroupViewModel(grp.Key);
-            foreach (var card in grp) group.Games.Add(card);
-            GameGroups.Add(group);
+            var v = Math.Max(1, value);
+            if (v == _libraryColumnCount) return;
+            _libraryColumnCount = v;
+            OnPropertyChanged(nameof(LibraryColumnCount));
+            if (VisibleGames.Count > 0) RebuildCardLayout();
         }
     }
+
+    private void RebuildCardLayout() => RebuildCardLayout(VisibleGames);
+
+    private void RebuildCardLayout(IEnumerable<GameCardViewModel> cards) =>
+        CardLayoutEntry.BuildRows(CardLayoutRows, cards, _libraryColumnCount);
+
+    /// <summary>Vite card grid: expand when the scroll sentinel nears the viewport (rootMargin 400px).</summary>
+    public void TryExpandLibraryCardsFromScroll(double scrollOffset, double viewportHeight, double extentHeight)
+    {
+        if (_libraryCardsFull is null || _libraryCardsVisibleCount >= _libraryCardsFull.Count)
+            return;
+
+        if (extentHeight <= viewportHeight + 48)
+        {
+            AppendLibraryCards(int.MaxValue);
+            return;
+        }
+
+        const double rootMargin = 400;
+        var distFromBottom = extentHeight - scrollOffset - viewportHeight;
+        if (distFromBottom > rootMargin)
+            return;
+
+        AppendLibraryCards(40);
+    }
+
+    private void AppendLibraryCards(int maxMore)
+    {
+        if (_libraryCardsFull is null) return;
+        const int batch = 40;
+        var remaining = _libraryCardsFull.Count - _libraryCardsVisibleCount;
+        if (remaining <= 0) return;
+        var take = maxMore == int.MaxValue ? remaining : Math.Min(batch, remaining);
+        for (var i = 0; i < take; i++)
+            VisibleGames.Add(_libraryCardsFull[_libraryCardsVisibleCount + i]);
+        _libraryCardsVisibleCount += take;
+        RebuildCardLayout(VisibleGames);
+    }
+
+    private void NotifyStreamEmbeddingProps() => OnPropertyChanged(nameof(ShowChiakiEmbedHost));
 
     [ObservableProperty] private bool _showSettings;
     [ObservableProperty] private bool _showDetect;
@@ -101,9 +220,28 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _showFocus;
     [ObservableProperty] private bool _showSearch;
     [ObservableProperty] private string? _zoomScreenshotUrl;
+    [ObservableProperty] private bool _isRefreshingGameInfo;
     [ObservableProperty] private string _searchQuery = "";
     [ObservableProperty] private string? _searchPlatformFilter;
     public bool AnyPanelOpen => ShowSettings || ShowDetect || ShowChiaki || ShowXcloud || ShowPlatforms;
+    public IEnumerable<PanelTabViewModel> PanelTabs
+    {
+        get
+        {
+            if (ShowSettings) yield return new PanelTabViewModel("settings", "Settings");
+            if (ShowDetect) yield return new PanelTabViewModel("detect", "Detect");
+            if (ShowPlatforms) yield return new PanelTabViewModel("platforms", "Platforms");
+            if (ShowChiaki) yield return new PanelTabViewModel("chiaki", "Remote Play");
+            if (ShowXcloud) yield return new PanelTabViewModel("xcloud", "Cloud Gaming");
+        }
+    }
+    public string RefreshInfoButtonLabel => IsRefreshingGameInfo ? "Fetching..." : "Refresh Info";
+    partial void OnIsRefreshingGameInfoChanged(bool value) => OnPropertyChanged(nameof(RefreshInfoButtonLabel));
+    partial void OnShowSettingsChanged(bool value) => NotifyTabsChanged();
+    partial void OnShowDetectChanged(bool value) => NotifyTabsChanged();
+    partial void OnShowChiakiChanged(bool value) => NotifyTabsChanged();
+    partial void OnShowXcloudChanged(bool value) => NotifyTabsChanged();
+    partial void OnShowPlatformsChanged(bool value) => NotifyTabsChanged();
 
     // Continue banner
     [ObservableProperty] private bool _showContinueBanner;
@@ -118,9 +256,16 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _showAppUpdate;
     [ObservableProperty] private string? _appUpdateVersion;
     [ObservableProperty] private bool _appUpdateReady;
+    [ObservableProperty] private int _appUpdatePercent;
     public bool AppUpdateDownloading => ShowAppUpdate && !AppUpdateReady;
+    public string AppUpdateDownloadLabel =>
+        AppUpdatePercent > 0
+            ? $"Downloading v{AppUpdateVersion} · {AppUpdatePercent}%"
+            : $"Downloading v{AppUpdateVersion}";
     partial void OnShowAppUpdateChanged(bool value) => OnPropertyChanged(nameof(AppUpdateDownloading));
     partial void OnAppUpdateReadyChanged(bool value) => OnPropertyChanged(nameof(AppUpdateDownloading));
+    partial void OnAppUpdateVersionChanged(string? value) => OnPropertyChanged(nameof(AppUpdateDownloadLabel));
+    partial void OnAppUpdatePercentChanged(int value) => OnPropertyChanged(nameof(AppUpdateDownloadLabel));
 
     // Subtle progress pill (bottom-right), mirrors Electron's importProgress /
     // metaProgress UI in App.tsx 1232–1272. Single ObservableProperty set ==
@@ -156,11 +301,18 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    // Search overlay uses full library scope (not the currently filtered view),
+    // matching the original app behavior.
+    private IEnumerable<GameCardViewModel> SearchLibrary =>
+        _games.GetAll()
+            .Where(g => g.Platform is not "psn" and not "psremote")
+            .Select(g => new GameCardViewModel(g, _games));
+
     // Search results
     public IEnumerable<GameCardViewModel> SearchResults =>
         string.IsNullOrEmpty(SearchQuery)
             ? []
-            : VisibleGames
+            : SearchLibrary
                 .Where(g => g.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
                 .Where(g => SearchPlatformFilter == null || g.Platform == SearchPlatformFilter)
                 .Take(12);
@@ -168,7 +320,7 @@ public partial class MainViewModel : ObservableObject
     public IEnumerable<string> SearchActivePlatforms =>
         string.IsNullOrEmpty(SearchQuery)
             ? []
-            : VisibleGames
+            : SearchLibrary
                 .Where(g => g.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
                 .Select(g => g.Platform)
                 .Distinct();
@@ -178,12 +330,24 @@ public partial class MainViewModel : ObservableObject
 
     public ObservableCollection<StreamTabViewModel> StreamTabs { get; } = [];
 
-    // Active stream (first tab that is not disconnected)
+    // Active stream (first true in-stream tab; GUI-only sessions are excluded
+    // from overlay-active state to match source behavior).
     public StreamTabViewModel? ActiveStreamTab =>
-        StreamTabs.FirstOrDefault(t => t.State is "streaming" or "connecting" or "launching" or "gui");
+        StreamTabs.FirstOrDefault(t => t.State is "streaming" or "connecting" or "launching");
+    public StreamTabViewModel? GuiStreamTab =>
+        StreamTabs.FirstOrDefault(t => t.State == "gui");
+    public bool ShowGuiStreamFloat => GuiStreamTab is not null;
     public bool IsStreaming => ActiveStreamTab is not null;
     public bool IsStreamConnecting =>
         ActiveStreamTab?.State is "connecting" or "launching";
+
+    /// <summary>Windows-only: show native host for embedded Chiaki video (parity with Electron stream bounds).</summary>
+    public bool ShowChiakiEmbedHost =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+        && IsStreaming
+        && ActiveStreamTab is { Platform: var p }
+        && (string.Equals(p, "psn", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(p, "psremote", StringComparison.OrdinalIgnoreCase));
 
     public MainViewModel(
         GameService games,
@@ -201,8 +365,10 @@ public partial class MainViewModel : ObservableObject
         Media = new MediaViewModel(smtc);
 
         var s = settings.Get();
-        ViewMode = s.DefaultView ?? "cards";
+        // Missing JSON key deserializes null — must not fall back to "cards" or orbit default is wrong.
+        ViewMode = NormalizeViewMode(s.DefaultView);
         ToolbarPosition = string.IsNullOrWhiteSpace(s.ToolbarPosition) ? s.NavPosition : s.ToolbarPosition;
+        HideSteamSoftware = s.FilterHideSteamSoftware;
 
         // Restore user-saved filter state (port parity with settings.js DEFAULT_SETTINGS).
         if (s.FilterPlatforms is { Count: > 0 })
@@ -219,8 +385,11 @@ public partial class MainViewModel : ObservableObject
         StreamTabs.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(ActiveStreamTab));
+            OnPropertyChanged(nameof(GuiStreamTab));
+            OnPropertyChanged(nameof(ShowGuiStreamFloat));
             OnPropertyChanged(nameof(IsStreaming));
             OnPropertyChanged(nameof(IsStreamConnecting));
+            OnPropertyChanged(nameof(ShowChiakiEmbedHost));
         };
 
         // Controller input from GamepadService is delivered on the UI thread.
@@ -242,11 +411,16 @@ public partial class MainViewModel : ObservableObject
             updater.UpdateAvailable += (_, args) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
                 AppUpdateVersion = args.NewVersion;
+                AppUpdatePercent = 0;
                 AppUpdateReady = false;
                 ShowAppUpdate = true;
                 // Kick off the download as soon as we know one is available
                 // so the "Restart" button can light up when ready.
                 _ = updater.DownloadAndInstallAsync();
+            });
+            updater.DownloadProgressChanged += (_, pct) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                AppUpdatePercent = pct;
             });
             updater.UpdateReady += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
@@ -254,6 +428,9 @@ public partial class MainViewModel : ObservableObject
             });
         }
         catch { /* non-Velopack dev run: silently skip */ }
+
+        _games.LibraryChanged += (_, _) =>
+            Avalonia.Threading.Dispatcher.UIThread.Post(Refresh);
 
         Refresh();
         UpdateContinueBanner();
@@ -265,6 +442,7 @@ public partial class MainViewModel : ObservableObject
 
     private int _gpIdx = -1;
     private string _gpArea = "cards"; // cards | orbit | focus | pill
+    private int _gpPillIdx = 0; // 0: Remote Play, 1: Cloud Gaming
 
     public void HandleGamepadActions(IReadOnlyList<string> actions)
     {
@@ -290,14 +468,39 @@ public partial class MainViewModel : ObservableObject
         if (act == "select")  { if (ShowSearch) CloseSearch(); else OpenSearch(); return; }
 
         if (AnyPanelOpen) return; // Nothing else to do while a panel is open.
+        if (ShowSearch)  return; // Directional nav must not bleed through the search overlay.
 
-        if (act == "y") { ToggleViewMode(); return; }
+        // Stream pill area (cards mode): left/right switches button,
+        // confirm opens selected stream panel, up returns to card grid.
+        if (_gpArea == "pill" && ViewMode == "cards")
+        {
+            switch (act)
+            {
+                case "left":
+                    _gpPillIdx = Math.Max(0, _gpPillIdx - 1);
+                    return;
+                case "right":
+                    _gpPillIdx = Math.Min(1, _gpPillIdx + 1);
+                    return;
+                case "confirm":
+                    if (_gpPillIdx == 0) OpenChiaki();
+                    else OpenXcloud();
+                    return;
+                case "up":
+                    _gpArea = "cards";
+                    return;
+            }
+        }
+
+        // y toggles view, but not while focus detail is open (matches Electron !focusGame guard).
+        if (act == "y" && !ShowFocus) { ToggleViewMode(); return; }
 
         // LB / RB cycle quick-filter + active platform chips (tabs equivalent).
         if (act is "lb" or "rb")
         {
             var tabs = new List<string> { "all", "favorites", "recent" };
-            foreach (var chip in PlatformChips.Where(c => c.IsActive)) tabs.Add(chip.Id);
+            foreach (var chip in PlatformChips) tabs.Add(chip.Id);
+            tabs = tabs.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             var curIdx = Math.Max(0, tabs.IndexOf(QuickFilter));
             var delta = act == "rb" ? 1 : -1;
             curIdx = ((curIdx + delta) % tabs.Count + tabs.Count) % tabs.Count;
@@ -331,18 +534,34 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // Right stick in orbit: cycle through platform clusters (mirrors Electron r_* handling).
+        if (ViewMode == "orbit" && act is "r_left" or "r_right" or "r_up" or "r_down")
+        {
+            var platIds = PlatformChips.Select(c => c.Id).ToList();
+            if (platIds.Count > 0)
+            {
+                var ci = platIds.IndexOf(QuickFilter);
+                if (ci < 0) ci = 0;
+                ci = act is "r_right" or "r_down"
+                    ? (ci + 1) % platIds.Count
+                    : (ci - 1 + platIds.Count) % platIds.Count;
+                QuickFilter = platIds[ci];
+            }
+            return;
+        }
+
         // Library: move selection within VisibleGames and open focus on confirm.
         if (VisibleGames.Count == 0) return;
         var idx = Math.Max(0, Math.Min(_gpIdx, VisibleGames.Count - 1));
 
-        // Rough column count based on window width (cards are ~180px).
+        // Keep in sync with library grid: 150 + 14 gap, ~64 horizontal margin.
         int cols = 6;
         try
         {
             if (Avalonia.Application.Current?.ApplicationLifetime
                 is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime d &&
                 d.MainWindow is { } w)
-                cols = Math.Max(1, (int)((w.Bounds.Width - 64) / 180));
+                cols = Math.Max(1, (int)((w.Bounds.Width - 64) / (double)LibraryCardCellWidth));
         }
         catch { /* use default */ }
 
@@ -350,7 +569,17 @@ public partial class MainViewModel : ObservableObject
         {
             case "right":   idx = Math.Min(VisibleGames.Count - 1, idx + 1); break;
             case "left":    idx = Math.Max(0, idx - 1); break;
-            case "down":    idx = Math.Min(VisibleGames.Count - 1, idx + cols); break;
+            case "down":
+                var next = Math.Min(VisibleGames.Count - 1, idx + cols);
+                var isBottomRow = idx + cols >= VisibleGames.Count;
+                if (ViewMode == "cards" && isBottomRow)
+                {
+                    _gpArea = "pill";
+                    _gpPillIdx = 0;
+                    return;
+                }
+                idx = next;
+                break;
             case "up":      idx = Math.Max(0, idx - cols); break;
             case "confirm":
                 _gpIdx = Math.Clamp(_gpIdx < 0 ? 0 : _gpIdx, 0, VisibleGames.Count - 1);
@@ -393,7 +622,6 @@ public partial class MainViewModel : ObservableObject
         // Hide-Steam-software filter: matches heuristics in Electron metadata.js —
         // explicit `software = true`, appdetails `type = "tool"/"application"`,
         // or category names that smell like "tool" / "software" / "soundtrack" / "demo".
-        var hideSoftware = _settings.Get().FilterHideSteamSoftware;
         bool IsSteamSoftware(Game g)
         {
             if (g.Platform != "steam") return false;
@@ -407,10 +635,15 @@ public partial class MainViewModel : ObservableObject
                     var lc = c.ToLowerInvariant();
                     if (lc.Contains("tool") || lc.Contains("software") ||
                         lc.Contains("soundtrack") || lc.Contains("benchmark") ||
-                        lc.Contains("utility"))
+                        lc.Contains("utility") || lc.Contains("utilities"))
                         return true;
                 }
             }
+            var n = (g.Name ?? string.Empty).ToLowerInvariant();
+            if (System.Text.RegularExpressions.Regex.IsMatch(n,
+                    @"redistributable|redistrib|steamworks|sdk|runtime|\bruntime\b|dedicated server|devkit|vr runtime|mod tools|soundtrack",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                return true;
             return false;
         }
 
@@ -418,7 +651,7 @@ public partial class MainViewModel : ObservableObject
         // live only as stream sessions, xbox tiles live in the xcloud panel).
         var visibleAll = all
             .Where(g => g.Platform is not "psn" and not "psremote")
-            .Where(g => !hideSoftware || !IsSteamSoftware(g))
+            .Where(g => !HideSteamSoftware || !IsSteamSoftware(g))
             .ToList();
 
         var platformCounts = visibleAll.GroupBy(g => g.Platform ?? "custom")
@@ -454,35 +687,19 @@ public partial class MainViewModel : ObservableObject
             .Select(g => new GameCardViewModel(g, _games))
             .ToList();
 
-        // Progressive render: for large libraries, show the first chunk immediately
-        // and append the rest in batches on the UI-thread loop. This keeps the first
-        // paint responsive even with thousands of games.
-        _progressiveRenderCts?.Cancel();
+        // Progressive render (Vite App.tsx INITIAL_CARDS + IntersectionObserver): first chunk
+        // immediately; the rest load as the user scrolls — see TryExpandLibraryCardsFromScroll.
+        _libraryCardsFull = filtered;
         VisibleGames.Clear();
-        GameGroups.Clear();
+        CardLayoutRows.Clear();
 
-        const int firstBatch = 60;
-        const int batchSize  = 40;
+        const int initialCards = 60;
 
-        var head = filtered.Take(firstBatch).ToList();
-        foreach (var c in head) VisibleGames.Add(c);
-        RebuildGroups(VisibleGames);
-
-        if (filtered.Count > firstBatch)
-        {
-            var tail = filtered.Skip(firstBatch).ToList();
-            _progressiveRenderCts = new CancellationTokenSource();
-            var token = _progressiveRenderCts.Token;
-            _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
-            {
-                for (var i = 0; i < tail.Count && !token.IsCancellationRequested; i += batchSize)
-                {
-                    foreach (var c in tail.Skip(i).Take(batchSize)) VisibleGames.Add(c);
-                    RebuildGroups(VisibleGames);
-                    await Task.Yield();
-                }
-            }, Avalonia.Threading.DispatcherPriority.Background);
-        }
+        var first = Math.Min(initialCards, _libraryCardsFull.Count);
+        for (var i = 0; i < first; i++)
+            VisibleGames.Add(_libraryCardsFull[i]);
+        _libraryCardsVisibleCount = first;
+        RebuildCardLayout(VisibleGames);
 
         if (SelectedGame is not null)
         {
@@ -492,6 +709,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(AllCategories));
+        UpdateContinueBanner();
     }
 
     private int _searchSelectedIndex = -1;
@@ -505,14 +723,29 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(HasNoSearchResults));
     }
 
-    partial void OnSearchPlatformFilterChanged(string? value) =>
+    partial void OnSearchPlatformFilterChanged(string? value)
+    {
         OnPropertyChanged(nameof(SearchResults));
+        OnPropertyChanged(nameof(SearchActivePlatforms));
+    }
 
     partial void OnSearchTextChanged(string value) { Refresh(); NotifyFilterCount(); }
     partial void OnActivePlatformFiltersChanged(ObservableCollection<string> value) { PersistFilters(); Refresh(); NotifyFilterCount(); }
     partial void OnActiveCategoryFiltersChanged(ObservableCollection<string> value) { PersistFilters(); Refresh(); NotifyFilterCount(); }
     partial void OnShowHiddenChanged(bool value) => Refresh();
     partial void OnShowInstalledOnlyChanged(bool value) { Refresh(); NotifyFilterCount(); }
+    partial void OnHideSteamSoftwareChanged(bool value)
+    {
+        try
+        {
+            var s = _settings.Get();
+            s.FilterHideSteamSoftware = value;
+            _settings.Save(s);
+        }
+        catch { /* best-effort */ }
+        Refresh();
+        NotifyFilterCount();
+    }
     partial void OnSortOrderChanged(string value) { Refresh(); NotifyFilterCount(); }
 
     private void NotifyFilterCount()
@@ -562,7 +795,8 @@ public partial class MainViewModel : ObservableObject
             if ((s.AccentColor ?? string.Empty) == trimmed) return;
             s.AccentColor = trimmed;
             _settings.Save(s);
-            try { App.Services.GetRequiredService<Services.ThemeService>().ApplyCurrent(); } catch { }
+            try { App.Services.GetRequiredService<Services.ThemeService>().ApplyCurrent(); }
+            catch (Exception ex) { Serilog.Log.Debug(ex, "[main] ApplyCurrent after accent save failed"); }
             OnPropertyChanged();
         }
     }
@@ -590,7 +824,15 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void SetToolbarPosition(string pos)
     {
-        if (!string.IsNullOrEmpty(pos)) ToolbarPosition = pos;
+        if (string.IsNullOrWhiteSpace(pos)) return;
+        ToolbarPosition = pos.Trim().ToLowerInvariant() switch
+        {
+            "top" => "top",
+            "bottom" => "bottom",
+            "left" => "left",
+            "right" => "right",
+            _ => "top",
+        };
     }
 
     [RelayCommand]
@@ -642,7 +884,9 @@ public partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void SetSearchPlatformFilter(string? platform) =>
-        SearchPlatformFilter = SearchPlatformFilter == platform ? null : platform;
+        SearchPlatformFilter = string.IsNullOrWhiteSpace(platform) || platform == "__all"
+            ? null
+            : (SearchPlatformFilter == platform ? null : platform);
 
     public void SearchMoveSelection(int delta)
     {
@@ -711,11 +955,10 @@ public partial class MainViewModel : ObservableObject
 
     public void AddGame(Models.Game game)
     {
-        _games.Add(game);
-        if (!string.IsNullOrEmpty(game.CoverUrl))
-            _covers.EnqueueGame(game.Id);
-        Refresh();
-        StatusMessage = $"Added \"{game.Name}\"";
+        var survivor = _games.Add(game);
+        if (!string.IsNullOrEmpty(survivor.CoverUrl))
+            _covers.EnqueueGame(survivor.Id);
+        StatusMessage = $"Added \"{survivor.Name}\"";
     }
 
     public void UpdateGame(Models.Game game)
@@ -723,7 +966,6 @@ public partial class MainViewModel : ObservableObject
         _games.Update(game);
         if (!string.IsNullOrEmpty(game.CoverUrl))
             _covers.EnqueueGame(game.Id);
-        Refresh();
         StatusMessage = $"Saved \"{game.Name}\"";
     }
 
@@ -785,13 +1027,12 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void DeleteGame(string id)
     {
-        _games.Delete(id);
         if (SelectedGame?.Id == id)
         {
             SelectedGame = null;
             ShowFocus = false;
         }
-        Refresh();
+        _games.Delete(id);
     }
 
     [RelayCommand]
@@ -825,6 +1066,7 @@ public partial class MainViewModel : ObservableObject
         SortOrder = "name";
         ShowHidden = false;
         ShowInstalledOnly = false;
+        HideSteamSoftware = true;
         QuickFilter = "all";
         PersistFilters();
         PersistDefaultTab();
@@ -840,7 +1082,8 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshGameInfo()
     {
-        if (SelectedGame is null) return;
+        if (SelectedGame is null || IsRefreshingGameInfo) return;
+        IsRefreshingGameInfo = true;
         var id = SelectedGame.Id;
         var name = SelectedGame.Name;
         StatusMessage = $"Fetching info for {name}...";
@@ -859,6 +1102,26 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusMessage = $"Refresh failed: {ex.Message}";
+        }
+        finally
+        {
+            IsRefreshingGameInfo = false;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenSelectedGameWebsite()
+    {
+        var url = SelectedGame?.Website;
+        if (string.IsNullOrWhiteSpace(url)) return;
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Could not open website: {ex.Message}";
         }
     }
 
@@ -900,6 +1163,18 @@ public partial class MainViewModel : ObservableObject
     public string ViewModeToggleLabel => ViewMode == "cards" ? "Orbit" : "Cards";
     partial void OnViewModeChanged(string value) => OnPropertyChanged(nameof(ViewModeToggleLabel));
 
+    /// <summary>Coerces persisted / UI strings to <c>orbit</c> or <c>cards</c> (default <c>orbit</c>).</summary>
+    public static string NormalizeViewMode(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "orbit";
+        return v.Trim().ToLowerInvariant() switch
+        {
+            "cards" => "cards",
+            "orbit" => "orbit",
+            _ => "orbit",
+        };
+    }
+
     [RelayCommand]
     private void ToggleViewMode() => ViewMode = ViewMode == "cards" ? "orbit" : "cards";
 
@@ -908,7 +1183,8 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void SetViewMode(string mode)
     {
-        if (!string.IsNullOrEmpty(mode) && mode != ViewMode) ViewMode = mode;
+        var n = NormalizeViewMode(mode);
+        if (n != ViewMode) ViewMode = n;
     }
 
     [RelayCommand] private void OpenSettings()  { ShowSettings = true;  OnPropertyChanged(nameof(AnyPanelOpen)); }
@@ -922,6 +1198,41 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand] private void OpenPlatforms() { ShowPlatforms = true;  OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void ClosePlatforms(){ ShowPlatforms = false; OnPropertyChanged(nameof(AnyPanelOpen)); }
     [RelayCommand] private void CloseFocus()    { ShowFocus = false; SelectedGame = null; }
+
+    [RelayCommand]
+    private void OpenLauncherTab()
+    {
+        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = false;
+        ShowFocus = false;
+        OnPropertyChanged(nameof(AnyPanelOpen));
+    }
+
+    [RelayCommand]
+    private void SwitchToPanelTab(string? tabId)
+    {
+        if (string.IsNullOrWhiteSpace(tabId)) return;
+        ShowSettings = tabId == "settings";
+        ShowDetect = tabId == "detect";
+        ShowPlatforms = tabId == "platforms";
+        ShowChiaki = tabId == "chiaki";
+        ShowXcloud = tabId == "xcloud";
+        OnPropertyChanged(nameof(AnyPanelOpen));
+    }
+
+    [RelayCommand]
+    private void ClosePanelTab(string? tabId)
+    {
+        if (string.IsNullOrWhiteSpace(tabId)) return;
+        switch (tabId)
+        {
+            case "settings": ShowSettings = false; break;
+            case "detect": ShowDetect = false; break;
+            case "platforms": ShowPlatforms = false; break;
+            case "chiaki": ShowChiaki = false; break;
+            case "xcloud": ShowXcloud = false; break;
+        }
+        OnPropertyChanged(nameof(AnyPanelOpen));
+    }
 
     [RelayCommand]
     private void CloseAllPanels()
@@ -971,6 +1282,13 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(AnyPanelOpen));
     }
 
+    [RelayCommand]
+    private void OpenGuiStream()
+    {
+        if (GuiStreamTab is not null)
+            SwitchToStreamTab(GuiStreamTab);
+    }
+
     private int _coverInitialRemaining;
     private void OnCoverProgress(object? sender, CoverProgressArgs e)
     {
@@ -999,6 +1317,21 @@ public partial class MainViewModel : ObservableObject
         Avalonia.Threading.Dispatcher.UIThread.Post(() => HandleChiakiEvent(e));
     }
 
+    /// <summary>Rich Presence for cloud/PS streams; cleared on <c>disconnected</c> in the handlers below.</summary>
+    private void TrySetDiscordPresenceForStream(string gameId)
+    {
+        if (!_settings.Get().DiscordPresence) return;
+        try
+        {
+            var discord = App.Services.GetRequiredService<DiscordService>();
+            if (!discord.IsConnected || !discord.IsReady) return;
+            var g = _games.GetAll().FirstOrDefault(x => x.Id == gameId);
+            if (g is null) return;
+            discord.SetPresence(g.Name, g.Platform ?? "custom", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        }
+        catch { /* best-effort */ }
+    }
+
     private void HandleChiakiEvent(ChiakiEventArgs e)
     {
         var tab = StreamTabs.FirstOrDefault(t => t.GameId == e.GameId);
@@ -1023,15 +1356,20 @@ public partial class MainViewModel : ObservableObject
                 {
                     if (e.Data.TryGetValue("resolution", out var res))
                         tab.Resolution = res?.ToString();
+                    TrySetDiscordPresenceForStream(e.GameId);
                 }
 
                 OnPropertyChanged(nameof(ActiveStreamTab));
+                OnPropertyChanged(nameof(GuiStreamTab));
+                OnPropertyChanged(nameof(ShowGuiStreamFloat));
                 OnPropertyChanged(nameof(IsStreaming));
                 OnPropertyChanged(nameof(IsStreamConnecting));
             }
             else if (stateStr == "disconnected" && tab is not null)
             {
                 StreamTabs.Remove(tab);
+                try { App.Services.GetRequiredService<Services.Integrations.DiscordService>().ClearPresence(); }
+                catch { /* best-effort */ }
             }
         }
         else if (e.Type == "quality" && tab is not null)
@@ -1080,7 +1418,17 @@ public partial class MainViewModel : ObservableObject
                     catch { /* best-effort */ }
                 }
             }
+
+            var toastTitle = !string.IsNullOrWhiteSpace(detected)
+                ? detected
+                : (!string.IsNullOrEmpty(newGameId)
+                    ? _games.GetAll().FirstOrDefault(x => x.Id == newGameId)?.Name
+                    : null);
+            if (!string.IsNullOrWhiteSpace(toastTitle))
+                ShowToast($"Now playing: {toastTitle}");
         }
+
+        NotifyStreamEmbeddingProps();
     }
 
     private void OnXcloudEvent(object? sender, XcloudEventArgs e)
@@ -1103,14 +1451,29 @@ public partial class MainViewModel : ObservableObject
                 tab.State = stateStr;
             }
 
+            if (stateStr == "streaming")
+                TrySetDiscordPresenceForStream(e.GameId);
+
             OnPropertyChanged(nameof(ActiveStreamTab));
+            OnPropertyChanged(nameof(GuiStreamTab));
+            OnPropertyChanged(nameof(ShowGuiStreamFloat));
             OnPropertyChanged(nameof(IsStreaming));
             OnPropertyChanged(nameof(IsStreamConnecting));
         }
         else if (e.Type == "disconnected" && tab is not null)
         {
             StreamTabs.Remove(tab);
+            try { App.Services.GetRequiredService<Services.Integrations.DiscordService>().ClearPresence(); }
+            catch { /* best-effort */ }
         }
+
+        NotifyStreamEmbeddingProps();
+    }
+
+    private void NotifyTabsChanged()
+    {
+        OnPropertyChanged(nameof(AnyPanelOpen));
+        OnPropertyChanged(nameof(PanelTabs));
     }
 }
 
@@ -1175,5 +1538,17 @@ public partial class StreamTabViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(LatencyLabel));
         OnPropertyChanged(nameof(HasQualityStats));
+    }
+}
+
+public sealed class PanelTabViewModel
+{
+    public string Id { get; }
+    public string Title { get; }
+
+    public PanelTabViewModel(string id, string title)
+    {
+        Id = id;
+        Title = title;
     }
 }

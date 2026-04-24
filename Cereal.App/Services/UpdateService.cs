@@ -55,7 +55,8 @@ public sealed class UpdateService
         if (_mgr is null || _pendingUpdate is null) return;
         try
         {
-            await _mgr.DownloadUpdatesAsync(_pendingUpdate);
+            await _mgr.DownloadUpdatesAsync(_pendingUpdate,
+                p => DownloadProgressChanged?.Invoke(this, p));
             Log.Information("[update] Download complete — will restart to apply");
             UpdateReady?.Invoke(this, EventArgs.Empty);
         }

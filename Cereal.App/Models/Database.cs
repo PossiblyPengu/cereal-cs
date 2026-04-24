@@ -6,7 +6,7 @@ public class Database
 {
     // Bump whenever the on-disk shape changes; DatabaseService runs one-time
     // migrations between these versions.
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 3;
 
     [JsonPropertyName("schemaVersion")]
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
@@ -38,6 +38,12 @@ public class AccountInfo
     [JsonPropertyName("accountId")]
     public string? AccountId { get; set; }
 
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("avatarUrl")]
+    public string? AvatarUrl { get; set; }
+
     [JsonPropertyName("accessToken")]
     public string? AccessToken { get; set; }
 
@@ -46,6 +52,9 @@ public class AccountInfo
 
     [JsonPropertyName("expiresAt")]
     public long? ExpiresAt { get; set; }
+
+    [JsonPropertyName("lastSyncMs")]
+    public long? LastSyncMs { get; set; }
 
     [JsonExtensionData]
     public Dictionary<string, object?>? Extra { get; set; }

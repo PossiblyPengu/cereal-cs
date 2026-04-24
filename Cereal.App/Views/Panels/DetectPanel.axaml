@@ -10,24 +10,79 @@
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
     </Style>
+    <Style Selector="Border.detect-card">
+      <Setter Property="Background" Value="#0affffff"/>
+      <Setter Property="BorderBrush" Value="#14ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="12,10"/>
+    </Style>
+    <Style Selector="Button.detect-primary">
+      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="14,8"/>
+      <Setter Property="MinHeight" Value="30"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.detect-primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#e8b85e"/>
+    </Style>
+    <Style Selector="Button.detect-primary:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.detect-primary:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+    </Style>
+    <Style Selector="Button.detect-ghost">
+      <Setter Property="Background" Value="#14ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="BorderBrush" Value="#10ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="12,7"/>
+      <Setter Property="MinHeight" Value="30"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.detect-ghost:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#22ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.detect-ghost:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.detect-ghost:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+    </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="Auto,*,Auto" Margin="32,24">
+  <Border Background="{DynamicResource ThemeSurface}"
+          BorderBrush="#14ffffff"
+          BorderThickness="1,0,0,0">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="16,14">
 
     <!-- Header -->
-    <StackPanel Grid.Row="0" Margin="0,0,0,20">
+    <StackPanel Grid.Row="0" Margin="0,0,0,16">
       <TextBlock Text="PLATFORMS" FontSize="9" FontWeight="Bold"
                  LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,6"/>
-      <TextBlock Text="Detect Games" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
+      <TextBlock Text="Detect Games" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
       <TextBlock Text="Scan your installed platforms and import games into your library."
-                 FontSize="13" Foreground="#50b0aaa0" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                 FontSize="12" Foreground="#50b0aaa0" Margin="0,3,0,0" TextWrapping="Wrap"/>
+      <Button Content="Manage platform accounts"
+              HorizontalAlignment="Left"
+              Margin="0,8,0,0"
+              Classes="detect-ghost"
+              Click="OpenPlatforms_Click"/>
     </StackPanel>
 
     <!-- Main content: provider toggles + results -->
-    <Grid Grid.Row="1" ColumnDefinitions="200,*">
+      <Grid Grid.Row="1" ColumnDefinitions="190,*">
 
       <!-- Provider list -->
-      <StackPanel Grid.Column="0" Spacing="4">
+      <Border Grid.Column="0" Classes="detect-card">
+      <StackPanel Spacing="4">
         <TextBlock Text="PLATFORMS" Foreground="#40b0aaa0" FontSize="9" FontWeight="Bold"
                    LetterSpacing="1.5" Margin="0,0,0,8"/>
         <ItemsControl ItemsSource="{Binding Providers}">
@@ -43,13 +98,14 @@
         <Button Content="Scan installed games"
                 Command="{Binding ScanCommand}"
                 IsEnabled="{Binding !IsScanning}"
-                Background="#d4a853" Foreground="#07070d"
-                CornerRadius="6" Padding="14,8" BorderThickness="0"
-                HorizontalAlignment="Left" Margin="0,16,0,0" Cursor="Hand"/>
+                Classes="detect-primary"
+                HorizontalAlignment="Left" Margin="0,12,0,0" Cursor="Hand"/>
       </StackPanel>
+      </Border>
 
       <!-- Results -->
-      <Grid Grid.Column="1" RowDefinitions="Auto,*" Margin="24,0,0,0">
+      <Border Grid.Column="1" Classes="detect-card" Margin="16,0,0,0">
+      <Grid RowDefinitions="Auto,*">
 
         <!-- Column header -->
         <Grid Grid.Row="0" ColumnDefinitions="*,100,60" Margin="0,0,0,4">
@@ -59,11 +115,11 @@
         </Grid>
         <Border Grid.Row="0" Height="1" Background="#0fffffff" VerticalAlignment="Bottom"/>
 
-        <ScrollViewer Grid.Row="1">
+        <ScrollViewer Grid.Row="1" Margin="0,6,0,0">
           <ItemsControl ItemsSource="{Binding Results}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:DetectedGameRow">
-                <Grid ColumnDefinitions="*,100,60" Margin="0,5">
+                <Grid ColumnDefinitions="*,100,60" Margin="0,3">
                   <TextBlock Grid.Column="0" Text="{Binding Name}"
                              Foreground="{Binding IsImported, Converter={x:Static conv:BoolConverters.ToObject},
                                ConverterParameter='#40b0aaa0,#e8e4de'}"
@@ -79,11 +135,12 @@
           </ItemsControl>
         </ScrollViewer>
       </Grid>
+      </Border>
 
     </Grid>
 
     <!-- Footer -->
-    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" Margin="0,16,0,0">
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
       <TextBlock VerticalAlignment="Center" Foreground="#50b0aaa0" FontSize="12">
         <TextBlock.Text>
           <MultiBinding StringFormat="{}{0} found  ·  {1} added">
@@ -94,17 +151,15 @@
       </TextBlock>
       <Button Content="Import selected"
               Command="{Binding ImportSelectedCommand}"
-              Background="#d4a853" Foreground="#07070d"
-              CornerRadius="6" Padding="14,8" BorderThickness="0" Cursor="Hand"/>
+              Classes="detect-primary"/>
       <Button Content="Import all"
               Command="{Binding ImportAllCommand}"
-              Background="#14ffffff" Foreground="{DynamicResource ThemeText2}"
-              CornerRadius="6" Padding="14,8" BorderThickness="1"
-              BorderBrush="#10ffffff" Cursor="Hand"/>
+              Classes="detect-ghost"/>
       <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"
              Foreground="#50b0aaa0" FontSize="12"
              IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
     </StackPanel>
 
   </Grid>
+  </Border>
 </UserControl>

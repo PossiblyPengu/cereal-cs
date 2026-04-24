@@ -4,7 +4,7 @@ using Serilog;
 
 namespace Cereal.App.Services.Providers;
 
-public class GogProvider(DatabaseService db) : IImportProvider
+public class GogProvider(DatabaseService db, AuthService auth) : IImportProvider
 {
     public string PlatformId => "gog";
 
@@ -50,8 +50,8 @@ public class GogProvider(DatabaseService db) : IImportProvider
 
     public async Task<ImportResult> ImportLibrary(ImportContext ctx)
     {
-        var acct = db.Db.Accounts.GetValueOrDefault("gog");
-        if (acct?.AccessToken is null)
+        var token = auth.GetAccessToken("gog");
+        if (string.IsNullOrWhiteSpace(token))
             return new ImportResult([], [], 0, "GOG account not connected");
 
         try
@@ -60,8 +60,9 @@ public class GogProvider(DatabaseService db) : IImportProvider
             var updated = new List<string>();
             var processedNames = new HashSet<string>();
             var allProducts = new List<JsonElement>();
+            var index = ProviderUtils.GameImportIndex.FromGames(db.Db.Games);
 
-            var firstPage = await FetchPage(ctx.Http, acct.AccessToken, 1);
+            var firstPage = await FetchPage(ctx.Http, token, 1);
             if (firstPage is null) return new ImportResult([], [], 0, "Could not fetch GOG library");
 
             allProducts.AddRange(firstPage.Value.products);
@@ -69,7 +70,7 @@ public class GogProvider(DatabaseService db) : IImportProvider
 
             for (var page = 2; page <= totalPages; page++)
             {
-                var p = await FetchPage(ctx.Http, acct.AccessToken, page);
+                var p = await FetchPage(ctx.Http, token, page);
                 if (p is not null) allProducts.AddRange(p.Value.products);
             }
 
@@ -89,17 +90,19 @@ public class GogProvider(DatabaseService db) : IImportProvider
                 var slug = (gp.TryGetProperty("slug", out var sl) ? sl.GetString() : null) ?? "";
                 var coverUrl = PickCoverImage(gp);
 
-                var existing = ProviderUtils.FindExisting(db, "gog", gogId, title);
+                var existing = index.Find("gog", gogId, title);
                 if (existing is not null)
                 {
                     var changed = false;
-                    if (existing.PlatformId is null) { existing.PlatformId = gogId; changed = true; }
+                    if (existing.PlatformId is null) { existing.PlatformId = ProviderUtils.NormalizePlatformId(gogId); changed = true; }
                     if (existing.CoverUrl is null && coverUrl is not null) { existing.CoverUrl = coverUrl; changed = true; }
                     if (changed) updated.Add(existing.Name);
                 }
                 else
                 {
-                    db.Db.Games.Add(ProviderUtils.MakeGameEntry("gog", "gog", title, gogId, coverUrl));
+                    var entry = ProviderUtils.MakeGameEntry("gog", "gog", title, gogId, coverUrl);
+                    db.Db.Games.Add(entry);
+                    index.Track(entry);
                     imported.Add(title);
                 }
 

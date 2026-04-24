@@ -4935,19 +4935,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\acalabrese\\.nuget\\packages\\": {}
+    "C:\\Users\\andre\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
+      "projectUniqueName": "E:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
       "projectName": "Cereal.App",
-      "projectPath": "D:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
-      "packagesPath": "C:\\Users\\acalabrese\\.nuget\\packages\\",
-      "outputPath": "D:\\CODE\\cereal-cs\\Cereal.App\\obj\\",
+      "projectPath": "E:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
+      "packagesPath": "C:\\Users\\andre\\.nuget\\packages\\",
+      "outputPath": "E:\\CODE\\cereal-cs\\Cereal.App\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\acalabrese\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\andre\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -4971,7 +4971,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net8.0": {
@@ -5064,31 +5064,31 @@
         "downloadDependencies": [
           {
             "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.21, 8.0.21]"
+            "version": "[8.0.24, 8.0.24]"
           },
           {
             "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
-            "version": "[8.0.21, 8.0.21]"
+            "version": "[8.0.24, 8.0.24]"
           },
           {
             "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[8.0.21, 8.0.21]"
+            "version": "[8.0.24, 8.0.24]"
           },
           {
             "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.21, 8.0.21]"
+            "version": "[8.0.24, 8.0.24]"
           },
           {
             "name": "Microsoft.NETCore.App.Runtime.win-x64",
-            "version": "[8.0.21, 8.0.21]"
+            "version": "[8.0.24, 8.0.24]"
           },
           {
             "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[8.0.21, 8.0.21]"
+            "version": "[8.0.24, 8.0.24]"
           },
           {
             "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
-            "version": "[8.0.21, 8.0.21]"
+            "version": "[8.0.24, 8.0.24]"
           }
         ],
         "frameworkReferences": {
@@ -5096,7 +5096,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "D:\\CODE\\important files\\dotnet-sdk-9.0.306-win-x64\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
       }
     },
     "runtimes": {

@@ -14,9 +14,19 @@
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.pp-primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#e8b85e"/>
+    </Style>
+    <Style Selector="Button.pp-primary:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.pp-primary:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
     <Style Selector="Button.pp-flat">
       <Setter Property="Background" Value="#14ffffff"/>
@@ -24,6 +34,7 @@
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="BorderBrush" Value="#10ffffff"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -31,14 +42,31 @@
     <Style Selector="Button.pp-flat:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#22ffffff"/>
     </Style>
+    <Style Selector="Button.pp-flat:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.pp-flat:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+    </Style>
     <Style Selector="Button.pp-danger">
       <Setter Property="Background" Value="#33ff4444"/>
       <Setter Property="Foreground" Value="#ff7070"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.pp-danger:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#55ff4444"/>
+      <Setter Property="TextElement.Foreground" Value="#ff9090"/>
+    </Style>
+    <Style Selector="Button.pp-danger:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.pp-danger:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
 
     <!-- Connection dot -->
@@ -58,22 +86,23 @@
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="8,4"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="FontSize" Value="11"/>
     </Style>
   </UserControl.Styles>
 
-  <Border Background="#f207070d"
-          BorderBrush="#1affffff"
+  <Border Background="{DynamicResource ThemeSurface}"
+          BorderBrush="#14ffffff"
           BorderThickness="1,0,0,0">
-    <Grid RowDefinitions="Auto,*,Auto" Margin="24,20">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16,14">
 
       <!-- Header -->
-      <StackPanel Grid.Row="0" Margin="0,0,0,16">
+      <StackPanel Grid.Row="0" Margin="0,0,0,14">
         <TextBlock Text="PLATFORMS" FontSize="9" FontWeight="Bold"
                    LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,6"/>
-        <TextBlock Text="Connect your game platforms" FontSize="22" FontWeight="SemiBold"
+        <TextBlock Text="Connect your game platforms" FontSize="15" FontWeight="SemiBold"
                    Foreground="{DynamicResource ThemeText}"/>
-        <TextBox Classes="pp" Text="{Binding Filter}" Watermark="Filter platforms…" Margin="0,12,0,0"/>
+        <TextBox Classes="pp" Text="{Binding Filter}" Watermark="Filter platforms…" Margin="0,10,0,0"/>
       </StackPanel>
 
       <!-- Platform list -->
@@ -89,23 +118,23 @@
             <DataTemplate x:DataType="vm:PlatformRowViewModel">
 
               <Border CornerRadius="12"
-                      Background="#0affffff"
-                      BorderBrush="#14ffffff"
+                      Background="#0dffffff"
+                      BorderBrush="#18ffffff"
                       BorderThickness="1"
                       Padding="14,12">
-                <StackPanel Spacing="10">
+              <StackPanel Spacing="8">
 
                   <!-- Header: icon + name + dot -->
                   <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                    <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8"
+                    <Border Grid.Column="0" Width="30" Height="30" CornerRadius="8"
                             Background="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
                             VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Icon}" FontSize="13" FontWeight="Bold"
+                      <TextBlock Text="{Binding Icon}" FontSize="12" FontWeight="Bold"
                                  Foreground="White"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
                                  Foreground="{DynamicResource ThemeText}"/>
                       <TextBlock Text="{Binding StatusLabel}" FontSize="10" Foreground="#50b0aaa0"/>
                     </StackPanel>
@@ -119,6 +148,21 @@
                   <TextBlock Text="{Binding Note}" FontSize="10" Foreground="#60b0aaa0"
                              TextWrapping="Wrap"
                              IsVisible="{Binding Note, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
+
+                  <Border IsVisible="{Binding IsConnected}" Background="#10ffffff" BorderBrush="#14ffffff" BorderThickness="1" CornerRadius="8" Padding="8,5">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                      <Border Width="28" Height="28" CornerRadius="14" Background="#22ffffff" VerticalAlignment="Center">
+                        <Image Source="{Binding AccountAvatar}" Stretch="UniformToFill"
+                               IsVisible="{Binding AccountAvatar, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding AccountName}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThemeText}"/>
+                        <TextBlock Text="{Binding AccountSubLabel}" FontSize="10" Foreground="#60b0aaa0"
+                                   IsVisible="{Binding AccountSubLabel, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
 
                   <!-- PSN: open Chiaki configurator -->
                   <Button Classes="pp-flat" Content="Configure chiaki-ng"
@@ -140,15 +184,27 @@
 
                   <!-- Connected row: import + disconnect -->
                   <Grid IsVisible="{Binding IsConnected}"
-                        ColumnDefinitions="*,Auto" >
+                        ColumnDefinitions="*,Auto,Auto" >
                     <Button Grid.Column="0" Classes="pp-primary"
                             Content="Import Library"
                             Command="{Binding ImportCommand}"
                             IsEnabled="{Binding !IsImporting}"
                             HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
-                    <Button Grid.Column="1" Classes="pp-danger" Content="Disconnect"
+                    <Button Grid.Column="1" Classes="pp-flat" Content="Reconnect"
+                            Margin="0,0,8,0"
+                            Command="{Binding ReconnectCommand}"
+                            IsVisible="{Binding ShowReconnect}"
+                            IsEnabled="{Binding !IsLoading}"/>
+                    <Button Grid.Column="2" Classes="pp-danger" Content="Disconnect"
                             Command="{Binding DisconnectCommand}"/>
                   </Grid>
+
+                  <StackPanel IsVisible="{Binding IsImporting}" Spacing="3">
+                    <ProgressBar Minimum="0" Maximum="1" Value="{Binding ImportProgressPercent}" Height="4"/>
+                    <TextBlock Text="{Binding ImportProgressText}" FontSize="10" Foreground="#60b0aaa0"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding ImportProgressText, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
+                  </StackPanel>
 
                   <!-- Local-detect-only providers: "Rescan" button -->
                   <Button Classes="pp-flat" Content="Rescan installed games"
@@ -186,12 +242,19 @@
                         <Button Grid.Column="0" Classes="pp-primary" Content="Save"
                                 Command="{Binding SaveApiKeyCommand}"
                                 HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
-                        <Button Grid.Column="1" Classes="pp-danger" Content="Delete"
+                        <Button Grid.Column="1" Classes="pp-flat" Content="Validate"
+                                Margin="0,0,8,0"
+                                Command="{Binding ValidateApiKeyCommand}"
+                                IsEnabled="{Binding !IsValidatingApiKey}"/>
+                        <Button Grid.Column="2" Classes="pp-danger" Content="Delete"
                                 Command="{Binding DeleteApiKeyCommand}"
                                 IsVisible="{Binding HasSavedApiKey}"/>
                       </Grid>
                       <TextBlock Text="Key saved ✓" FontSize="10" Foreground="#22c55e"
                                  IsVisible="{Binding HasSavedApiKey}"/>
+                      <TextBlock Text="{Binding ApiKeyStatus}" FontSize="10" Foreground="{DynamicResource ThemeText2}"
+                                 TextWrapping="Wrap"
+                                 IsVisible="{Binding ApiKeyStatus, Converter={x:Static conv:Converters.StringIsNotEmpty}}"/>
                     </StackPanel>
                   </Border>
 

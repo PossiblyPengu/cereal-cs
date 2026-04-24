@@ -9,7 +9,7 @@ namespace Cereal.App.Services.Providers;
 
 // ─── Battle.net ───────────────────────────────────────────────────────────────
 
-public class BattleNetProvider : IProvider
+public class BattleNetProvider(DatabaseService db) : IImportProvider
 {
     public string PlatformId => "battlenet";
 
@@ -45,11 +45,17 @@ public class BattleNetProvider : IProvider
         catch (Exception ex) { Log.Debug(ex, "[battlenet] DetectInstalled"); }
         return Task.FromResult(new DetectResult(games));
     }
+
+    public async Task<ImportResult> ImportLibrary(ImportContext ctx)
+    {
+        var detected = (await DetectInstalled()).Games;
+        return LocalProviderImportHelpers.MergeLocalDetectImport(db, "battlenet", detected, ctx);
+    }
 }
 
 // ─── EA App ───────────────────────────────────────────────────────────────────
 
-public class EaProvider : IProvider
+public class EaProvider(DatabaseService db) : IImportProvider
 {
     public string PlatformId => "ea";
 
@@ -88,11 +94,17 @@ public class EaProvider : IProvider
         catch (Exception ex) { Log.Debug(ex, "[ea] DetectInstalled"); }
         return Task.FromResult(new DetectResult(games));
     }
+
+    public async Task<ImportResult> ImportLibrary(ImportContext ctx)
+    {
+        var detected = (await DetectInstalled()).Games;
+        return LocalProviderImportHelpers.MergeLocalDetectImport(db, "ea", detected, ctx);
+    }
 }
 
 // ─── Ubisoft Connect ──────────────────────────────────────────────────────────
 
-public class UbisoftProvider : IProvider
+public class UbisoftProvider(DatabaseService db) : IImportProvider
 {
     public string PlatformId => "ubisoft";
 
@@ -131,6 +143,12 @@ public class UbisoftProvider : IProvider
         }
         catch (Exception ex) { Log.Debug(ex, "[ubisoft] DetectInstalled"); }
         return Task.FromResult(new DetectResult(games));
+    }
+
+    public async Task<ImportResult> ImportLibrary(ImportContext ctx)
+    {
+        var detected = (await DetectInstalled()).Games;
+        return LocalProviderImportHelpers.MergeLocalDetectImport(db, "ubisoft", detected, ctx);
     }
 }
 
@@ -300,7 +318,7 @@ public class ItchioProvider(DatabaseService db) : IImportProvider
 
 // ─── Xbox ────────────────────────────────────────────────────────────────────
 
-public class XboxProvider(DatabaseService db) : IImportProvider
+public class XboxProvider(DatabaseService db, AuthService auth) : IImportProvider
 {
     public string PlatformId => "xbox";
 
@@ -344,7 +362,7 @@ public class XboxProvider(DatabaseService db) : IImportProvider
 
         var xuid = acct.AccountId!;
         var userHash = acct.Extra?.GetValueOrDefault("userHash")?.ToString();
-        var xsts     = acct.Extra?.GetValueOrDefault("xstsToken")?.ToString();
+        var xsts     = auth.GetXstsToken("xbox");
         if (string.IsNullOrEmpty(userHash) || string.IsNullOrEmpty(xsts))
             return new ImportResult([], [], 0, "Xbox account not connected (missing XSTS token)");
 
@@ -447,5 +465,67 @@ public class XboxProvider(DatabaseService db) : IImportProvider
             Log.Error(ex, "[xbox] ImportLibrary failed");
             return new ImportResult([], [], 0, "Xbox import failed: " + ex.Message);
         }
+    }
+}
+
+internal static class LocalProviderImportHelpers
+{
+    public static ImportResult MergeLocalDetectImport(
+        DatabaseService db,
+        string platform,
+        List<Game> detected,
+        ImportContext ctx)
+    {
+        var imported = new List<string>();
+        var updated = new List<string>();
+        var idx = 0;
+
+        foreach (var g in detected)
+        {
+            idx++;
+            var existing = ProviderUtils.FindExisting(db, platform, g.PlatformId ?? string.Empty, g.Name);
+            if (existing is not null)
+            {
+                var changed = false;
+                if (string.IsNullOrWhiteSpace(existing.PlatformId) && !string.IsNullOrWhiteSpace(g.PlatformId))
+                {
+                    existing.PlatformId = g.PlatformId;
+                    changed = true;
+                }
+                if (existing.Installed != true)
+                {
+                    existing.Installed = true;
+                    changed = true;
+                }
+                if (changed) updated.Add(existing.Name);
+            }
+            else
+            {
+                db.Db.Games.Add(g);
+                imported.Add(g.Name);
+            }
+
+            if (idx % 10 == 0)
+            {
+                ctx.Notify?.Invoke(new ImportProgress
+                {
+                    Status = "running",
+                    Provider = platform,
+                    Processed = idx,
+                    Total = detected.Count,
+                    Name = g.Name,
+                });
+            }
+        }
+
+        db.Save();
+        ctx.Notify?.Invoke(new ImportProgress
+        {
+            Status = "done",
+            Provider = platform,
+            Processed = detected.Count,
+            Total = detected.Count,
+        });
+        return new ImportResult(imported, updated, detected.Count);
     }
 }

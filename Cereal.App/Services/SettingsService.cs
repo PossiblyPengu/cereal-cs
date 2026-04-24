@@ -6,6 +6,8 @@ public class SettingsService
 {
     private readonly DatabaseService _db;
 
+    public event EventHandler<Settings>? SettingsSaved;
+
     public SettingsService(DatabaseService db) => _db = db;
 
     public Settings Get() => _db.Db.Settings;
@@ -14,6 +16,7 @@ public class SettingsService
     {
         _db.Db.Settings = updated;
         _db.Save();
+        SettingsSaved?.Invoke(this, updated);
         return updated;
     }
 

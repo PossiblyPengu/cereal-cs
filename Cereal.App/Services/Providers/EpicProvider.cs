@@ -5,7 +5,7 @@ using Serilog;
 
 namespace Cereal.App.Services.Providers;
 
-public class EpicProvider(DatabaseService db) : IImportProvider
+public class EpicProvider(DatabaseService db, AuthService auth) : IImportProvider
 {
     public string PlatformId => "epic";
 
@@ -57,14 +57,15 @@ public class EpicProvider(DatabaseService db) : IImportProvider
     public async Task<ImportResult> ImportLibrary(ImportContext ctx)
     {
         var acct = db.Db.Accounts.GetValueOrDefault("epic");
-        if (acct?.AccessToken is null || acct.AccountId is null)
+        var token = auth.GetAccessToken("epic");
+        if (string.IsNullOrWhiteSpace(token) || acct?.AccountId is null)
             return new ImportResult([], [], 0, "Epic account not connected");
 
         try
         {
             var req = new HttpRequestMessage(HttpMethod.Get,
                 "https://library-service.live.use1a.on.epicgames.com/library/api/public/items?includeMetadata=true");
-            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", acct.AccessToken);
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var resp = await ctx.Http.SendAsync(req);
             var json = await resp.Content.ReadAsStringAsync();
             var doc = JsonDocument.Parse(json);
@@ -78,6 +79,7 @@ public class EpicProvider(DatabaseService db) : IImportProvider
             var processedKeys = new HashSet<string>();
             var processedNames = new HashSet<string>();
             var idx = 0;
+            var index = ProviderUtils.GameImportIndex.FromGames(db.Db.Games);
 
             foreach (var rec in records.EnumerateArray())
             {
@@ -98,18 +100,20 @@ public class EpicProvider(DatabaseService db) : IImportProvider
                 processedNames.Add(canonical);
 
                 var coverUrl = PickCoverImage(rec);
-                var existing = ProviderUtils.FindExisting(db, "epic", keyId, title);
+                var existing = index.Find("epic", keyId, title);
 
                 if (existing is not null)
                 {
                     var changed = false;
-                    if (existing.PlatformId is null) { existing.PlatformId = keyId; changed = true; }
+                    if (existing.PlatformId is null) { existing.PlatformId = ProviderUtils.NormalizePlatformId(keyId); changed = true; }
                     if (existing.CoverUrl is null && coverUrl is not null) { existing.CoverUrl = coverUrl; changed = true; }
                     if (changed) updated.Add(existing.Name);
                 }
                 else
                 {
-                    db.Db.Games.Add(ProviderUtils.MakeGameEntry("epic", "epic", title, keyId, coverUrl));
+                    var entry = ProviderUtils.MakeGameEntry("epic", "epic", title, keyId, coverUrl);
+                    db.Db.Games.Add(entry);
+                    index.Track(entry);
                     imported.Add(title);
                 }
 

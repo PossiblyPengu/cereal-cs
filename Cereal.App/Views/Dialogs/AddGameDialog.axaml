@@ -1,8 +1,8 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Cereal.App.Views.Dialogs.AddGameDialog"
         Title="Add Game"
-        Width="520" Height="660"
+        Width="520" Height="700"
         MinHeight="500"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
@@ -25,6 +25,7 @@
       <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="MinHeight" Value="32"/>
       <Setter Property="FontSize" Value="13"/>
     </Style>
     <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
@@ -35,6 +36,7 @@
       <Setter Property="BorderBrush" Value="#18ffffff"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
       <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="MinHeight" Value="32"/>
       <Setter Property="HorizontalAlignment" Value="Stretch"/>
     </Style>
     <Style Selector="Button.action">
@@ -43,11 +45,21 @@
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="20,9"/>
+      <Setter Property="MinHeight" Value="32"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.action:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#e8b85e"/>
+    </Style>
+    <Style Selector="Button.action:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#d29f45"/>
+    </Style>
+    <Style Selector="Button.action:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.action:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
     <Style Selector="Button.secondary">
       <Setter Property="Background" Value="#10ffffff"/>
@@ -56,10 +68,20 @@
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="14,8"/>
+      <Setter Property="MinHeight" Value="32"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#18ffffff"/>
+    </Style>
+    <Style Selector="Button.secondary:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#24ffffff"/>
+    </Style>
+    <Style Selector="Button.secondary:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.secondary:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
     <Style Selector="Button.sm">
       <Setter Property="Background" Value="#10ffffff"/>
@@ -68,8 +90,22 @@
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.sm:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#18ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.sm:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#24ffffff"/>
+    </Style>
+    <Style Selector="Button.sm:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.sm:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
     <Style Selector="TextBox.multiline">
       <Setter Property="MinHeight" Value="60"/>
@@ -84,15 +120,15 @@
     </Style>
   </Window.Styles>
 
-  <Grid RowDefinitions="*,Auto" Margin="24,20">
+  <Grid RowDefinitions="*,Auto" Margin="20,16">
 
     <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
       <StackPanel Spacing="0">
 
         <!-- Title -->
         <TextBlock x:Name="DialogTitle" Text="Add Game"
-                   FontSize="20" FontWeight="Bold"
-                   Foreground="{DynamicResource ThemeText}" Margin="0,0,0,16"/>
+                   FontSize="18" FontWeight="SemiBold"
+                   Foreground="{DynamicResource ThemeText}" Margin="0,0,0,14"/>
 
         <!-- Name -->
         <TextBlock Classes="label" Text="GAME NAME"/>
@@ -152,6 +188,10 @@
         <TextBox x:Name="NotesBox" Classes="multiline"
                  Watermark="Personal notes about this game..." MinHeight="52"/>
 
+        <!-- Categories -->
+        <TextBlock Classes="label" Text="CATEGORIES"/>
+        <TextBox x:Name="CategoriesBox" Watermark="Action, RPG, Multiplayer"/>
+
         <!-- Metadata section (expandable) -->
         <Expander x:Name="MetaExpander" Header="▸  METADATA — Auto-fill from web"
                   IsExpanded="False" Margin="0,12,0,0">
@@ -191,12 +231,20 @@
 
             <TextBlock Classes="label" Text="HEADER IMAGE"/>
             <Grid ColumnDefinitions="*,Auto,Auto">
-              <TextBox Grid.Column="0" x:Name="HeaderBox" Watermark="Wide banner URL"/>
+              <TextBox Grid.Column="0" x:Name="HeaderBox" Watermark="Wide banner URL"
+                       TextChanged="HeaderBox_TextChanged"/>
               <Button Grid.Column="1" Classes="sm" Content="File"
                       Margin="8,0,4,0" Click="BrowseHeader_Click"/>
               <Button Grid.Column="2" Classes="sm" Content="Search"
                       Click="PickHeaderArt_Click"/>
             </Grid>
+
+            <!-- Header preview -->
+            <Border Margin="0,8,0,0" Height="100" Background="#08ffffff"
+                    CornerRadius="6" ClipToBounds="True"
+                    IsVisible="{Binding ElementName=HeaderPreview, Path=IsVisible}">
+              <Image x:Name="HeaderPreview" Stretch="Uniform" IsVisible="False"/>
+            </Border>
 
             <TextBlock Classes="label" Text="WEBSITE"/>
             <TextBox x:Name="WebsiteBox" Watermark="https://..."/>
@@ -212,7 +260,7 @@
 
     <!-- Action buttons -->
     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
-                Spacing="10" Margin="0,16,0,0">
+                Spacing="10" Margin="0,14,0,0">
       <Button Classes="secondary" Content="Cancel" Click="Cancel_Click"/>
       <Button x:Name="SaveBtn" Classes="action" Content="Add Game" Click="Save_Click"/>
     </StackPanel>

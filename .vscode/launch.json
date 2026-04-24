@@ -1,0 +1,77 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cereal: Publish + Run (Debug, wait)",
+            "type": "PowerShell",
+            "request": "launch",
+            "preLaunchTask": "Cereal: Publish (Debug)",
+            "script": "${workspaceFolder}/run.ps1",
+            "args": [
+                "-SkipPublish",
+                "-Wait"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Cereal: Publish + Run (Release, wait)",
+            "type": "PowerShell",
+            "request": "launch",
+            "preLaunchTask": "Cereal: Publish (Release)",
+            "script": "${workspaceFolder}/run.ps1",
+            "args": [
+                "-Release",
+                "-SkipPublish",
+                "-Wait"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Cereal: Publish + Run (Debug, wait, dev placeholders)",
+            "type": "PowerShell",
+            "request": "launch",
+            "preLaunchTask": "Cereal: Publish (Debug, dev placeholders)",
+            "script": "${workspaceFolder}/run.ps1",
+            "args": [
+                "-SkipPublish",
+                "-Wait",
+                "-DevPlaceholders",
+                "-DevPlaceholderCount",
+                "80",
+                "-DevPlaceholdersForce"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Cereal: Publish + Run (Debug, wait, dev placeholders lite)",
+            "type": "PowerShell",
+            "request": "launch",
+            "preLaunchTask": "Cereal: Publish (Debug, dev placeholders)",
+            "script": "${workspaceFolder}/run.ps1",
+            "args": [
+                "-SkipPublish",
+                "-Wait",
+                "-DevPlaceholders",
+                "-DevPlaceholderCount",
+                "20"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Cereal: Publish + Run (Debug, wait, clear dev placeholders)",
+            "type": "PowerShell",
+            "request": "launch",
+            "preLaunchTask": "Cereal: Publish (Debug, dev placeholders)",
+            "script": "${workspaceFolder}/run.ps1",
+            "args": [
+                "-SkipPublish",
+                "-Wait",
+                "-ClearDevPlaceholders"
+            ],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

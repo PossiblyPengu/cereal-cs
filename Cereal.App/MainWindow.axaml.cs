@@ -1,8 +1,11 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
 using Cereal.App.ViewModels;
@@ -14,10 +17,14 @@ public partial class MainWindow : Window
 {
     private DispatcherTimer? _streamBarTimer;
     private bool _streamBarPinned; // stays visible while pointer is inside
+    private readonly ChiakiService _chiakiEmbed;
+    private MainViewModel? _mainVm;
 
     public MainWindow()
     {
         InitializeComponent();
+        _chiakiEmbed = App.Services.GetRequiredService<ChiakiService>();
+        _chiakiEmbed.SessionEvent += OnChiakiSessionEventForEmbed;
 
         var vm = new MainViewModel(
             App.Services.GetRequiredService<GameService>(),
@@ -28,6 +35,8 @@ public partial class MainWindow : Window
             App.Services.GetRequiredService<SmtcService>());
 
         DataContext = vm;
+        _mainVm = vm;
+        vm.PropertyChanged += OnMainVmPropertyChanged;
 
         // Restore saved window bounds. Size can be set in ctor, but Position
         // must wait until after the window has opened or the OS may ignore it.
@@ -53,12 +62,11 @@ public partial class MainWindow : Window
             }
         }
 
-        // Optional start-minimized (hidden if MinimizeToTray is also on).
+        // Optional start-minimized: mirror Vite behavior by hiding window.
         if (settings.StartMinimized)
         {
             WindowState = WindowState.Minimized;
-            if (settings.MinimizeToTray)
-                Opened += (_, _) => Hide();
+            Opened += (_, _) => Hide();
         }
 
         TrySetIcon();
@@ -72,19 +80,86 @@ public partial class MainWindow : Window
         App.Services.GetRequiredService<LaunchService>().MinimizeRequested += OnMinimizeRequested;
 
         ApplyUiScale(settings.UiScale);
+        Opened += OnMainWindowOpened;
     }
 
-    // Parses "90%"/"100%"/"110%" → LayoutTransform scale. Called on startup
-    // and any time the setting changes (see SettingsViewModel).
+    private void OnMainWindowOpened(object? sender, EventArgs e)
+    {
+        if (ChiakiStreamHost is not null)
+            ChiakiStreamHost.SizeChanged += ChiakiStreamHost_SizeChanged;
+        SizeChanged += MainWindow_SizeChanged;
+    }
+
+    private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (_mainVm?.ShowChiakiEmbedHost == true)
+            Dispatcher.UIThread.Post(TryEmbedChiakiStream, DispatcherPriority.Background);
+    }
+
+    private void ChiakiStreamHost_SizeChanged(object? sender, SizeChangedEventArgs e)
+        => TryEmbedChiakiStream();
+
+    private void OnMainVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MainViewModel.ShowChiakiEmbedHost))
+            Dispatcher.UIThread.Post(TryEmbedChiakiStream, DispatcherPriority.Background);
+    }
+
+    private void OnChiakiSessionEventForEmbed(object? sender, ChiakiEventArgs e)
+    {
+        if (e.Type != "embedded") return;
+        if (_mainVm?.ShowChiakiEmbedHost != true) return;
+        Dispatcher.UIThread.Post(TryEmbedChiakiStream, DispatcherPriority.Background);
+    }
+
+    private void TryEmbedChiakiStream()
+    {
+        if (ChiakiStreamHost is null || !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+        if (_mainVm?.ShowChiakiEmbedHost != true) return;
+        var handle = TryGetPlatformHandle()?.Handle ?? default;
+        if (handle == default) return;
+        var origin = ChiakiStreamHost.TranslatePoint(new Point(0, 0), this) ?? new Point(0, 0);
+        var scale = RenderScaling;
+        var x = (int)Math.Round(origin.X * scale);
+        var y = (int)Math.Round(origin.Y * scale);
+        var w = (int)Math.Max(1, Math.Round(ChiakiStreamHost.Bounds.Width * scale));
+        var h = (int)Math.Max(1, Math.Round(ChiakiStreamHost.Bounds.Height * scale));
+        _chiakiEmbed.EmbedAnyStreamingSessionToHost(handle, x, y, w, h);
+    }
+
+    // Parses either legacy decimal ("0.9"/"1"/"1.1") or percent
+    // ("90%"/"100%"/"110%") settings formats.
     public void ApplyUiScale(string? uiScale)
     {
-        var raw = (uiScale ?? "100%").TrimEnd('%');
-        if (!double.TryParse(raw, System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out var pct) || pct <= 0)
-            pct = 100;
-        var scale = Math.Clamp(pct / 100.0, 0.75, 1.5);
+        var scale = ParseUiScale(uiScale);
         if (RootScaler is not null)
             RootScaler.LayoutTransform = new ScaleTransform(scale, scale);
+    }
+
+    public static double ParseUiScale(string? uiScale)
+    {
+        var raw = (uiScale ?? "100%").Trim();
+        if (raw.EndsWith("%", StringComparison.Ordinal))
+        {
+            var pctRaw = raw[..^1];
+            if (double.TryParse(pctRaw, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var pct) && pct > 0)
+            {
+                return Math.Clamp(pct / 100.0, 0.75, 1.5);
+            }
+            return 1.0;
+        }
+
+        if (double.TryParse(raw, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var value) && value > 0)
+        {
+            // Legacy Vite setting values are decimal zoom factors, while very
+            // large values are likely already percentages without a trailing %.
+            var scale = value > 3 ? value / 100.0 : value;
+            return Math.Clamp(scale, 0.75, 1.5);
+        }
+
+        return 1.0;
     }
 
     private void OnMinimizeRequested(object? sender, EventArgs e)
@@ -214,9 +289,13 @@ public partial class MainWindow : Window
         if (DataContext is not MainViewModel { IsStreaming: true } vm) return;
         var pos = e.GetPosition(this);
         var y = pos.Y - 40; // subtract title bar height
-        bool nearEdge = string.Equals(vm.ToolbarPosition, "bottom", StringComparison.OrdinalIgnoreCase)
-            ? y >= ClientSize.Height - 40 - 60
-            : y <= 60;
+        bool nearEdge = vm.ToolbarPosition?.ToLowerInvariant() switch
+        {
+            "bottom" => y >= ClientSize.Height - 40 - 60,
+            "left" => pos.X <= 80,
+            "right" => pos.X >= ClientSize.Width - 80,
+            _ => y <= 60,
+        };
         if (nearEdge)
             ShowStreamBar();
     }
@@ -264,6 +343,27 @@ public partial class MainWindow : Window
     private void Minimize_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;
+    }
+
+    private void WindowMinimize_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void WindowMaximize_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void WindowClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void TitleBar_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            BeginMoveDrag(e);
     }
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -316,6 +416,7 @@ public partial class MainWindow : Window
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is not MainViewModel vm) return;
+        var hasCmdOrCtrl = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
 
         if (e.Key == Key.Escape)
         {
@@ -378,21 +479,21 @@ public partial class MainWindow : Window
             if (e.Key == Key.Enter)
             {
                 e.Handled = true;
-                vm.SearchConfirm(launch: e.KeyModifiers == KeyModifiers.Control);
+                vm.SearchConfirm(launch: hasCmdOrCtrl);
                 return;
             }
         }
 
-        // Ctrl+K — open search overlay
-        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.K)
+        // Cmd/Ctrl+K — open search overlay
+        if (hasCmdOrCtrl && e.Key == Key.K)
         {
             e.Handled = true;
             vm.OpenSearchCommand.Execute(null);
             return;
         }
 
-        // Ctrl+F — focus search box
-        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.F)
+        // Cmd/Ctrl+F — focus search box
+        if (hasCmdOrCtrl && e.Key == Key.F)
         {
             e.Handled = true;
             var search = FindSearchBox(this);
@@ -400,8 +501,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Ctrl+, — open settings
-        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.OemComma)
+        // Cmd/Ctrl+, — open settings
+        if (hasCmdOrCtrl && e.Key == Key.OemComma)
         {
             e.Handled = true;
             vm.OpenSettingsCommand.Execute(null);

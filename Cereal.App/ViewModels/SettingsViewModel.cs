@@ -1,5 +1,10 @@
 using System.Management;
 using System.Text.Json;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,6 +14,7 @@ using Cereal.App.Services.Integrations;
 using Cereal.App.Services.Metadata;
 using Cereal.App.Services.Providers;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace Cereal.App.ViewModels;
 
@@ -18,10 +24,20 @@ public sealed record MostPlayedRow(int Rank, string Name, string Time);
 
 public partial class SettingsViewModel : ObservableObject
 {
-    public static readonly string[] ViewOptions    = ["cards", "orbit"];
-    public static readonly string[] NavPositions   = ["top", "bottom", "left", "right"];
-    public static readonly string[] StarDensities  = ["low", "normal", "high"];
-    public static readonly string[] UiScaleOptions = ["80%", "90%", "100%", "110%", "120%", "150%"];
+    private sealed class LibraryExportBundle
+    {
+        public List<Game> Games { get; set; } = [];
+        public List<string> Categories { get; set; } = [];
+        public string ExportedAt { get; set; } = DateTime.UtcNow.ToString("O");
+    }
+
+    public static readonly string[] ViewOptions      = ["cards", "orbit"];
+    public static readonly string[] ViewOptionLabels = ["Card Grid", "Galaxy Orbit"];
+    public static readonly string[] NavPositions     = ["top", "bottom", "left", "right"];
+    public static readonly string[] NavPositionLabels= ["Top", "Bottom", "Left", "Right"];
+    public static readonly string[] StarDensities    = ["low", "normal", "high"];
+    public static readonly string[] StarDensityLabels= ["Low", "Normal", "High"];
+    public static readonly string[] UiScaleOptions   = ["90%", "100%", "110%", "125%"];
     public static readonly AppTheme[] ThemeOptions = AppThemes.All;
 
     private readonly SettingsService _settingsSvc;
@@ -30,12 +46,31 @@ public partial class SettingsViewModel : ObservableObject
     private readonly CredentialService _creds;
     private readonly ThemeService _themeSvc;
     private readonly GameService _games;
+    private readonly DatabaseService _db;
     private readonly UpdateService _updateSvc;
     private readonly IEnumerable<IProvider> _providers;
 
+    // ─── ComboBox index helpers (maps raw values ↔ display labels) ──────────
+
+    public int DefaultViewIndex
+    {
+        get => Math.Max(0, Array.IndexOf(ViewOptions, DefaultView));
+        set { if (value >= 0 && value < ViewOptions.Length) DefaultView = ViewOptions[value]; }
+    }
+    public int NavPositionIndex
+    {
+        get => Math.Max(0, Array.IndexOf(NavPositions, NavPosition));
+        set { if (value >= 0 && value < NavPositions.Length) NavPosition = NavPositions[value]; }
+    }
+    public int StarDensityIndex
+    {
+        get => Math.Max(0, Array.IndexOf(StarDensities, StarDensity));
+        set { if (value >= 0 && value < StarDensities.Length) StarDensity = StarDensities[value]; }
+    }
+
     // ─── Settings properties ─────────────────────────────────────────────────
 
-    [ObservableProperty] private string _defaultView = "cards";
+    [ObservableProperty] private string _defaultView = "orbit";
     [ObservableProperty] private string _theme = "midnight";
     [ObservableProperty] private string _accentColor = "#7c6af7";
     [ObservableProperty] private bool _showAnimations = true;
@@ -44,8 +79,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _minimizeToTray;
     [ObservableProperty] private bool _startMinimized;
     [ObservableProperty] private bool _launchOnStartup;
-    [ObservableProperty] private bool _discordPresence = true;
-    [ObservableProperty] private bool _autoSyncPlaytime = true;
+    [ObservableProperty] private bool _discordPresence;
+    [ObservableProperty] private bool _autoSyncPlaytime;
     [ObservableProperty] private bool _rememberWindowBounds = true;
     [ObservableProperty] private bool _filterHideSteamSoftware = true;
     [ObservableProperty] private string? _steamPath;
@@ -59,7 +94,20 @@ public partial class SettingsViewModel : ObservableObject
 
     private static string NormalizeMetadataSource(string? v) =>
         string.Equals(v, "wikipedia", StringComparison.OrdinalIgnoreCase) ? "wikipedia" : "steam";
+    private static string NormalizeUiScale(string? raw)
+    {
+        var scale = Cereal.App.MainWindow.ParseUiScale(raw);
+        var pct = (int)Math.Round(scale * 100.0, MidpointRounding.AwayFromZero);
+        return $"{pct}%";
+    }
     [ObservableProperty] private string? _steamGridDbKey;
+    [ObservableProperty] private bool _hasSteamGridDbSecret;
+    [ObservableProperty] private bool _steamGridDbKeyInvalid;
+    [ObservableProperty] private bool _steamGridDbShowStatusBusy;
+    [ObservableProperty] private bool _steamGridDbShowStatusErr;
+    [ObservableProperty] private bool _steamGridDbShowStatusOk;
+    [ObservableProperty] private bool _steamGridDbShowStatusMissing;
+    [ObservableProperty] private string _steamGridDbStatusOkText = "Key saved";
     [ObservableProperty] private string _navPosition = "top";
     [ObservableProperty] private string _starDensity = "normal";
     [ObservableProperty] private string _uiScale = "100%";
@@ -130,6 +178,7 @@ public partial class SettingsViewModel : ObservableObject
     }
     partial void OnStarDensityChanged(string value)
     {
+        OnPropertyChanged(nameof(StarDensityIndex));
         AutoSave();
         RebuildOrbitIfLoaded();
     }
@@ -181,7 +230,10 @@ public partial class SettingsViewModel : ObservableObject
             if (DiscordPresence && !_discord.IsConnected) _discord.Connect();
             else if (!DiscordPresence && _discord.IsConnected) _discord.Disconnect();
         }
-        catch { /* best-effort */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[settings] AutoSave failed");
+        }
     }
 
     // ─── chiaki-ng update state ───────────────────────────────────────────────
@@ -198,12 +250,53 @@ public partial class SettingsViewModel : ObservableObject
         ChiakiVersion = version;
     }
 
+    private static readonly HttpClient _http = CreateHttpClient();
+    private static HttpClient CreateHttpClient()
+    {
+        var c = new HttpClient();
+        c.DefaultRequestHeaders.Add("User-Agent", "cereal-cs");
+        c.Timeout = TimeSpan.FromSeconds(10);
+        return c;
+    }
+
     [RelayCommand]
     private async Task CheckChiakiUpdate()
     {
         StatusMessage = "Checking chiaki-ng…";
-        await Task.Delay(200); // let UI breathe
-        StatusMessage = "chiaki-ng is up to date.";
+        try
+        {
+            var json = await _http.GetStringAsync(
+                "https://api.github.com/repos/streetpea/chiaki-ng/releases/latest");
+            using var doc = JsonDocument.Parse(json);
+            var tag = doc.RootElement.GetProperty("tag_name").GetString() ?? "";
+            var latestStr = tag.TrimStart('v');
+
+            ChiakiUpdateVersion = latestStr;
+
+            var hasInstalled = Version.TryParse(ChiakiVersion, out var installed);
+            var hasLatest    = Version.TryParse(latestStr, out var latest);
+
+            if (hasInstalled && hasLatest && latest > installed)
+            {
+                ChiakiUpdateAvailable = true;
+                StatusMessage = $"chiaki-ng {latestStr} is available.";
+            }
+            else if (!hasInstalled && hasLatest)
+            {
+                // system install or unknown version — show latest but can't compare
+                ChiakiUpdateAvailable = true;
+                StatusMessage = $"chiaki-ng {latestStr} available (installed version unknown).";
+            }
+            else
+            {
+                ChiakiUpdateAvailable = false;
+                StatusMessage = "chiaki-ng is up to date.";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Update check failed: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -223,27 +316,99 @@ public partial class SettingsViewModel : ObservableObject
 
     private void LoadSystemSpecs()
     {
-        var os  = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
-        var ram = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-        var ramStr = ram > 0 ? $"{ram / 1_073_741_824.0:F1} GB" : "—";
+        var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
         var cpu = "—";
         var gpu = "—";
+        var ramStr = "—";
+        var logicalCpus = Environment.ProcessorCount;
 
         if (OperatingSystem.IsWindows())
         {
             try
             {
                 using var s = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor");
-                foreach (var obj in s.Get()) { cpu = obj["Name"]?.ToString() ?? "—"; break; }
+                foreach (var obj in s.Get()) { cpu = obj["Name"]?.ToString()?.Trim() ?? "—"; break; }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[settings] WMI CPU query failed");
+            }
+            try
+            {
+                using var s = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
+                foreach (var obj in s.Get())
+                {
+                    try
+                    {
+                        var raw = obj["TotalPhysicalMemory"];
+                        if (raw is null) break;
+                        var bytes = Convert.ToUInt64(raw, System.Globalization.CultureInfo.InvariantCulture);
+                        if (bytes > 0)
+                            ramStr = $"{Math.Round(bytes / 1_073_741_824.0, MidpointRounding.AwayFromZero)} GB";
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, "[settings] WMI RAM cell parse failed");
+                    }
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[settings] WMI RAM query failed");
+            }
             try
             {
                 using var s = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController");
-                foreach (var obj in s.Get()) { gpu = obj["Name"]?.ToString() ?? "—"; break; }
+                foreach (var obj in s.Get()) { gpu = obj["Name"]?.ToString()?.Trim() ?? "—"; break; }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[settings] WMI GPU query failed");
+            }
         }
+        else if (OperatingSystem.IsLinux())
+        {
+            try
+            {
+                foreach (var line in File.ReadLines("/proc/cpuinfo"))
+                {
+                    if (line.StartsWith("model name", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var i = line.IndexOf(':');
+                        if (i >= 0) cpu = line[(i + 1)..].Trim();
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[settings] /proc/cpuinfo read failed");
+            }
+            try
+            {
+                foreach (var line in File.ReadLines("/proc/meminfo"))
+                {
+                    if (!line.StartsWith("MemTotal:", StringComparison.OrdinalIgnoreCase)) continue;
+                    var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2 && ulong.TryParse(parts[1], out var kb) && kb > 0)
+                        ramStr = $"{Math.Round(kb / 1024.0 / 1024.0, MidpointRounding.AwayFromZero)} GB";
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[settings] /proc/meminfo read failed");
+            }
+        }
+        else
+        {
+            var ram = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+            if (ram > 0) ramStr = $"{ram / 1_073_741_824.0:F1} GB";
+        }
+
+        if (logicalCpus > 1 && cpu != "—")
+            cpu += $" · {logicalCpus} cores";
 
         Dispatcher.UIThread.Post(() =>
         {
@@ -350,6 +515,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public SettingsViewModel(SettingsService settings, DiscordService discord,
                              CoverService covers, CredentialService creds, ThemeService theme,
+                             DatabaseService db,
                              GameService games, UpdateService updateSvc, IEnumerable<IProvider> providers)
     {
         _settingsSvc = settings;
@@ -357,6 +523,7 @@ public partial class SettingsViewModel : ObservableObject
         _covers = covers;
         _creds = creds;
         _themeSvc = theme;
+        _db = db;
         _games = games;
         _updateSvc = updateSvc;
         _providers = providers;
@@ -372,6 +539,43 @@ public partial class SettingsViewModel : ObservableObject
 
         LoadChiakiStatus();
         _ = Task.Run(LoadSystemSpecs);
+        SyncSteamGridDbSecret();
+        RefreshSteamGridDbUi();
+    }
+
+    public string SteamGridDbKeyWatermark =>
+        HasSteamGridDbSecret && string.IsNullOrWhiteSpace(SteamGridDbKey)
+            ? "Saved — paste to replace"
+            : "Paste API key here";
+
+    private void SyncSteamGridDbSecret() =>
+        HasSteamGridDbSecret = !string.IsNullOrEmpty(
+            _creds.GetPassword("cereal", "steamgriddb_key"));
+
+    private void RefreshSteamGridDbUi()
+    {
+        SteamGridDbShowStatusBusy = IsValidatingKey;
+        SteamGridDbShowStatusErr = !IsValidatingKey && SteamGridDbKeyInvalid;
+        var okValid = !IsValidatingKey && !SteamGridDbKeyInvalid && SteamGridDbKeyValid
+                      && !string.IsNullOrWhiteSpace(SteamGridDbKey);
+        var okSaved = !IsValidatingKey && !SteamGridDbKeyInvalid && HasSteamGridDbSecret
+                      && string.IsNullOrWhiteSpace(SteamGridDbKey);
+        SteamGridDbShowStatusOk = okValid || okSaved;
+        SteamGridDbStatusOkText = okSaved ? "Key saved" : "Valid";
+        SteamGridDbShowStatusMissing = !IsValidatingKey && !SteamGridDbKeyInvalid
+            && !HasSteamGridDbSecret && string.IsNullOrWhiteSpace(SteamGridDbKey) && !okValid;
+        OnPropertyChanged(nameof(SteamGridDbKeyWatermark));
+    }
+
+    partial void OnIsValidatingKeyChanged(bool value) => RefreshSteamGridDbUi();
+    partial void OnHasSteamGridDbSecretChanged(bool value) => RefreshSteamGridDbUi();
+    partial void OnSteamGridDbKeyInvalidChanged(bool value) => RefreshSteamGridDbUi();
+    partial void OnSteamGridDbKeyValidChanged(bool value) => RefreshSteamGridDbUi();
+
+    partial void OnSteamGridDbKeyChanged(string? value)
+    {
+        SteamGridDbKeyInvalid = false;
+        RefreshSteamGridDbUi();
     }
 
     public AppTheme? SelectedTheme
@@ -399,6 +603,12 @@ public partial class SettingsViewModel : ObservableObject
     // zoom applies immediately as the dropdown changes, no Save button required).
     partial void OnUiScaleChanged(string value)
     {
+        value = NormalizeUiScale(value);
+        if (!string.Equals(UiScale, value, StringComparison.Ordinal))
+        {
+            UiScale = value;
+            return;
+        }
         try
         {
             if (Avalonia.Application.Current?.ApplicationLifetime is
@@ -408,18 +618,22 @@ public partial class SettingsViewModel : ObservableObject
                 mw.ApplyUiScale(value);
             }
         }
-        catch { /* no-op */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[settings] Live ApplyUiScale failed");
+        }
     }
 
     // Live default-view update so changing the dropdown previews the new view.
     partial void OnDefaultViewChanged(string value)
     {
+        OnPropertyChanged(nameof(DefaultViewIndex));
+        if (_loadingFromModel) return;
         if (Avalonia.Application.Current?.ApplicationLifetime is
             Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime d &&
-            d.MainWindow?.DataContext is MainViewModel mvm &&
-            !string.IsNullOrEmpty(value))
+            d.MainWindow?.DataContext is MainViewModel mvm)
         {
-            mvm.ViewMode = value;
+            mvm.ViewMode = MainViewModel.NormalizeViewMode(value);
         }
     }
 
@@ -427,6 +641,7 @@ public partial class SettingsViewModel : ObservableObject
     // so the user can see the change without hunting for the Save button.
     partial void OnNavPositionChanged(string value)
     {
+        OnPropertyChanged(nameof(NavPositionIndex));
         if (Avalonia.Application.Current?.ApplicationLifetime is
             Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime d &&
             d.MainWindow?.DataContext is MainViewModel mvm &&
@@ -441,7 +656,7 @@ public partial class SettingsViewModel : ObservableObject
         _loadingFromModel = true;
         try
         {
-        DefaultView = s.DefaultView;
+        DefaultView = MainViewModel.NormalizeViewMode(s.DefaultView);
         Theme = s.Theme;
         AccentColor = s.AccentColor;
         ShowAnimations = s.ShowAnimations;
@@ -461,7 +676,7 @@ public partial class SettingsViewModel : ObservableObject
         MetadataSource = NormalizeMetadataSource(s.MetadataSource);
         NavPosition = s.NavPosition;
         StarDensity = s.StarDensity;
-        UiScale = s.UiScale;
+        UiScale = NormalizeUiScale(s.UiScale);
         }
         finally { _loadingFromModel = false; }
     }
@@ -494,7 +709,7 @@ public partial class SettingsViewModel : ObservableObject
         s.NavPosition = NavPosition;
         s.ToolbarPosition = NavPosition; // Keep the two aliases in sync.
         s.StarDensity = StarDensity;
-        s.UiScale = UiScale;
+        s.UiScale = NormalizeUiScale(UiScale);
         _settingsSvc.Save(s);
 
         // Apply live to the running window (avoids requiring a restart).
@@ -504,7 +719,10 @@ public partial class SettingsViewModel : ObservableObject
         {
             mw.ApplyUiScale(UiScale);
             if (mw.DataContext is MainViewModel mvm)
+            {
                 mvm.ToolbarPosition = NavPosition;
+                mvm.ViewMode = MainViewModel.NormalizeViewMode(DefaultView);
+            }
 
             // Rebuild Orbit with fresh star-density / animations settings, if it's loaded.
             var orbit = FindDescendant<Views.OrbitView>(mw);
@@ -588,24 +806,36 @@ public partial class SettingsViewModel : ObservableObject
         });
     }
 
+    /// <summary>Vite SettingsPanel: validate + save in one step (no separate Validate button).</summary>
     [RelayCommand]
-    private async Task ValidateSteamGridDbKey()
+    private async Task SaveSteamGridDbKey()
     {
         if (string.IsNullOrWhiteSpace(SteamGridDbKey)) return;
         IsValidatingKey = true;
+        SteamGridDbKeyInvalid = false;
         StatusMessage = null;
-        var (ok, error) = await _covers.ValidateSteamGridDbKeyAsync(SteamGridDbKey);
-        SteamGridDbKeyValid = ok;
-        StatusMessage = ok ? "API key is valid." : $"Invalid key: {error}";
-        IsValidatingKey = false;
-    }
-
-    [RelayCommand]
-    private void SaveSteamGridDbKey()
-    {
-        if (string.IsNullOrWhiteSpace(SteamGridDbKey)) return;
-        _creds.SetPassword("cereal", "steamgriddb_key", SteamGridDbKey);
-        StatusMessage = "SteamGridDB key saved.";
+        RefreshSteamGridDbUi();
+        try
+        {
+            var (ok, error) = await _covers.ValidateSteamGridDbKeyAsync(SteamGridDbKey);
+            if (!ok)
+            {
+                SteamGridDbKeyInvalid = true;
+                StatusMessage = $"Key is invalid: {error}";
+                return;
+            }
+            _creds.SetPassword("cereal", "steamgriddb_key", SteamGridDbKey);
+            HasSteamGridDbSecret = true;
+            SteamGridDbKey = string.Empty;
+            SteamGridDbKeyValid = false;
+            SteamGridDbKeyInvalid = false;
+            StatusMessage = "SteamGridDB key saved.";
+        }
+        finally
+        {
+            IsValidatingKey = false;
+            RefreshSteamGridDbUi();
+        }
     }
 
     [RelayCommand]
@@ -614,7 +844,10 @@ public partial class SettingsViewModel : ObservableObject
         _creds.DeletePassword("cereal", "steamgriddb_key");
         SteamGridDbKey = null;
         SteamGridDbKeyValid = false;
+        HasSteamGridDbSecret = false;
+        SteamGridDbKeyInvalid = false;
         StatusMessage = "SteamGridDB key removed.";
+        RefreshSteamGridDbUi();
     }
 
     [RelayCommand]
@@ -627,6 +860,80 @@ public partial class SettingsViewModel : ObservableObject
             System.Diagnostics.Process.Start(psi);
         }
         catch (Exception ex) { StatusMessage = "Couldn't open browser: " + ex.Message; }
+    }
+
+    /// <summary>Electron <c>steamgriddb:login</c> parity — open prefs, then paste + validate + save.</summary>
+    [RelayCommand]
+    private async Task SteamGridDbGuidedLoginAsync()
+    {
+        OpenSteamGridDbPreferences();
+
+        if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime life
+            || life.MainWindow is null)
+            return;
+
+        var pasteBtn = new Button { Content = "Paste API key", Padding = new Avalonia.Thickness(14, 8), Margin = new Avalonia.Thickness(0, 0, 8, 0) };
+        var cancelBtn = new Button { Content = "Cancel", Padding = new Avalonia.Thickness(14, 8) };
+
+        var dlg = new Window
+        {
+            Title = "SteamGridDB",
+            Width = 440,
+            Height = 220,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Background = Brush.Parse("#12122a"),
+            Content = new StackPanel
+            {
+                Margin = new Avalonia.Thickness(24),
+                Spacing = 16,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Copy your API key from the SteamGridDB page that opened, then click “Paste API key”.",
+                        Foreground = Brush.Parse("#e8e4de"),
+                        FontSize = 13,
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Children = { cancelBtn, pasteBtn },
+                    },
+                },
+            },
+        };
+
+        var pasted = false;
+        pasteBtn.Click += (_, _) => { pasted = true; dlg.Close(); };
+        cancelBtn.Click += (_, _) => dlg.Close();
+
+        await dlg.ShowDialog(life.MainWindow);
+        if (!pasted) return;
+
+        var apiKey = (await App.ReadClipboardTextAsync()).Trim();
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            StatusMessage = "Clipboard is empty. Copy your SteamGridDB API key first, then try again.";
+            return;
+        }
+
+        var (ok, error) = await _covers.ValidateSteamGridDbKeyAsync(apiKey);
+        if (!ok)
+        {
+            StatusMessage = $"API key appears invalid: {error}";
+            return;
+        }
+
+        _creds.SetPassword("cereal", "steamgriddb_key", apiKey);
+        HasSteamGridDbSecret = true;
+        SteamGridDbKey = string.Empty;
+        SteamGridDbKeyValid = false;
+        SteamGridDbKeyInvalid = false;
+        StatusMessage = "SteamGridDB key saved.";
+        RefreshSteamGridDbUi();
     }
 
     [RelayCommand]
@@ -679,7 +986,11 @@ public partial class SettingsViewModel : ObservableObject
                     added++;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "[settings] Rescan failed for provider {Provider}",
+                    provider.GetType().Name);
+            }
         }
         StatusMessage = $"Rescan complete — {added} game(s) merged.";
     }
@@ -725,12 +1036,12 @@ public partial class SettingsViewModel : ObservableObject
         var all = _games.GetAll();
         var json = System.Text.Json.JsonSerializer.Serialize(all);
         _clearedSnapshot = System.Text.Json.JsonSerializer.Deserialize<List<Cereal.App.Models.Game>>(json) ?? [];
-        var ids = all.Select(g => g.Id).ToList();
-        foreach (var id in ids) _games.Delete(id);
+        var count = all.Count;
+        _games.ClearLibrary();
 
         ConfirmingClearGames = false;
         CanUndoClear = true;
-        StatusMessage = $"Cleared {ids.Count} game(s). Undo available for 10s.";
+        StatusMessage = $"Cleared {count} game(s). Undo available for 10s.";
         RefreshLibraryStats();
 
         // Auto-expire the undo window.
@@ -752,7 +1063,7 @@ public partial class SettingsViewModel : ObservableObject
     private void UndoClearGames()
     {
         if (_clearedSnapshot is null) return;
-        foreach (var g in _clearedSnapshot) _games.Add(g);
+        _games.AddRange(_clearedSnapshot);
         StatusMessage = $"Restored {_clearedSnapshot.Count} game(s).";
         _clearedSnapshot = null;
         CanUndoClear = false;
@@ -775,11 +1086,35 @@ public partial class SettingsViewModel : ObservableObject
         foreach (var g in _games.GetAll())
         {
             var id = Sanitize(g.Id);
-            foreach (var f in SafeEnumerate(paths.CoversDir,  $"cover_{id}.*"))   { try { File.Delete(f); count++; } catch { } }
-            foreach (var f in SafeEnumerate(paths.HeadersDir, $"header_{id}.*"))  { try { File.Delete(f); count++; } catch { } }
+            foreach (var f in SafeEnumerate(paths.CoversDir,  $"cover_{id}.*"))
+            {
+                try { File.Delete(f); count++; }
+                catch (Exception ex) { Log.Debug(ex, "[settings] Delete cover file {Path}", f); }
+            }
+            foreach (var f in SafeEnumerate(paths.HeadersDir, $"header_{id}.*"))
+            {
+                try { File.Delete(f); count++; }
+                catch (Exception ex) { Log.Debug(ex, "[settings] Delete header file {Path}", f); }
+            }
             // Legacy paths from PathService.GetCoverPath / GetHeaderPath (if any remain)
-            try { if (File.Exists(paths.GetCoverPath(g.Id)))  { File.Delete(paths.GetCoverPath(g.Id));  count++; } } catch { }
-            try { if (File.Exists(paths.GetHeaderPath(g.Id))) { File.Delete(paths.GetHeaderPath(g.Id)); count++; } } catch { }
+            try
+            {
+                if (File.Exists(paths.GetCoverPath(g.Id)))
+                {
+                    File.Delete(paths.GetCoverPath(g.Id));
+                    count++;
+                }
+            }
+            catch (Exception ex) { Log.Debug(ex, "[settings] Delete legacy cover"); }
+            try
+            {
+                if (File.Exists(paths.GetHeaderPath(g.Id)))
+                {
+                    File.Delete(paths.GetHeaderPath(g.Id));
+                    count++;
+                }
+            }
+            catch (Exception ex) { Log.Debug(ex, "[settings] Delete legacy header"); }
 
             // Clear the cached paths on the game record so covers re-download
             g.LocalCoverPath = null;
@@ -791,8 +1126,15 @@ public partial class SettingsViewModel : ObservableObject
 
     private static IEnumerable<string> SafeEnumerate(string dir, string pattern)
     {
-        try { return Directory.Exists(dir) ? Directory.EnumerateFiles(dir, pattern) : []; }
-        catch { return []; }
+        try
+        {
+            return Directory.Exists(dir) ? Directory.EnumerateFiles(dir, pattern) : [];
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[settings] SafeEnumerate failed for {Dir} {Pattern}", dir, pattern);
+            return [];
+        }
     }
 
     private static string Sanitize(string id) =>
@@ -803,10 +1145,15 @@ public partial class SettingsViewModel : ObservableObject
 
     public async Task ExportLibraryAsync(string path)
     {
-        var games = _games.GetAll();
-        var json = JsonSerializer.Serialize(games, new JsonSerializerOptions { WriteIndented = true });
+        var bundle = new LibraryExportBundle
+        {
+            Games = _games.GetAll(),
+            Categories = _db.Db.Categories?.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(c => c).ToList() ?? [],
+            ExportedAt = DateTime.UtcNow.ToString("O"),
+        };
+        var json = JsonSerializer.Serialize(bundle, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(path, json);
-        StatusMessage = $"Library exported ({games.Count} games).";
+        StatusMessage = $"Library exported ({bundle.Games.Count} games).";
     }
 
     public async Task ImportLibraryAsync(string path)
@@ -814,12 +1161,47 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             var json = await File.ReadAllTextAsync(path);
-            var games = JsonSerializer.Deserialize<List<Game>>(json);
-            if (games is null) { StatusMessage = "Import failed: invalid file."; return; }
-            foreach (var g in games) _games.Add(g);
+            var games = new List<Game>();
+            List<string>? categories = null;
+
+            using (var doc = JsonDocument.Parse(json))
+            {
+                var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    games = JsonSerializer.Deserialize<List<Game>>(json) ?? [];
+                }
+                else if (root.ValueKind == JsonValueKind.Object)
+                {
+                    if (root.TryGetProperty("games", out var gEl) && gEl.ValueKind == JsonValueKind.Array)
+                        games = JsonSerializer.Deserialize<List<Game>>(gEl.GetRawText()) ?? [];
+                    if (root.TryGetProperty("categories", out var cEl) && cEl.ValueKind == JsonValueKind.Array)
+                        categories = JsonSerializer.Deserialize<List<string>>(cEl.GetRawText()) ?? [];
+                }
+            }
+
+            if (games.Count == 0 && categories is null)
+            {
+                StatusMessage = "Import failed: invalid file.";
+                return;
+            }
+
+            var (processed, newRows) = _games.AddRange(games);
+            if (categories is { Count: > 0 })
+            {
+                _db.Db.Categories ??= [];
+                foreach (var c in categories.Where(c => !string.IsNullOrWhiteSpace(c)))
+                {
+                    if (!_db.Db.Categories.Contains(c, StringComparer.OrdinalIgnoreCase))
+                        _db.Db.Categories.Add(c.Trim());
+                }
+                _db.Save();
+            }
             OnPropertyChanged(nameof(GameCount));
             OnPropertyChanged(nameof(TotalPlaytimeLabel));
-            StatusMessage = $"Imported {games.Count} game(s).";
+            StatusMessage = newRows < processed
+                ? $"Imported {newRows} new, merged {processed - newRows} with existing ({processed} total)."
+                : $"Imported {newRows} game(s).";
         }
         catch (Exception ex) { StatusMessage = $"Import failed: {ex.Message}"; }
     }

@@ -40,8 +40,10 @@ public class OrbitWorld : Border
     private Point? _dragStart;              // pointer position at mousedown (screen space)
     private Point _dragCamStart;            // camera offset at mousedown
     private bool _dragMoved;
+    private bool _userMovedCamera;
 
     private DispatcherTimer? _flyTimer;
+    public event EventHandler? CameraChanged;
 
     public OrbitWorld()
     {
@@ -71,9 +73,11 @@ public class OrbitWorld : Border
         AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(FitAll, DispatcherPriority.Background);
         SizeChanged += (_, _) =>
         {
-            // If the user hasn't panned/zoomed yet, stay fit; otherwise leave the
-            // user's camera alone on resize to match the original behavior.
-            if (_camX == 0 && _camY == 0 && _camZoom == 1.0) FitAll();
+            // Keep auto-fitting until the user explicitly pans/zooms. This
+            // avoids early layout passes (very small viewport) locking in a
+            // tiny/offset camera before the control reaches its final size.
+            if (!_userMovedCamera)
+                Dispatcher.UIThread.Post(FitAll, DispatcherPriority.Background);
         };
     }
 
@@ -88,6 +92,17 @@ public class OrbitWorld : Border
         _scale.ScaleY = _camZoom;
         _translate.X = _camX;
         _translate.Y = _camY;
+        CameraChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>True after the user has panned, wheel-zoomed, or used the zoom HUD (not mere primary click).</summary>
+    public bool UserAdjustedCamera => _userMovedCamera;
+
+    /// <summary>Clears the "user adjusted" flag and fits the full galaxy in the viewport (double-click / Fit all).</summary>
+    public void ResetAndFitAll()
+    {
+        _userMovedCamera = false;
+        FitAll();
     }
 
     public void FitAll()
@@ -95,14 +110,20 @@ public class OrbitWorld : Border
         var vw = Bounds.Width;
         var vh = Bounds.Height;
         if (vw <= 0 || vh <= 0) return;
+        // Ignore transient tiny layout passes during initialization.
+        if (vw < 200 || vh < 120) return;
 
-        var zx = vw / WorldWidth;
-        var zy = vh / WorldHeight;
-        var z = Math.Min(zx, zy) * 0.9;
+        // Match the Vite implementation exactly:
+        // z = min(vw/GALAXY_W, vh/GALAXY_H) * 0.9
+        // x = (vw - GALAXY_W * z) / 2
+        // y = (vh - GALAXY_H * z) / 2
+        var z = Math.Clamp(Math.Min(vw / WorldWidth, vh / WorldHeight) * 0.9, MinZoom, MaxZoom);
         var targetX = (vw - WorldWidth * z) / 2.0;
         var targetY = (vh - WorldHeight * z) / 2.0;
-        FlyTo(targetX, targetY, z);
+        SetCamera(targetX, targetY, z);
     }
+
+    public void MarkUserCameraAdjustment() => _userMovedCamera = true;
 
     /// <summary>
     /// Smoothly animate camera to the given translation + zoom over 600ms.
@@ -181,7 +202,11 @@ public class OrbitWorld : Border
         var p = e.GetPosition(this);
         var dx = p.X - start.X;
         var dy = p.Y - start.Y;
-        if (Math.Abs(dx) > DragThresholdPx || Math.Abs(dy) > DragThresholdPx) _dragMoved = true;
+        if (Math.Abs(dx) > DragThresholdPx || Math.Abs(dy) > DragThresholdPx)
+        {
+            _dragMoved = true;
+            _userMovedCamera = true;
+        }
 
         _camX = _dragCamStart.X + dx;
         _camY = _dragCamStart.Y + dy;
@@ -201,6 +226,14 @@ public class OrbitWorld : Border
         base.OnPointerWheelChanged(e);
         e.Handled = true;
 
+        // If a camera fly animation is active (e.g. FitAll/FlyTo), it can
+        // immediately overwrite wheel-driven camera updates and make zoom feel
+        // like it snaps toward a stale target. Cancel it so zoom-to-cursor is
+        // always authoritative.
+        _flyTimer?.Stop();
+        _flyTimer = null;
+        _userMovedCamera = true;
+
         var factor = e.Delta.Y > 0 ? 1.1 : 0.9;
         var newZoom = Math.Clamp(_camZoom * factor, MinZoom, MaxZoom);
 
@@ -216,6 +249,6 @@ public class OrbitWorld : Border
     {
         // Double-click fit-all — attach once to the routed event so all instances
         // pick it up without per-instance subscription.
-        DoubleTappedEvent.AddClassHandler<OrbitWorld>((x, _) => x.FitAll());
+        DoubleTappedEvent.AddClassHandler<OrbitWorld>((x, _) => x.ResetAndFitAll());
     }
 }

@@ -19,6 +19,11 @@ public partial class GameCardViewModel : ObservableObject
     public string PlatformLabel  => PlatformInfo.GetLabel(Game.Platform);
     public string PlatformLetter => PlatformInfo.GetLetter(Game.Platform);
     public string PlatformColor  => PlatformInfo.GetColor(Game.Platform);
+    public string? PlatformLogoPath => PlatformLogos.TryGet(Game.Platform)?.PathData;
+    public bool ShowPlatformLogoFill => PlatformLogos.TryGet(Game.Platform)?.Kind == PlatformLogoKind.Fill;
+    public bool ShowPlatformLogoStroke => PlatformLogos.TryGet(Game.Platform)?.Kind == PlatformLogoKind.Stroke;
+    public bool ShowPlatformLetter => PlatformLogos.TryGet(Game.Platform) is null;
+    public double PlatformLogoStrokeWidth => PlatformLogos.TryGet(Game.Platform)?.StrokeWidth ?? 2;
     public bool IsNotInstalled   => Game.Installed == false;
     public string Initial => string.IsNullOrEmpty(Game.Name) ? "?" : Game.Name[0].ToString().ToUpperInvariant();
     public bool HasCover => !string.IsNullOrEmpty(CoverPath);
@@ -39,6 +44,7 @@ public partial class GameCardViewModel : ObservableObject
     public string? Notes => Game.Notes;
     public List<string>? Screenshots => Game.Screenshots;
     public string? Website => Game.Website;
+    public bool HasWebsite => !string.IsNullOrWhiteSpace(Game.Website);
     public bool HasDeveloper => !string.IsNullOrEmpty(Game.Developer);
     public bool HasPublisher => !string.IsNullOrEmpty(Game.Publisher);
     public bool HasReleaseDate => !string.IsNullOrEmpty(Game.ReleaseDate);
@@ -118,7 +124,17 @@ public partial class GameCardViewModel : ObservableObject
         OnPropertyChanged(nameof(HasNotes));
         OnPropertyChanged(nameof(HasCategories));
         OnPropertyChanged(nameof(HasScreenshots));
+        OnPropertyChanged(nameof(Website));
+        OnPropertyChanged(nameof(HasWebsite));
         OnPropertyChanged(nameof(FavoriteLabel));
+        OnPropertyChanged(nameof(PlatformLabel));
+        OnPropertyChanged(nameof(PlatformLetter));
+        OnPropertyChanged(nameof(PlatformColor));
+        OnPropertyChanged(nameof(PlatformLogoPath));
+        OnPropertyChanged(nameof(ShowPlatformLogoFill));
+        OnPropertyChanged(nameof(ShowPlatformLogoStroke));
+        OnPropertyChanged(nameof(ShowPlatformLetter));
+        OnPropertyChanged(nameof(PlatformLogoStrokeWidth));
     }
 
     partial void OnIsFavoriteChanged(bool value) => OnPropertyChanged(nameof(FavoriteLabel));

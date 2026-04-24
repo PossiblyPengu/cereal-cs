@@ -83,13 +83,18 @@ public partial class DetectViewModel : ObservableObject
     {
         var selected = Results.Where(r => r.IsSelected && r.Game is not null).ToList();
         AddedCount = 0;
-        foreach (var row in selected)
+        if (selected.Count > 0)
         {
-            _games.Add(row.Game!);
-            row.IsImported = true;
-            AddedCount++;
+            var (processed, newRows) = _games.AddRange(selected.Select(r => r.Game!));
+            foreach (var row in selected)
+                row.IsImported = true;
+            AddedCount = processed;
+            StatusMessage = newRows < processed
+                ? $"Imported {newRows} new, merged {processed - newRows} with existing."
+                : $"Imported {newRows} game(s).";
         }
-        StatusMessage = AddedCount > 0 ? $"Imported {AddedCount} game(s)." : "Nothing new to import.";
+        else
+            StatusMessage = "Nothing new to import.";
     }
 
     [RelayCommand]

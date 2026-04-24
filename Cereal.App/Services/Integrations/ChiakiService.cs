@@ -200,6 +200,9 @@ public sealed class ChiakiService : IDisposable
         };
         psi.ArgumentList.Add("-ExecutionPolicy"); psi.ArgumentList.Add("Bypass");
         psi.ArgumentList.Add("-File");            psi.ArgumentList.Add(scriptPath);
+        // Match Electron chiaki:update — without -Force the script exits early when chiaki-ng
+        // is already present, so GitHub updates would never apply.
+        psi.ArgumentList.Add("-Force");
         psi.ArgumentList.Add("-InstallDir");      psi.ArgumentList.Add(installDir);
 
         try
@@ -994,6 +997,8 @@ public sealed class ChiakiService : IDisposable
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
             };
             psi.ArgumentList.Add("-ExecutionPolicy"); psi.ArgumentList.Add("Bypass");
             psi.ArgumentList.Add("-File");            psi.ArgumentList.Add(scriptPath);
@@ -1062,6 +1067,35 @@ public sealed class ChiakiService : IDisposable
             Log.Warning(ex, "[chiaki] EmbedSessionToHost failed");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Reparent the first Chiaki window we are tracking (streaming/connecting).
+    /// Used when the UI tab's <c>GameId</c> no longer matches the dictionary key after title detection.
+    /// </summary>
+    public bool EmbedAnyStreamingSessionToHost(nint hostHwnd, int x, int y, int width, int height)
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return false;
+        foreach (var kv in _sessions)
+        {
+            var session = kv.Value;
+            if (session.EmbedWindowHandle == nint.Zero) continue;
+            if (session.State is not ("streaming" or "connecting" or "launching")) continue;
+            try
+            {
+                Win32Interop.ReparentAndPosition(session.EmbedWindowHandle, hostHwnd, x, y, width, height);
+                session.IsEmbedded = true;
+                RaiseEvent(kv.Key, "embedded", new { embedded = true });
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "[chiaki] EmbedAnyStreamingSessionToHost failed for session {GameId}", kv.Key);
+                return false;
+            }
+        }
+
+        return false;
     }
 
     public void Dispose()

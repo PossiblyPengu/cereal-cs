@@ -7,6 +7,110 @@
              x:DataType="vm:MainViewModel"
              Background="Transparent">
 
+  <UserControl.Resources>
+    <DataTemplate x:Key="GameCardDataTemplate" x:DataType="vm:GameCardViewModel">
+      <Border Classes="game-card" Width="150"
+              Classes.not-installed="{Binding IsNotInstalled}"
+              Focusable="True"
+              Tapped="Card_Tapped"
+              DoubleTapped="Card_DoubleTapped"
+              KeyDown="Card_KeyDown">
+        <Grid RowDefinitions="225,Auto">
+          <Panel Grid.Row="0">
+            <Border Background="{DynamicResource ThemeCardUp}">
+              <TextBlock Text="{Binding Initial}" FontSize="36" FontWeight="UltraLight" Foreground="#4d706b63"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <Image Source="{Binding CoverPath, Converter={x:Static vm:CoverThumbConverter.Instance}}"
+                   Stretch="UniformToFill"
+                   IsVisible="{Binding HasCover}"/>
+            <Border VerticalAlignment="Bottom" Height="80" IsHitTestVisible="False">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                  <GradientStop Color="Transparent" Offset="0"/>
+                  <GradientStop Color="#b207070d" Offset="1"/>
+                </LinearGradientBrush>
+              </Border.Background>
+            </Border>
+            <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" CornerRadius="4" Padding="6,2" Background="#8c000000">
+              <Panel MinHeight="12">
+                <Viewbox Width="14" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         IsVisible="{Binding ShowPlatformLogoFill}">
+                  <Canvas Width="24" Height="24">
+                    <Path Fill="{Binding PlatformColor, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                          Data="{Binding PlatformLogoPath}"/>
+                  </Canvas>
+                </Viewbox>
+                <Viewbox Width="14" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         IsVisible="{Binding ShowPlatformLogoStroke}">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding PlatformColor, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                          StrokeThickness="{Binding PlatformLogoStrokeWidth}"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="{Binding PlatformLogoPath}"/>
+                  </Canvas>
+                </Viewbox>
+                <TextBlock Text="{Binding PlatformLetter}" FontSize="9" FontWeight="Bold"
+                           Foreground="{Binding PlatformColor, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding ShowPlatformLetter}"/>
+              </Panel>
+            </Border>
+            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8" Width="22" Height="22"
+                    CornerRadius="11" Background="#e6d4a853" BoxShadow="0 2 8 0 #4cd4a853" IsVisible="{Binding IsFavorite}">
+              <PathIcon Width="10" Height="10"
+                        Foreground="#0a0a0f"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Data="M12,2 L15.09,8.26 L22,9.27 L17,14.14 L18.18,21.02 L12,17.77 L5.82,21.02 L7,14.14 L2,9.27 L8.91,8.26 Z"/>
+            </Border>
+            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" Width="22" Height="22"
+                    CornerRadius="11" Background="#bf000000" BorderBrush="#26ffffff" BorderThickness="1"
+                    IsVisible="{Binding IsNotInstalled}">
+              <PathIcon Width="10" Height="10"
+                        Foreground="#99ffffff"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Data="M12,3 V15 M7,10 L12,15 L17,10 M3,19 H21"/>
+            </Border>
+            <Border Classes="hover-actions" VerticalAlignment="Bottom" IsHitTestVisible="False">
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6" Margin="8,8">
+                <Button Classes="btn-play-hover" Content="Play" IsHitTestVisible="True" Click="PlayBtn_Click"/>
+                <Button Classes="btn-ghost-hover" Content="{Binding FavoriteLabel}" IsHitTestVisible="True" Click="FavBtn_Click"/>
+              </StackPanel>
+            </Border>
+          </Panel>
+          <Border Grid.Row="1" Padding="10,10,10,12">
+            <StackPanel Spacing="3">
+              <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Text="{Binding PlaytimeLabel}" FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.DataTemplates>
+    <DataTemplate x:DataType="vm:PlatformSectionRowViewModel">
+      <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="{Binding SectionMargin}">
+        <Ellipse Width="8" Height="8" Fill="{Binding PlatformColor}" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding PlatformLabel}" FontSize="13" FontWeight="SemiBold"
+                   Foreground="{DynamicResource ThemeText2}" LetterSpacing="0.5" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding CountLabel}" FontSize="11" FontWeight="Normal"
+                   Foreground="{DynamicResource ThemeText4}" VerticalAlignment="Center"/>
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:DataType="vm:GameCardRowViewModel">
+      <ItemsControl ItemsSource="{Binding Cards}" ItemTemplate="{StaticResource GameCardDataTemplate}" Margin="{Binding RowMargin}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" Spacing="14"/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+      </ItemsControl>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
   <UserControl.Styles>
 
     <!-- ── Nav pill chip ── -->
@@ -16,17 +120,27 @@
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="CornerRadius" Value="14"/>
-      <Setter Property="Padding" Value="10,4"/>
+      <Setter Property="Padding" Value="12,4"/>
       <Setter Property="FontSize" Value="10"/>
       <Setter Property="FontWeight" Value="Medium"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.chip:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="Background" Value="#0bffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
     </Style>
+    <Style Selector="Button.chip:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#14ffffff"/>
+    </Style>
+    <Style Selector="Button.chip:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.chip:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
+    <!-- index.css .chip.active — rgba(212,168,83,0.12) accent-soft -->
     <Style Selector="Button.chip.active">
-      <Setter Property="Background" Value="#1fd4a853"/>
+      <Setter Property="Background" Value="#1FD4A853"/>
       <Setter Property="BorderBrush" Value="#4dd4a853"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
@@ -43,8 +157,38 @@
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.nav-btn:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="Background" Value="#0bffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.nav-btn:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#18ffffff"/>
+    </Style>
+    <Style Selector="Button.nav-btn:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.nav-btn:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
+
+    <!-- index.css .theme-picker-btn -->
+    <Style Selector="Button.theme-picker-btn">
+      <Setter Property="Background" Value="#0affffff"/>
+      <Setter Property="BorderBrush" Value="#0fffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="9,5"/>
+      <Setter Property="MinHeight" Value="26"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.theme-picker-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#12ffffff"/>
+      <Setter Property="BorderBrush" Value="#1affffff"/>
+    </Style>
+    <Style Selector="Button.theme-picker-btn:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#18ffffff"/>
+    </Style>
+    <Style Selector="Button.theme-picker-btn:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
     </Style>
 
     <!-- ── View toggle button ── -->
@@ -59,16 +203,26 @@
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.view-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#0affffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
+    </Style>
+    <Style Selector="Button.view-btn:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#14ffffff"/>
+    </Style>
+    <Style Selector="Button.view-btn:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.view-btn:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
     </Style>
     <Style Selector="Button.view-btn.active">
       <Setter Property="Background" Value="#1fd4a853"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
 
-    <!-- ── Game card ── -->
+    <!-- ── Game card (index.css .game-card) ── -->
     <Style Selector="Border.game-card">
-      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="CornerRadius" Value="12"/>
       <Setter Property="Background" Value="{DynamicResource ThemeCard}"/>
       <Setter Property="BorderBrush" Value="#0fffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
@@ -77,20 +231,38 @@
       <Setter Property="RenderTransform" Value="scale(1) translateY(0px)"/>
       <Setter Property="Transitions">
         <Transitions>
-          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18"/>
-          <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18"/>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.32"/>
+          <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.32"/>
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.32"/>
         </Transitions>
       </Setter>
     </Style>
     <Style Selector="Border.game-card:pointerover">
       <Setter Property="RenderTransform" Value="scale(1.02) translateY(-4px)"/>
-      <Setter Property="BoxShadow" Value="0 12 32 0 #660a0a14"/>
+      <Setter Property="BoxShadow" Value="0 12 32 0 #66000000"/>
       <Setter Property="BorderBrush" Value="#1affffff"/>
+    </Style>
+    <Style Selector="Border.game-card:focus">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
+    <!-- index.css .game-card:hover .card-cover img -->
+    <Style Selector="Border.game-card Image">
+      <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
+      <Setter Property="RenderTransform" Value="scale(1)"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.32"/>
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.game-card:pointerover Image">
+      <Setter Property="RenderTransform" Value="scale(1.05)"/>
     </Style>
 
     <!-- Not-installed: dimmed -->
+    <!-- index.css .game-card.not-installed — opacity 0.6 -->
     <Style Selector="Border.game-card.not-installed">
-      <Setter Property="Opacity" Value="0.55"/>
+      <Setter Property="Opacity" Value="0.6"/>
     </Style>
     <Style Selector="Border.game-card.not-installed:pointerover">
       <Setter Property="Opacity" Value="0.85"/>
@@ -131,23 +303,46 @@
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="CornerRadius" Value="14"/>
       <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.stream-pill-btn:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="Background" Value="#0fffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
     </Style>
+    <Style Selector="Button.stream-pill-btn:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#20ffffff"/>
+    </Style>
+    <Style Selector="Button.stream-pill-btn:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.stream-pill-btn:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
 
-    <!-- Play / ghost hover buttons -->
+    <!-- Play / ghost hover buttons — .card-hover-btn (index.css 806-810) -->
     <Style Selector="Button.btn-play-hover">
       <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
+      <Setter Property="Foreground" Value="#0a0a0f"/>
       <Setter Property="FontSize" Value="10"/>
       <Setter Property="FontWeight" Value="Bold"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="10,5"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.btn-play-hover:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#e8b85e"/>
+    </Style>
+    <Style Selector="Button.btn-play-hover:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#d29f45"/>
+    </Style>
+    <Style Selector="Button.btn-play-hover:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.btn-play-hover:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
     <Style Selector="Button.btn-ghost-hover">
       <Setter Property="Background" Value="#14ffffff"/>
@@ -160,6 +355,20 @@
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
+    <Style Selector="Button.btn-ghost-hover:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#20ffffff"/>
+      <Setter Property="BorderBrush" Value="#1affffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.btn-ghost-hover:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#28ffffff"/>
+    </Style>
+    <Style Selector="Button.btn-ghost-hover:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.btn-ghost-hover:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+    </Style>
 
   </UserControl.Styles>
 
@@ -167,175 +376,52 @@
   <Panel>
 
     <!-- ── Card grid (scroll area) ── -->
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                  IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
-      <StackPanel Margin="32,60,32,40">
+    <!-- Outer Panel: empty-state overlay; scroll has one virtualized list of
+         section headers + short horizontal card rows. -->
+    <Panel IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
 
-        <!-- Empty state — matches Electron App.tsx 1158-1168 (:/ icon, title, text, two action buttons) -->
-        <StackPanel IsVisible="{Binding !GameGroups.Count}"
-                    VerticalAlignment="Center" HorizontalAlignment="Center"
-                    Margin="0,80,0,0" Spacing="14">
-          <TextBlock Text=":/" FontSize="48" Foreground="#33e8e4de"
-                     FontWeight="Light" LetterSpacing="4"
-                     HorizontalAlignment="Center" Margin="0,0,0,2"/>
-          <TextBlock Text="No games yet" FontSize="16" FontWeight="SemiBold"
-                     Foreground="{DynamicResource ThemeText3}" HorizontalAlignment="Center"/>
-          <TextBlock Text="Add games manually or detect from installed platforms."
-                     FontSize="13" Foreground="{DynamicResource ThemeText4}"
-                     HorizontalAlignment="Center" MaxWidth="320"
-                     TextWrapping="Wrap" TextAlignment="Center"/>
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center"
-                      Margin="0,6,0,0">
-            <Button Content="Add Game"
-                    Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
-                    CornerRadius="10" Padding="20,9" FontSize="13" FontWeight="Bold"
-                    BorderThickness="0" Cursor="Hand"
-                    Command="{Binding ShowAddGameCommand}"/>
-            <Button Content="Detect"
-                    Background="Transparent" Foreground="{DynamicResource ThemeText2}"
-                    BorderBrush="#1affffff" BorderThickness="1"
-                    CornerRadius="10" Padding="20,9" FontSize="13"
-                    Cursor="Hand"
-                    Command="{Binding OpenDetectCommand}"/>
-          </StackPanel>
+      <!-- Empty state overlay — centered, only shown when library is empty -->
+      <StackPanel IsVisible="{Binding !VisibleGames.Count}"
+                  VerticalAlignment="Center" HorizontalAlignment="Center"
+                  IsHitTestVisible="{Binding !VisibleGames.Count}"
+                  Spacing="14">
+        <TextBlock Text=":/" FontSize="48" Foreground="#33e8e4de"
+                   FontWeight="Light" LetterSpacing="4"
+                   HorizontalAlignment="Center" Margin="0,0,0,2"/>
+        <TextBlock Text="No games yet" FontSize="16" FontWeight="SemiBold"
+                   Foreground="{DynamicResource ThemeText3}" HorizontalAlignment="Center"/>
+        <TextBlock Text="Add games manually or detect from installed platforms."
+                   FontSize="13" Foreground="{DynamicResource ThemeText4}"
+                   HorizontalAlignment="Center" MaxWidth="320"
+                   TextWrapping="Wrap" TextAlignment="Center"/>
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center"
+                    Margin="0,6,0,0">
+          <Button Content="Add Game"
+                  Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
+                  CornerRadius="10" Padding="20,9" FontSize="13" FontWeight="Bold"
+                  BorderThickness="0" Cursor="Hand"
+                  Command="{Binding ShowAddGameCommand}"/>
+          <Button Content="Detect"
+                  Background="Transparent" Foreground="{DynamicResource ThemeText2}"
+                  BorderBrush="#1affffff" BorderThickness="1"
+                  CornerRadius="10" Padding="20,9" FontSize="13"
+                  Cursor="Hand"
+                  Command="{Binding OpenDetectCommand}"/>
         </StackPanel>
-
-        <!-- Platform groups -->
-        <ItemsControl ItemsSource="{Binding GameGroups}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:PlatformGroupViewModel">
-              <StackPanel Margin="0,0,0,28">
-
-                <!-- Section header -->
-                <StackPanel Orientation="Horizontal" Spacing="10" Margin="2,0,0,14"
-                            VerticalAlignment="Center">
-                  <Ellipse Width="8" Height="8" Fill="{Binding PlatformColor}"
-                           VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding PlatformLabel}"
-                             FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText2}"
-                             LetterSpacing="0.5" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding CountLabel}"
-                             FontSize="11" Foreground="{DynamicResource ThemeText4}" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Cards wrap panel -->
-                <ItemsControl ItemsSource="{Binding Games}">
-                  <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                      <WrapPanel Orientation="Horizontal" ItemWidth="150"/>
-                    </ItemsPanelTemplate>
-                  </ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:GameCardViewModel">
-                      <Border Classes="game-card" Width="150" Margin="0,0,14,14"
-                              Classes.not-installed="{Binding IsNotInstalled}"
-                              Tapped="Card_Tapped"
-                              DoubleTapped="Card_DoubleTapped">
-                        <!-- Card layout: cover (225px 2:3) + info -->
-                        <Grid RowDefinitions="225,Auto">
-
-                          <!-- Cover image area -->
-                          <Panel Grid.Row="0">
-                            <!-- Fallback background -->
-                            <Border Background="{DynamicResource ThemeCardUp}">
-                              <TextBlock Text="{Binding Initial}"
-                                         FontSize="48" FontWeight="Light"
-                                         Foreground="#1de8e4de"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-
-                            <!-- Cover image (if loaded) -->
-                            <Image Source="{Binding CoverPath}"
-                                   Stretch="UniformToFill"
-                                   IsVisible="{Binding HasCover}"/>
-
-                            <!-- Bottom gradient overlay -->
-                            <Border VerticalAlignment="Bottom" Height="80"
-                                    IsHitTestVisible="False">
-                              <Border.Background>
-                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                                  <GradientStop Color="Transparent" Offset="0"/>
-                                  <GradientStop Color="#b207070d" Offset="1"/>
-                                </LinearGradientBrush>
-                              </Border.Background>
-                            </Border>
-
-                            <!-- Platform badge top-left (index.css 800): 2px 8px padding, 9px bold letter -->
-                            <Border HorizontalAlignment="Left" VerticalAlignment="Top"
-                                    Margin="8" CornerRadius="4" Padding="8,2"
-                                    Background="#8c000000">
-                              <TextBlock Text="{Binding PlatformLetter}"
-                                         FontSize="9" FontWeight="Bold"
-                                         Foreground="{Binding PlatformColor}"/>
-                            </Border>
-
-                            <!-- Favorite star top-right (index.css 798) — gold circle with star -->
-                            <Border HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Margin="8" Width="22" Height="22"
-                                    CornerRadius="11"
-                                    Background="#e6d4a853"
-                                    BoxShadow="0 2 8 0 #4cd4a853"
-                                    IsVisible="{Binding IsFavorite}">
-                              <TextBlock Text="★" FontSize="10" Foreground="{DynamicResource ThemeVoid}"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-
-                            <!-- Not-installed badge bottom-right (index.css 765) -->
-                            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                    Margin="8" Width="22" Height="22"
-                                    CornerRadius="11"
-                                    Background="#bf000000"
-                                    BorderBrush="#26ffffff" BorderThickness="1"
-                                    IsVisible="{Binding IsNotInstalled}">
-                              <TextBlock Text="↓" FontSize="10" Foreground="#99ffffff"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-
-                            <!-- Hover action buttons (bottom) -->
-                            <Border Classes="hover-actions"
-                                    VerticalAlignment="Bottom"
-                                    IsHitTestVisible="False">
-                              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                          Spacing="6" Margin="8,8">
-                                <Button Classes="btn-play-hover" Content="Play"
-                                        IsHitTestVisible="True"
-                                        Click="PlayBtn_Click"/>
-                                <Button Classes="btn-ghost-hover"
-                                        Content="{Binding FavoriteLabel}"
-                                        IsHitTestVisible="True"
-                                        Click="FavBtn_Click"/>
-                              </StackPanel>
-                            </Border>
-                          </Panel>
-
-                          <!-- Card info -->
-                          <Border Grid.Row="1" Padding="10,8,10,10">
-                            <StackPanel Spacing="2">
-                              <TextBlock Text="{Binding Name}"
-                                         FontSize="12" FontWeight="SemiBold"
-                                         Foreground="{DynamicResource ThemeText}"
-                                         TextTrimming="CharacterEllipsis"/>
-                              <TextBlock Text="{Binding PlaytimeLabel}"
-                                         FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
-                            </StackPanel>
-                          </Border>
-
-                        </Grid>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-              </StackPanel>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
       </StackPanel>
-    </ScrollViewer>
+
+      <ScrollViewer x:Name="LibraryScroll" HorizontalScrollBarVisibility="Disabled"
+                    ScrollChanged="LibraryScroll_ScrollChanged">
+        <ItemsControl ItemsSource="{Binding CardLayoutRows}" Margin="32,52,32,34">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel Orientation="Vertical"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </ScrollViewer>
+
+    </Panel>
 
     <!-- ── Orbit mode ── -->
     <views:OrbitView x:Name="OrbitViewControl"
@@ -350,18 +436,25 @@
          Detect is on the empty-state and Chiaki/Xcloud live on the
          bottom-right `.stream-pill`.
     ───────────────────────────────────────────────────────── -->
-    <Border VerticalAlignment="{Binding ToolbarVerticalAlignment}" HorizontalAlignment="Center"
-            Margin="0,8,0,8"
-            CornerRadius="22"
+    <!-- index.css .nav-pill — rgba(13,13,22,0.82), border rgba(255,255,255,0.09) -->
+    <Border VerticalAlignment="{Binding ToolbarVerticalAlignment}"
+            HorizontalAlignment="{Binding ToolbarHorizontalAlignment}"
+            Margin="{Binding ToolbarMargin}"
+            MinWidth="{Binding NavPillMinWidth}"
+            CornerRadius="{Binding NavPillCornerRadius}"
             Background="#d20d0d16"
             BorderBrush="#17ffffff"
             BorderThickness="1"
-            BoxShadow="0 8 32 0 #b3000000, inset 0 2 0 0 #0dffffff"
-            Padding="10,4">
-      <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+            BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
+            Padding="{Binding NavPillPadding}"
+            RenderTransformOrigin="0.5,0.5">
+      <Border.RenderTransform>
+        <ScaleTransform ScaleX="{Binding ToolbarScale}" ScaleY="{Binding ToolbarScale}"/>
+      </Border.RenderTransform>
+      <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="2" VerticalAlignment="Center">
 
-        <!-- Brand "Cereal" — gradient matching index.css 126 -->
-        <TextBlock Text="Cereal" FontSize="11" FontWeight="Light"
+        <!-- Brand — index.css .nav-brand (uppercase) -->
+        <TextBlock Text="CEREAL" FontSize="11" FontWeight="Light"
                    LetterSpacing="4"
                    VerticalAlignment="Center" Margin="6,0,10,0">
           <TextBlock.Foreground>
@@ -392,7 +485,7 @@
         <ItemsControl ItemsSource="{Binding PlatformChips}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="1"/>
+              <StackPanel Orientation="Horizontal" Spacing="2"/>
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
@@ -403,13 +496,27 @@
                       Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).TogglePlatformFilterCommand}"
                       CommandParameter="{Binding Id}">
                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                  <!-- Colored letter badge stands in for the SVG icon each Electron chip has -->
-                  <TextBlock Text="{Binding Letter}"
-                             FontSize="11" FontWeight="Bold"
-                             Width="14" Height="14"
-                             TextAlignment="Center"
-                             Foreground="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
-                             VerticalAlignment="Center"/>
+                  <Panel Width="14" Height="14" VerticalAlignment="Center">
+                    <Viewbox Width="14" Height="14" IsVisible="{Binding ShowLogoFill}">
+                      <Canvas Width="24" Height="24">
+                        <Path Fill="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                              Data="{Binding LogoPathData}"/>
+                      </Canvas>
+                    </Viewbox>
+                    <Viewbox Width="14" Height="14" IsVisible="{Binding ShowLogoStroke}">
+                      <Canvas Width="24" Height="24">
+                        <Path Stroke="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                              StrokeThickness="{Binding LogoStrokeWidth}"
+                              StrokeLineCap="Round"
+                              Fill="Transparent"
+                              Data="{Binding LogoPathData}"/>
+                      </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="{Binding Letter}" FontSize="9" FontWeight="Bold"
+                               Foreground="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsVisible="{Binding ShowLogoLetter}"/>
+                  </Panel>
                   <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding Count}"
                              IsVisible="{Binding HasCount}"
@@ -425,11 +532,18 @@
 
         <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
 
-        <!-- Sort / Filter flyout (with count badge, App.tsx 967-974) -->
-        <Button Classes="nav-btn" ToolTip.Tip="Sort &amp; Filter">
+        <!-- Filter flyout — trigger icon matches Vite I.search (constants.tsx) -->
+        <Button Classes="nav-btn" ToolTip.Tip="Filter games">
           <Panel>
-            <TextBlock Text="⚏" FontSize="14" VerticalAlignment="Center"
-                       HorizontalAlignment="Center"/>
+            <Viewbox Width="14" Height="14">
+              <Canvas Width="24" Height="24">
+                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="2"
+                      StrokeLineCap="Round"
+                      Fill="Transparent"
+                      Data="M19,11 A8,8 0 1 1 3,11 A8,8 0 1 1 19,11 M21,21 L16.65,16.65"/>
+              </Canvas>
+            </Viewbox>
             <!-- Gold count badge top-right when any filter is active -->
             <Border HorizontalAlignment="Right" VerticalAlignment="Top"
                     Margin="0,-4,-4,0" MinWidth="14" Height="14"
@@ -445,7 +559,7 @@
           </Panel>
           <Button.Flyout>
             <Flyout Placement="Bottom">
-              <Border Background="{DynamicResource ThemeSurface}" BorderBrush="#1affffff" BorderThickness="1"
+              <Border Background="{DynamicResource ThemeSurface}" BorderBrush="#0fffffff" BorderThickness="1"
                       CornerRadius="10" Padding="16,14" MinWidth="220">
                 <StackPanel Spacing="12">
 
@@ -513,6 +627,16 @@
                   <!-- Divider -->
                   <Border Height="1" Background="#0fffffff"/>
 
+                  <!-- Text filter (parity with source gameFilter in filter popover) -->
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="SEARCH" FontSize="9" FontWeight="Bold"
+                               LetterSpacing="1.5" Foreground="#40b0aaa0"/>
+                    <TextBox Text="{Binding SearchText}" Watermark="Filter games..."
+                             Background="#0affffff" BorderBrush="#18ffffff"
+                             Foreground="{DynamicResource ThemeText}"
+                             CornerRadius="6" Padding="8,5" FontSize="11"/>
+                  </StackPanel>
+
                   <!-- Show hidden toggle -->
                   <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <CheckBox IsChecked="{Binding ShowHidden}" Foreground="{DynamicResource ThemeText2}"/>
@@ -524,6 +648,13 @@
                   <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <CheckBox IsChecked="{Binding ShowInstalledOnly}" Foreground="{DynamicResource ThemeText2}"/>
                     <TextBlock Text="Installed only" FontSize="12" Foreground="{DynamicResource ThemeText2}"
+                               VerticalAlignment="Center"/>
+                  </StackPanel>
+
+                  <!-- Hide steam software/tools -->
+                  <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <CheckBox IsChecked="{Binding HideSteamSoftware}" Foreground="{DynamicResource ThemeText2}"/>
+                    <TextBlock Text="Hide Steam software" FontSize="12" Foreground="{DynamicResource ThemeText2}"
                                VerticalAlignment="Center"/>
                   </StackPanel>
 
@@ -576,7 +707,7 @@
         </Button>
 
         <!-- View toggle (App.tsx 1029-1032): orbit first, cards second -->
-        <Border Padding="2" CornerRadius="8" Background="#08ffffff"
+        <Border Padding="2" CornerRadius="8" Background="#0bffffff"
                 BorderBrush="#0fffffff" BorderThickness="1"
                 Margin="4,0">
           <StackPanel Orientation="Horizontal" Spacing="1">
@@ -585,14 +716,30 @@
                     Command="{Binding SetViewModeCommand}"
                     CommandParameter="orbit"
                     ToolTip.Tip="Orbit view">
-              <TextBlock Text="◉" FontSize="12"/>
+              <Viewbox Width="12" Height="12">
+                <Canvas Width="24" Height="24">
+                  <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="2"
+                        StrokeLineCap="Round"
+                        Fill="Transparent"
+                        Data="M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12 M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12"/>
+                </Canvas>
+              </Viewbox>
             </Button>
             <Button Classes="view-btn"
                     Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
                     Command="{Binding SetViewModeCommand}"
                     CommandParameter="cards"
                     ToolTip.Tip="Card view">
-              <TextBlock Text="⊞" FontSize="12"/>
+              <Viewbox Width="12" Height="12">
+                <Canvas Width="24" Height="24">
+                  <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="2"
+                        StrokeLineCap="Round"
+                        Fill="Transparent"
+                        Data="M4,3 H9 A1,1 0 0 1 10,4 V9 A1,1 0 0 1 9,10 H4 A1,1 0 0 1 3,9 V4 A1,1 0 0 1 4,3 Z M15,3 H20 A1,1 0 0 1 21,4 V9 A1,1 0 0 1 20,10 H15 A1,1 0 0 1 14,9 V4 A1,1 0 0 1 15,3 Z M4,14 H9 A1,1 0 0 1 10,15 V20 A1,1 0 0 1 9,21 H4 A1,1 0 0 1 3,20 V15 A1,1 0 0 1 4,14 Z M15,14 H20 A1,1 0 0 1 21,15 V20 A1,1 0 0 1 20,21 H15 A1,1 0 0 1 14,20 V15 A1,1 0 0 1 15,14 Z"/>
+                </Canvas>
+              </Viewbox>
             </Button>
           </StackPanel>
         </Border>
@@ -600,16 +747,20 @@
         <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
 
         <!-- Theme picker (App.tsx 1034-1091) — dots + custom accent input -->
-        <Button Classes="nav-btn" ToolTip.Tip="Theme">
-          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-            <Ellipse Width="10" Height="10" Fill="{DynamicResource ThemeAccent}"/>
-            <TextBlock Text="▾" FontSize="8" VerticalAlignment="Center"
-                       Foreground="{DynamicResource ThemeText3}"/>
+        <Button Classes="theme-picker-btn" ToolTip.Tip="Theme">
+          <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+            <Ellipse Width="14" Height="14" Fill="{DynamicResource ThemeAccent}"/>
+            <Path Width="8" Height="8" VerticalAlignment="Center" Stretch="Uniform"
+                  Stroke="{DynamicResource ThemeText3}"
+                  StrokeThickness="1.5"
+                  StrokeLineCap="Round"
+                  Fill="Transparent"
+                  Data="M1,2 L4,5 L7,2"/>
           </StackPanel>
           <Button.Flyout>
             <Flyout Placement="Bottom">
               <Border Background="{DynamicResource ThemeSurface}"
-                      BorderBrush="#1affffff" BorderThickness="1"
+                      BorderBrush="#0fffffff" BorderThickness="1"
                       CornerRadius="12" Padding="10">
                 <StackPanel Spacing="6" Width="140">
                   <ItemsControl ItemsSource="{Binding ThemeSwatches}">
@@ -648,31 +799,111 @@
           </Button.Flyout>
         </Button>
 
-        <!-- Toolbar position picker (port of App.tsx 1122–1150) -->
-        <Button Classes="nav-btn" ToolTip.Tip="Toolbar position">
-          <TextBlock Text="⚏" FontSize="13" VerticalAlignment="Center"
-                     HorizontalAlignment="Center"/>
+        <!-- Toolbar position — current glyph matches Vite layoutOptions (App.tsx 1094–1101) -->
+        <Button Classes="theme-picker-btn" ToolTip.Tip="Toolbar position">
+          <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+            <Panel Width="14" Height="14">
+              <!-- top -->
+              <Viewbox Width="14" Height="14"
+                       IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=top}">
+                <Canvas Width="12" Height="12">
+                  <Path Stroke="{DynamicResource ThemeText2}" StrokeThickness="1.2" Fill="Transparent"
+                        Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                  <Path Fill="{DynamicResource ThemeText2}"
+                        Data="M2,1 H10 A1,1 0 0 1 11,2 L11,4.5 L1,4.5 L1,2 A1,1 0 0 1 2,1 Z"/>
+                </Canvas>
+              </Viewbox>
+              <!-- bottom -->
+              <Viewbox Width="14" Height="14"
+                       IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=bottom}">
+                <Canvas Width="12" Height="12">
+                  <Path Stroke="{DynamicResource ThemeText2}" StrokeThickness="1.2" Fill="Transparent"
+                        Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                  <Path Fill="{DynamicResource ThemeText2}"
+                        Data="M2,7.5 H10 A1,1 0 0 1 11,8.5 V10 A1,1 0 0 1 10,11 H2 A1,1 0 0 1 1,10 V8.5 A1,1 0 0 1 2,7.5 Z"/>
+                </Canvas>
+              </Viewbox>
+              <!-- left -->
+              <Viewbox Width="14" Height="14"
+                       IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=left}">
+                <Canvas Width="12" Height="12">
+                  <Path Stroke="{DynamicResource ThemeText2}" StrokeThickness="1.2" Fill="Transparent"
+                        Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                  <Path Fill="{DynamicResource ThemeText2}"
+                        Data="M2,1 H3.5 A1,1 0 0 1 4.5,2 V10 A1,1 0 0 1 3.5,11 H2 A1,1 0 0 1 1,10 V2 A1,1 0 0 1 2,1 Z"/>
+                </Canvas>
+              </Viewbox>
+              <!-- right -->
+              <Viewbox Width="14" Height="14"
+                       IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}">
+                <Canvas Width="12" Height="12">
+                  <Path Stroke="{DynamicResource ThemeText2}" StrokeThickness="1.2" Fill="Transparent"
+                        Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                  <Path Fill="{DynamicResource ThemeText2}"
+                        Data="M8.5,1 H10 A1,1 0 0 1 11,2 V10 A1,1 0 0 1 10,11 H8.5 A1,1 0 0 1 7.5,10 V2 A1,1 0 0 1 8.5,1 Z"/>
+                </Canvas>
+              </Viewbox>
+            </Panel>
+            <Path Width="8" Height="8" VerticalAlignment="Center" Stretch="Uniform"
+                  Stroke="{DynamicResource ThemeText3}"
+                  StrokeThickness="1.5"
+                  StrokeLineCap="Round"
+                  Fill="Transparent"
+                  Data="M1,2 L4,5 L7,2"/>
+          </StackPanel>
           <Button.Flyout>
             <Flyout Placement="Bottom">
               <Border Background="{DynamicResource ThemeSurface}"
-                      BorderBrush="#1affffff" BorderThickness="1"
+                      BorderBrush="#0fffffff" BorderThickness="1"
                       CornerRadius="10" Padding="6">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                   <Button Classes="nav-btn" ToolTip.Tip="Top"
                           Command="{Binding SetToolbarPositionCommand}" CommandParameter="top">
-                    <TextBlock Text="▁" FontSize="14"/>
+                    <Viewbox Width="12" Height="12">
+                      <Canvas Width="12" Height="12">
+                        <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.2" Fill="Transparent"
+                              Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Data="M2,1 H10 A1,1 0 0 1 11,2 L11,4.5 L1,4.5 L1,2 A1,1 0 0 1 2,1 Z"/>
+                      </Canvas>
+                    </Viewbox>
                   </Button>
                   <Button Classes="nav-btn" ToolTip.Tip="Bottom"
                           Command="{Binding SetToolbarPositionCommand}" CommandParameter="bottom">
-                    <TextBlock Text="▔" FontSize="14"/>
+                    <Viewbox Width="12" Height="12">
+                      <Canvas Width="12" Height="12">
+                        <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.2" Fill="Transparent"
+                              Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Data="M2,7.5 H10 A1,1 0 0 1 11,8.5 V10 A1,1 0 0 1 10,11 H2 A1,1 0 0 1 1,10 V8.5 A1,1 0 0 1 2,7.5 Z"/>
+                      </Canvas>
+                    </Viewbox>
                   </Button>
                   <Button Classes="nav-btn" ToolTip.Tip="Left"
                           Command="{Binding SetToolbarPositionCommand}" CommandParameter="left">
-                    <TextBlock Text="▏" FontSize="14"/>
+                    <Viewbox Width="12" Height="12">
+                      <Canvas Width="12" Height="12">
+                        <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.2" Fill="Transparent"
+                              Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Data="M2,1 H3.5 A1,1 0 0 1 4.5,2 V10 A1,1 0 0 1 3.5,11 H2 A1,1 0 0 1 1,10 V2 A1,1 0 0 1 2,1 Z"/>
+                      </Canvas>
+                    </Viewbox>
                   </Button>
                   <Button Classes="nav-btn" ToolTip.Tip="Right"
                           Command="{Binding SetToolbarPositionCommand}" CommandParameter="right">
-                    <TextBlock Text="▕" FontSize="14"/>
+                    <Viewbox Width="12" Height="12">
+                      <Canvas Width="12" Height="12">
+                        <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.2" Fill="Transparent"
+                              Data="M2.5,1 L9.5,1 A1.5,1.5 0 0 1 11,2.5 L11,9.5 A1.5,1.5 0 0 1 9.5,11 L2.5,11 A1.5,1.5 0 0 1 1,9.5 L1,2.5 A1.5,1.5 0 0 1 2.5,1 Z"/>
+                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Data="M8.5,1 H10 A1,1 0 0 1 11,2 V10 A1,1 0 0 1 10,11 H8.5 A1,1 0 0 1 7.5,10 V2 A1,1 0 0 1 8.5,1 Z"/>
+                      </Canvas>
+                    </Viewbox>
                   </Button>
                 </StackPanel>
               </Border>
@@ -682,17 +913,27 @@
 
         <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
 
-        <!-- Trailing nav-actions: Add + Settings (App.tsx 1152-1155) -->
-        <Button Classes="nav-btn" ToolTip.Tip="Add game"
-                Command="{Binding ShowAddGameCommand}">
-          <TextBlock Text="＋" FontSize="15" VerticalAlignment="Center"
-                     HorizontalAlignment="Center"/>
-        </Button>
-        <Button Classes="nav-btn" ToolTip.Tip="Settings (Ctrl+,)"
-                Command="{Binding OpenSettingsCommand}">
-          <TextBlock Text="⚙" FontSize="14" VerticalAlignment="Center"
-                     HorizontalAlignment="Center"/>
-        </Button>
+        <!-- Trailing nav-actions — index.css .nav-actions margin-left 6px, gap 1px -->
+        <StackPanel Orientation="Horizontal" Spacing="1" Margin="6,0,0,0" VerticalAlignment="Center">
+          <Button Classes="nav-btn" ToolTip.Tip="Add game"
+                  Command="{Binding ShowAddGameCommand}">
+            <Viewbox Width="14" Height="14">
+              <Canvas Width="24" Height="24">
+                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="2"
+                      StrokeLineCap="Round"
+                      Fill="Transparent"
+                      Data="M12,5 V19 M5,12 H19"/>
+              </Canvas>
+            </Viewbox>
+          </Button>
+          <Button Classes="nav-btn" ToolTip.Tip="Settings (Ctrl+,)"
+                  Command="{Binding OpenSettingsCommand}">
+            <PathIcon Width="14" Height="14"
+                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M12,9 A3,3 0 1 0 12,15 A3,3 0 1 0 12,9 M19.4,15 C19.62,15.56 20.12,15.95 20.72,15.99 L21,16 A2,2 0 1 1 21,20 H20.91 C20.35,20 19.84,20.22 19.46,20.61 L19.4,20.67 A2,2 0 1 1 16.57,17.84 L16.63,17.78 C17.04,17.37 17.19,16.76 17,16.22 C16.78,15.66 16.28,15.27 15.68,15.23 L15.59,15.22 A2,2 0 1 1 15.59,8.78 L15.68,8.77 C16.28,8.73 16.78,8.34 17,7.78 C17.19,7.24 17.04,6.63 16.63,6.22 L16.57,6.16 A2,2 0 1 1 19.4,3.33 L19.46,3.39 C19.84,3.78 20.35,4 20.91,4 H21 A2,2 0 1 1 21,8 L20.72,8.01 C20.12,8.05 19.62,8.44 19.4,9 C19.21,9.54 19.36,10.15 19.77,10.56 L19.83,10.62 A2,2 0 1 1 17,13.45 L16.94,13.39 C16.53,12.98 15.92,12.83 15.38,13.02"/>
+          </Button>
+        </StackPanel>
 
       </StackPanel>
     </Border>
@@ -710,9 +951,13 @@
             CornerRadius="22" Padding="6,4"
             Background="#d20d0d16"
             BorderBrush="#17ffffff" BorderThickness="1"
-            BoxShadow="0 8 32 0 #b3000000, inset 0 2 0 0 #0dffffff"
+            BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
             ZIndex="50"
+            RenderTransformOrigin="0.5,0.5"
             IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
+      <Border.RenderTransform>
+        <ScaleTransform ScaleX="{Binding ToolbarScale}" ScaleY="{Binding ToolbarScale}"/>
+      </Border.RenderTransform>
       <StackPanel Orientation="Horizontal" Spacing="2">
         <Button Classes="stream-pill-btn" ToolTip.Tip="PlayStation Remote Play"
                 Command="{Binding OpenChiakiCommand}">
@@ -720,9 +965,9 @@
             <Border Width="22" Height="22" CornerRadius="11"
                     Background="#33003087"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
-              <TextBlock Text="P" FontSize="11" FontWeight="Bold"
-                         Foreground="#4d8fff"
-                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <PathIcon Width="14" Height="14" Foreground="#4d8fff"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Data="M8.984,2.596 V20.143 L12.899,21.404 V6.688 C12.899,5.998 13.203,5.537 13.693,5.697 C14.329,5.877 14.453,6.511 14.453,7.202 V13.077 C16.894,14.27 18.815,13.075 18.815,9.925 C18.815,6.688 17.689,5.25 14.377,4.098 C13.07,3.65 10.649,2.912 8.987,2.596 Z"/>
             </Border>
             <TextBlock Text="Remote Play" FontSize="11" FontWeight="SemiBold"
                        VerticalAlignment="Center"/>
@@ -734,9 +979,9 @@
             <Border Width="22" Height="22" CornerRadius="11"
                     Background="#33107c10"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
-              <TextBlock Text="X" FontSize="11" FontWeight="Bold"
-                         Foreground="#34d399"
-                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <PathIcon Width="12" Height="12" Foreground="#34d399"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Data="M4.102,21.033 A11.95,11.95 0 0 0 12,24 A11.96,11.96 0 0 0 19.902,21.033 C21.779,19.121 15.586,12.324 12,9.616 C8.418,12.324 2.221,19.121 4.102,21.033 Z"/>
             </Border>
             <TextBlock Text="Cloud Gaming" FontSize="11" FontWeight="SemiBold"
                        VerticalAlignment="Center"/>
@@ -756,7 +1001,7 @@
 
     <!-- ── Subtle progress pill (bottom-right) — mirrors Electron's subtle-pill ── -->
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
-            Margin="0,0,22,22" CornerRadius="14" Padding="12,8"
+            Margin="0,0,20,20" CornerRadius="14" Padding="12,8"
             Background="#ec0d0d16" BorderBrush="#18ffffff" BorderThickness="1"
             MinWidth="220"
             BoxShadow="0 8 24 0 #80000000"

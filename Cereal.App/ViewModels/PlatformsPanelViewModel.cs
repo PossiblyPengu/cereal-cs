@@ -6,6 +6,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net.Http.Headers;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -131,6 +132,9 @@ public partial class PlatformsPanelViewModel : ObservableObject
     }
 
     internal async Task ImportAsync(string platform)
+        => await ImportAsync(platform, null);
+
+    internal async Task ImportAsync(string platform, Action<ImportProgress>? onProgress)
     {
         var provider = GetImportProvider(platform);
         if (provider is null)
@@ -148,20 +152,45 @@ public partial class PlatformsPanelViewModel : ObservableObject
         StatusMessage = $"Importing {platform} library…";
         try
         {
+            await _auth.RefreshTokenIfNeededAsync(platform);
             var ctx = new ImportContext
             {
                 Db = _db,
                 ApiKey = _creds.GetPassword("cereal", $"{platform}_api_key"),
                 Http = new HttpClient(),
                 Notify = p => Dispatcher.UIThread.Post(() =>
-                    StatusMessage = $"{platform}: {p.Processed}/{p.Total} {p.Name ?? ""}"),
+                {
+                    StatusMessage = $"{platform}: {p.Processed}/{p.Total} {p.Name ?? ""}";
+                    onProgress?.Invoke(p);
+                }),
             };
             var result = await provider.ImportLibrary(ctx);
             if (!string.IsNullOrEmpty(result.Error))
             {
-                StatusMessage = $"{platform} import failed: {result.Error}";
+                if (result.Error.Contains("401", StringComparison.OrdinalIgnoreCase) ||
+                    result.Error.Contains("403", StringComparison.OrdinalIgnoreCase) ||
+                    result.Error.Contains("token", StringComparison.OrdinalIgnoreCase) ||
+                    result.Error.Contains("unauthorized", StringComparison.OrdinalIgnoreCase))
+                {
+                    var refreshed = await _auth.RefreshTokenIfNeededAsync(platform);
+                    if (refreshed)
+                    {
+                        result = await provider.ImportLibrary(ctx);
+                    }
+                }
+            }
+            if (!string.IsNullOrEmpty(result.Error))
+            {
+                if (platform == "steam" && string.IsNullOrWhiteSpace(_creds.GetPassword("cereal", "steam_api_key")))
+                    StatusMessage = "steam import failed. Private profile? Add a Steam API key and retry.";
+                else
+                    StatusMessage = $"{platform} import failed: {result.Error}";
                 return;
             }
+
+            var reconciledInstalled = 0;
+            if (platform is "steam" or "gog" or "epic")
+                reconciledInstalled = await ReconcileInstalledAfterImportAsync(platform);
 
             // Enqueue covers for new games
             foreach (var g in _db.Db.Games.Where(g => g.Platform == platform))
@@ -170,6 +199,15 @@ public partial class PlatformsPanelViewModel : ObservableObject
             StatusMessage = result.Imported.Count + result.Updated.Count > 0
                 ? $"{platform}: {result.Imported.Count} new, {result.Updated.Count} updated"
                 : $"{platform}: library already up to date";
+            if (reconciledInstalled > 0)
+                StatusMessage += $" - {reconciledInstalled} install states reconciled";
+
+            var acct = _db.Db.Accounts.GetValueOrDefault(platform);
+            if (acct is not null)
+            {
+                acct.LastSyncMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                _db.Save();
+            }
         }
         catch (Exception ex)
         {
@@ -187,6 +225,22 @@ public partial class PlatformsPanelViewModel : ObservableObject
             added++;
         }
         return added;
+    }
+
+    private async Task<int> ReconcileInstalledAfterImportAsync(string platform)
+    {
+        var provider = GetProvider(platform);
+        if (provider is null) return 0;
+        try
+        {
+            var detected = await provider.DetectInstalled();
+            var installedOnly = detected.Games.Where(g => g.Installed == true);
+            return MergeGames(installedOnly);
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     internal void Disconnect(string platform)
@@ -210,6 +264,9 @@ public partial class PlatformsPanelViewModel : ObservableObject
 
     internal bool HasApiKey(string platform) =>
         !string.IsNullOrEmpty(_creds.GetPassword("cereal", $"{platform}_api_key"));
+
+    internal string? GetApiKey(string platform) =>
+        _creds.GetPassword("cereal", $"{platform}_api_key");
 
     // Short, transient status line used by paste-key handlers (mirrors the
     // Electron version's top-right toast).
@@ -239,8 +296,13 @@ public partial class PlatformRowViewModel : ObservableObject
     [ObservableProperty] private int _installedCount;
     [ObservableProperty] private string? _accountName;
     [ObservableProperty] private string? _accountAvatar;
+    [ObservableProperty] private string? _accountSubLabel;
     [ObservableProperty] private string _apiKeyInput = "";
     [ObservableProperty] private bool _hasSavedApiKey;
+    [ObservableProperty] private string? _apiKeyStatus;
+    [ObservableProperty] private bool _isValidatingApiKey;
+    [ObservableProperty] private string? _importProgressText;
+    [ObservableProperty] private double _importProgressPercent;
 
     public string StatusLabel
     {
@@ -256,6 +318,7 @@ public partial class PlatformRowViewModel : ObservableObject
 
     // Combined visibility flags (simpler than MultiBindings in XAML).
     public bool ShowSignIn => SupportsSignIn && !IsConnected;
+    public bool ShowReconnect => SupportsSignIn && IsConnected;
     public bool ShowRescan => !SupportsSignIn && !IsPsn;
     public bool DotOk => IsConnected;
     public bool DotWarn => !IsConnected && (InstalledCount > 0 || IsXbox);
@@ -265,6 +328,7 @@ public partial class PlatformRowViewModel : ObservableObject
         OnPropertyChanged(nameof(StatusLabel));
         OnPropertyChanged(nameof(DotClass));
         OnPropertyChanged(nameof(ShowSignIn));
+        OnPropertyChanged(nameof(ShowReconnect));
         OnPropertyChanged(nameof(DotOk));
         OnPropertyChanged(nameof(DotWarn));
     }
@@ -277,6 +341,7 @@ public partial class PlatformRowViewModel : ObservableObject
     }
 
     partial void OnAccountNameChanged(string? value) => OnPropertyChanged(nameof(StatusLabel));
+    partial void OnAccountSubLabelChanged(string? value) => OnPropertyChanged(nameof(StatusLabel));
 
     public PlatformRowViewModel(string id, PlatformsPanelViewModel parent)
     {
@@ -317,7 +382,9 @@ public partial class PlatformRowViewModel : ObservableObject
     {
         var account = _parent.GetAccount(Id);
         IsConnected = account is not null;
-        AccountName = account?.Username ?? account?.AccountId;
+        AccountName = account?.DisplayName ?? account?.Username ?? account?.AccountId;
+        AccountAvatar = account?.AvatarUrl;
+        AccountSubLabel = GetAccountSubLabel(account);
 
         var provider = _parent.GetProvider(Id);
         if (provider is not null)
@@ -334,6 +401,29 @@ public partial class PlatformRowViewModel : ObservableObject
         OnPropertyChanged(nameof(DotClass));
     }
 
+    private static string FormatAgo(long timestampMs)
+    {
+        var dt = DateTimeOffset.FromUnixTimeMilliseconds(timestampMs);
+        var span = DateTimeOffset.UtcNow - dt;
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalHours < 1) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalDays < 1) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+
+    private static string? GetAccountSubLabel(AccountInfo? account)
+    {
+        if (account is null) return null;
+        var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (account.ExpiresAt is long exp)
+        {
+            if (exp <= nowMs) return "Session expired - sign in again";
+            if (exp <= nowMs + (15 * 60 * 1000)) return "Session expiring soon";
+        }
+        if (account.LastSyncMs is long ts) return $"Synced {FormatAgo(ts)}";
+        return !string.IsNullOrWhiteSpace(account.AccountId) ? $"ID: {account.AccountId}" : null;
+    }
+
     [RelayCommand]
     private async Task SignIn()
     {
@@ -344,10 +434,40 @@ public partial class PlatformRowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task Reconnect()
+    {
+        if (!SupportsSignIn) return;
+        IsLoading = true;
+        try
+        {
+            _parent.Disconnect(Id);
+            await _parent.SignInAsync(Id);
+            await RefreshStatusAsync();
+        }
+        finally { IsLoading = false; }
+    }
+
+    [RelayCommand]
     private async Task Import()
     {
         IsImporting = true;
-        try { await _parent.ImportAsync(Id); await RefreshStatusAsync(); }
+        ImportProgressText = "Starting import…";
+        ImportProgressPercent = 0;
+        try
+        {
+            await _parent.ImportAsync(Id, p =>
+            {
+                ImportProgressText = string.IsNullOrWhiteSpace(p.Name)
+                    ? $"{p.Processed}/{p.Total}"
+                    : $"{p.Processed}/{p.Total} - {p.Name}";
+                ImportProgressPercent = p.Total > 0
+                    ? Math.Clamp((double)p.Processed / p.Total, 0, 1)
+                    : 0;
+            });
+            await RefreshStatusAsync();
+            if (ImportProgressPercent >= 1)
+                ImportProgressText = "Import complete.";
+        }
         finally { IsImporting = false; }
     }
 
@@ -366,6 +486,7 @@ public partial class PlatformRowViewModel : ObservableObject
         {
             ApiKeyInput = "";
             HasSavedApiKey = true;
+            ApiKeyStatus = null;
         }
     }
 
@@ -375,6 +496,7 @@ public partial class PlatformRowViewModel : ObservableObject
         _parent.DeleteApiKey(Id);
         HasSavedApiKey = false;
         ApiKeyInput = "";
+        ApiKeyStatus = null;
     }
 
     [RelayCommand]
@@ -391,6 +513,52 @@ public partial class PlatformRowViewModel : ObservableObject
         ApiKeyInput = "";
         HasSavedApiKey = true;
         _parent.Flash("Pasted key saved");
+        ApiKeyStatus = null;
+    }
+
+    [RelayCommand]
+    private async Task ValidateApiKey()
+    {
+        var key = string.IsNullOrWhiteSpace(ApiKeyInput)
+            ? _parent.GetApiKey(Id)
+            : ApiKeyInput.Trim();
+
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            ApiKeyStatus = "Enter or save a key first.";
+            return;
+        }
+
+        IsValidatingApiKey = true;
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            if (Id == "steam")
+            {
+                var url = $"https://api.steampowered.com/ISteamWebAPIUtil/GetServerInfo/v1/?key={Uri.EscapeDataString(key)}";
+                using var res = await http.GetAsync(url);
+                ApiKeyStatus = res.IsSuccessStatusCode ? "Steam key looks valid." : "Steam key validation failed.";
+            }
+            else if (Id == "itchio")
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, "https://api.itch.io/profile/owned-keys?page=1");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
+                using var res = await http.SendAsync(req);
+                ApiKeyStatus = res.IsSuccessStatusCode ? "itch.io key looks valid." : "itch.io key validation failed.";
+            }
+            else
+            {
+                ApiKeyStatus = "Validation is currently available for Steam and itch.io keys.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ApiKeyStatus = $"Validation failed: {ex.Message}";
+        }
+        finally
+        {
+            IsValidatingApiKey = false;
+        }
     }
 
     [RelayCommand]

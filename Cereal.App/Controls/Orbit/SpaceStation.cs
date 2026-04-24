@@ -8,6 +8,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
+using Avalonia.Threading;
 
 namespace Cereal.App.Controls.Orbit;
 
@@ -24,6 +25,8 @@ public sealed class SpaceStation : Panel
     private readonly OrbitWorld _world;
     private readonly Border _hub;
     private readonly TextBlock _labelText;
+    private readonly DispatcherTimer _floatTimer;
+    private readonly DateTime _floatStart;
     private bool _hovering;
 
     public SpaceStation(OrbitWorld world, Color color, string label, string letter, int gameCount)
@@ -176,29 +179,17 @@ public sealed class SpaceStation : Panel
         Children.Add(_labelText);
 
         // ─── Subtle float animation (6s, vertical bob) ───────────────────────
-        var float_ = new Animation
+        _floatStart = DateTime.UtcNow;
+        RenderTransform = new TranslateTransform(0, 0);
+        _floatTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) =>
         {
-            Duration = TimeSpan.FromSeconds(6),
-            IterationCount = new IterationCount(ulong.MaxValue),
-            PlaybackDirection = PlaybackDirection.Alternate,
-            Easing = new SineEaseInOut(),
-            Children =
-            {
-                new KeyFrame
-                {
-                    Cue = new Cue(0d),
-                    Setters = { new Setter(TranslateTransform.YProperty, 0d) },
-                },
-                new KeyFrame
-                {
-                    Cue = new Cue(1d),
-                    Setters = { new Setter(TranslateTransform.YProperty, -6d) },
-                },
-            },
-        };
-        var floatXform = new TranslateTransform();
-        RenderTransform = floatXform;
-        _ = float_.RunAsync(floatXform);
+            if (RenderTransform is not TranslateTransform t) return;
+            var secs = (DateTime.UtcNow - _floatStart).TotalSeconds;
+            var y = -3.0 + Math.Sin(secs / 6.0 * Math.PI * 2) * 3.0; // [-6..0]
+            t.Y = y;
+        });
+        _floatTimer.Start();
+        DetachedFromVisualTree += (_, _) => _floatTimer.Stop();
     }
 
     private static Canvas BuildRing(double size, IBrush strokeBrush, double strokeThickness,
@@ -272,29 +263,17 @@ public sealed class SpaceStation : Panel
 
         // Rotation around center.
         var rot = new RotateTransform(0);
+        var spinStart = DateTime.UtcNow;
+        var sign = reverse ? -1.0 : 1.0;
         ring.RenderTransform = rot;
         ring.RenderTransformOrigin = RelativePoint.Center;
-
-        var anim = new Animation
+        var spinTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) =>
         {
-            Duration = TimeSpan.FromSeconds(rotationSeconds),
-            IterationCount = new IterationCount(ulong.MaxValue),
-            Easing = new LinearEasing(),
-            Children =
-            {
-                new KeyFrame
-                {
-                    Cue = new Cue(0d),
-                    Setters = { new Setter(RotateTransform.AngleProperty, reverse ? 360d : 0d) },
-                },
-                new KeyFrame
-                {
-                    Cue = new Cue(1d),
-                    Setters = { new Setter(RotateTransform.AngleProperty, reverse ? 0d : 360d) },
-                },
-            },
-        };
-        _ = anim.RunAsync(rot);
+            var elapsed = (DateTime.UtcNow - spinStart).TotalSeconds;
+            rot.Angle = sign * (elapsed / rotationSeconds * 360.0);
+        });
+        spinTimer.Start();
+        ring.DetachedFromVisualTree += (_, _) => spinTimer.Stop();
 
         return ring;
     }

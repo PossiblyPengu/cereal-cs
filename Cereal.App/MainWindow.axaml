@@ -10,25 +10,72 @@
         Width="1280" Height="800"
         MinWidth="900" MinHeight="560"
         WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="#07070d">
 
   <Window.Styles>
+    <Style Selector="Button.win-ctrl">
+      <Setter Property="Width" Value="46"/>
+      <Setter Property="Height" Value="40"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Foreground" Value="#66b0aaa0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.win-ctrl:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#12ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.win-ctrl:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#20ffffff"/>
+    </Style>
+    <Style Selector="Button.win-ctrl.close:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#c42b1c"/>
+      <Setter Property="TextElement.Foreground" Value="White"/>
+    </Style>
+    <Style Selector="Button.win-ctrl.close:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#a72216"/>
+      <Setter Property="TextElement.Foreground" Value="White"/>
+    </Style>
+    <Style Selector="Button.win-ctrl:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="inset 0 0 0 2 #4dd4a853"/>
+    </Style>
+
     <!-- Stream tab close button -->
     <Style Selector="Button.tab-close">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Padding" Value="3,0"/>
-      <Setter Property="Foreground" Value="#5ab0aaa0"/>
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Width" Value="16"/>
+      <Setter Property="Height" Value="16"/>
+      <Setter Property="Margin" Value="2,0,0,0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Foreground" Value="#4db0aaa0"/>
       <Setter Property="CornerRadius" Value="4"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Opacity" Value="0"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.1"/>
+        </Transitions>
+      </Setter>
     </Style>
     <Style Selector="Button.tab-close:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#22ffffff"/>
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.tab-close:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#2affffff"/>
+    </Style>
+    <Style Selector="Button.tab-close:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
+    <Style Selector="Button.stream-tab:pointerover Button.tab-close">
+      <Setter Property="Opacity" Value="1"/>
     </Style>
 
     <!-- Clickable stream tab — flat chrome, reveals the child border styling -->
@@ -43,8 +90,49 @@
       <Setter Property="Padding" Value="0"/>
       <Setter Property="CornerRadius" Value="7"/>
     </Style>
+    <Style Selector="Button.stream-tab Button.tab-close:focus-visible">
+      <Setter Property="Opacity" Value="1"/>
+    </Style>
     <Style Selector="Button.stream-tab:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#12ffffff"/>
+      <Setter Property="Background" Value="#18ffffff"/>
+    </Style>
+    <Style Selector="Button.stream-tab:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#22ffffff"/>
+    </Style>
+    <Style Selector="Button.stream-tab:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
+
+    <!-- index.css .search-esc -->
+    <Style Selector="Button.search-esc">
+      <Setter Property="Padding" Value="6,14"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="#0fffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Foreground" Value="#706b63"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.search-esc:pointerover /template/ ContentPresenter">
+      <Setter Property="BorderBrush" Value="#706b63"/>
+      <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
+    </Style>
+    <Style Selector="Button.search-esc:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
+
+    <!-- index.css .search-plat-chip (active colors come from MultiBinding) -->
+    <Style Selector="Button.search-plat-chip">
+      <Setter Property="Padding" Value="2,8"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.search-plat-chip:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#0bffffff"/>
     </Style>
   </Window.Styles>
 
@@ -53,78 +141,139 @@
 
     <!-- ── Tab bar (index.css .tab-bar 49) — chrome-extended, 40px, blurred, drag region -->
     <Border Grid.Row="0"
+            PointerPressed="TitleBar_PointerPressed"
             Background="#f7070710"
             BorderBrush="#0dffffff"
             BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="Auto,*,Auto">
 
         <!-- Left: Cereal launcher tab (index.css .tab-item / TabBar.tsx CEREAL_ICON) -->
-        <Border Grid.Column="0"
-                Margin="6,4"
-                CornerRadius="6" Padding="10,0,12,0" Height="32"
-                Background="#14ffffff"
-                BoxShadow="inset 0 2 0 0 #d4a853">
-          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <!-- Cereal icon — stylized orb cluster -->
-            <Panel Width="14" Height="14" VerticalAlignment="Center">
-              <Ellipse Width="13" Height="13" Stroke="#d4a853" StrokeThickness="1.3"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-              <Ellipse Width="2.6" Height="2.6" Fill="#ccd4a853"
-                       HorizontalAlignment="Left" VerticalAlignment="Top"
-                       Margin="3,3,0,0"/>
-              <Ellipse Width="2.6" Height="2.6" Fill="#d4a853"
-                       HorizontalAlignment="Right" VerticalAlignment="Top"
-                       Margin="0,3,2,0"/>
-              <Ellipse Width="2" Height="2" Fill="#b3d4a853"
-                       HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                       Margin="0,0,0,2"/>
-            </Panel>
-            <TextBlock Text="Cereal" FontSize="11" FontWeight="SemiBold"
-                       Foreground="{DynamicResource ThemeText}"
-                       VerticalAlignment="Center"/>
-          </StackPanel>
-        </Border>
+        <Button Grid.Column="0"
+                Command="{Binding OpenLauncherTabCommand}"
+                Padding="0" BorderThickness="0" Cursor="Hand">
+          <Border Margin="6,4"
+                  CornerRadius="6" Padding="10,0,12,0" Height="32"
+                  Background="#14ffffff"
+                  BoxShadow="inset 0 2 0 0 #d4a853">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <!-- Cereal icon — stylized orb cluster -->
+              <Panel Width="14" Height="14" VerticalAlignment="Center">
+                <Ellipse Width="13" Height="13" Stroke="#d4a853" StrokeThickness="1.3"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Width="2.6" Height="2.6" Fill="#ccd4a853"
+                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                         Margin="3,3,0,0"/>
+                <Ellipse Width="2.6" Height="2.6" Fill="#d4a853"
+                         HorizontalAlignment="Right" VerticalAlignment="Top"
+                         Margin="0,3,2,0"/>
+                <Ellipse Width="2" Height="2" Fill="#b3d4a853"
+                         HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                         Margin="0,0,0,2"/>
+              </Panel>
+              <TextBlock Text="Cereal" FontSize="11" FontWeight="SemiBold"
+                         Foreground="{DynamicResource ThemeText}"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+        </Button>
 
         <!-- Center: stream session tabs -->
-        <ItemsControl Grid.Column="1" ItemsSource="{Binding StreamTabs}"
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="3"
+                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Margin="2,0">
+          <ItemsControl ItemsSource="{Binding PanelTabs}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="3"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:PanelTabViewModel">
+                <Button Classes="stream-tab"
+                        Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SwitchToPanelTabCommand}"
+                        CommandParameter="{Binding Id}"
+                        Padding="0" BorderThickness="0" Cursor="Hand">
+                  <Border CornerRadius="7" Padding="10,0,8,0" Height="32"
+                          MinWidth="90" MaxWidth="200"
+                          Background="#0dffffff">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeText2}"
+                                 FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis"/>
+                      <Button Classes="tab-close"
+                              Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ClosePanelTabCommand}"
+                              CommandParameter="{Binding Id}">
+                        <PathIcon Width="8" Height="8"
+                                  Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Data="M1,1 L7,7 M7,1 L1,7"/>
+                      </Button>
+                    </StackPanel>
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <ItemsControl ItemsSource="{Binding StreamTabs}"
                       HorizontalAlignment="Left" VerticalAlignment="Center"
                       Margin="2,0">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="3"/>
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:StreamTabViewModel">
-              <!-- Stream tab — .tab-item (index.css 51): 32px tall, 7px rounded, subtle bg.
-                   Clicking the tab body re-opens the associated stream panel
-                   (Chiaki for psn/psremote, Xcloud for xbox) — matches the
-                   `onSwitch` behaviour in TabBar.tsx. -->
-              <Button Classes="stream-tab"
-                      Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SwitchToStreamTabCommand}"
-                      CommandParameter="{Binding}"
-                      Padding="0" BorderThickness="0" Cursor="Hand">
-                <Border CornerRadius="7" Padding="10,0,4,0" Height="32"
-                        MinWidth="90" MaxWidth="210"
-                        Background="#0effffff">
-                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeText2}"
-                               FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Text="{Binding State}" Foreground="#50b0aaa0"
-                               FontSize="10" VerticalAlignment="Center"/>
-                    <Button Classes="tab-close" Content="×"
-                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
-                            CommandParameter="{Binding GameId}"/>
-                  </StackPanel>
-                </Border>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="3"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:StreamTabViewModel">
+                <!-- Stream tab — .tab-item (index.css 51): 32px tall, 7px rounded, subtle bg.
+                     Clicking the tab body re-opens the associated stream panel
+                     (Chiaki for psn/psremote, Xcloud for xbox) — matches the
+                     `onSwitch` behaviour in TabBar.tsx. -->
+                <Button Classes="stream-tab"
+                        Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SwitchToStreamTabCommand}"
+                        CommandParameter="{Binding}"
+                        Padding="0" BorderThickness="0" Cursor="Hand">
+                  <Border CornerRadius="7" Padding="10,0,8,0" Height="32"
+                          MinWidth="90" MaxWidth="210"
+                          Background="#0dffffff">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ThemeText2}"
+                                 FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Text="{Binding State}" Foreground="#50b0aaa0"
+                                 FontSize="10" VerticalAlignment="Center"/>
+                      <Button Classes="tab-close"
+                              Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
+                              CommandParameter="{Binding GameId}">
+                        <PathIcon Width="8" Height="8"
+                                  Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Data="M1,1 L7,7 M7,1 L1,7"/>
+                      </Button>
+                    </StackPanel>
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
 
-        <!-- Right: spacer for OS window controls -->
-        <Border Grid.Column="2" Width="140" IsHitTestVisible="False"/>
+        <!-- Right: Vite parity window controls -->
+        <StackPanel Grid.Column="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+          <Button Classes="win-ctrl" Click="WindowMinimize_Click" ToolTip.Tip="Minimize">
+            <PathIcon Width="10" Height="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M0,0 L10,0"/>
+          </Button>
+          <Button Classes="win-ctrl" Click="WindowMaximize_Click" ToolTip.Tip="Maximize">
+            <Border Width="10" Height="10"
+                    BorderBrush="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    BorderThickness="1"/>
+          </Button>
+          <Button Classes="win-ctrl close" Click="WindowClose_Click" ToolTip.Tip="Close">
+            <PathIcon Width="10" Height="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M0,0 L10,10 M10,0 L0,10"/>
+          </Button>
+        </StackPanel>
       </Grid>
     </Border>
 
@@ -134,45 +283,61 @@
       <!-- Main library view (always visible) -->
       <views:MainView/>
 
+      <!-- Chiaki video embed target rect (Windows) — stream reparented into main window client area -->
+      <Border x:Name="ChiakiStreamHost"
+              ZIndex="8"
+              IsVisible="{Binding ShowChiakiEmbedHost}"
+              Background="Transparent"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"/>
+
       <!-- Overlay backdrop (blocks clicks, dims background) -->
+      <!-- index.css .panel-backdrop — rgba(0,0,0,0.55) -->
       <Border IsVisible="{Binding AnyPanelOpen}"
-              Background="#cc07070d"
+              Background="#8c000000"
               IsHitTestVisible="True"
               PointerPressed="Backdrop_PointerPressed"/>
 
-      <!-- Settings panel — slides in from right -->
+      <!-- Side widths: index.css .side-panel 480px, .side-panel.wide 560px -->
       <panels:SettingsPanel HorizontalAlignment="Right"
-                            Width="480"
+                            Width="560"
                             IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowSettings}"/>
 
-      <!-- Detect panel -->
       <panels:DetectPanel HorizontalAlignment="Right"
-                          Width="520"
+                          Width="480"
                           IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowDetect}"/>
 
-      <!-- Chiaki panel -->
       <panels:ChiakiPanel HorizontalAlignment="Right"
-                          Width="480"
+                          Width="560"
                           IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowChiaki}"/>
 
-      <!-- Platforms panel -->
       <panels:PlatformsPanel HorizontalAlignment="Right"
-                             Width="520"
+                             Width="560"
                              IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowPlatforms}"/>
 
       <!-- Xbox Cloud — full screen -->
       <panels:XcloudPanel IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).ShowXcloud}"/>
 
       <!-- Focus panel — full screen game detail (topmost) -->
-      <panels:FocusPanel IsVisible="{Binding ShowFocus}"/>
+      <panels:FocusPanel IsVisible="True"
+                         IsHitTestVisible="{Binding ShowFocus}"
+                         Opacity="{Binding ShowFocus, Converter={x:Static conv:BoolConverters.ToObject},
+                                   ConverterParameter='1,0'}">
+        <panels:FocusPanel.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.18"/>
+          </Transitions>
+        </panels:FocusPanel.Transitions>
+      </panels:FocusPanel>
 
       <!-- ── Stream overlay bar ── -->
       <Border x:Name="StreamBarBorder"
               VerticalAlignment="{Binding ToolbarVerticalAlignment}"
               IsVisible="{Binding IsStreaming}"
-              Background="#f0101018"
-              BorderBrush="#1affffff"
+              Background="#d20d0d16"
+              BorderBrush="#17ffffff"
               BorderThickness="{Binding StreamBarBorderThickness}"
+              BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
               ZIndex="60"
               PointerEntered="StreamBar_PointerEntered"
               PointerExited="StreamBar_PointerExited">
@@ -235,7 +400,9 @@
                   FontSize="12" Cursor="Hand"
                   Click="Minimize_Click"
                   ToolTip.Tip="Minimize">
-            <TextBlock Text="─" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <PathIcon Width="10" Height="10"
+                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M0,5 L10,5"/>
           </Button>
           <!-- Fullscreen toggle -->
           <Button Grid.Column="4" x:Name="FullscreenBtn"
@@ -246,7 +413,9 @@
                   FontSize="12" Cursor="Hand"
                   Click="ToggleFullscreen_Click"
                   ToolTip.Tip="Toggle fullscreen">
-            <TextBlock Text="⛶" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <PathIcon Width="12" Height="12"
+                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M8,1 H11 V4 M4,11 H1 V8 M11,8 V11 H8 M1,4 V1 H4 M11,1 L7,5 M1,11 L5,7"/>
           </Button>
           <!-- Stop button -->
           <Button Grid.Column="5" Content="Stop" Margin="8,0,0,0"
@@ -257,6 +426,29 @@
                   Command="{Binding CloseStreamTabCommand}"
                   CommandParameter="{Binding ActiveStreamTab.GameId}"/>
         </Grid>
+      </Border>
+
+      <!-- ── GUI session float (chiaki/xcloud launcher-open state) ── -->
+      <Border IsVisible="{Binding ShowGuiStreamFloat}"
+              HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Margin="0,0,12,72"
+              ZIndex="61"
+              CornerRadius="10"
+              Background="#de0f1118"
+              BorderBrush="#22ffffff"
+              BorderThickness="1"
+              Padding="10,8">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="GUI open" FontSize="11" Foreground="{DynamicResource ThemeText2}" VerticalAlignment="Center"/>
+          <TextBlock Text="{Binding GuiStreamTab.DisplayTitle}" FontSize="11" FontWeight="SemiBold"
+                     Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center" MaxWidth="180"
+                     TextTrimming="CharacterEllipsis"/>
+          <Button Content="Open" Classes="nav-btn" Padding="8,4"
+                  Command="{Binding OpenGuiStreamCommand}"/>
+          <Button Content="Stop" Classes="nav-btn" Padding="8,4"
+                  Command="{Binding CloseStreamTabCommand}"
+                  CommandParameter="{Binding GuiStreamTab.GameId}"/>
+        </StackPanel>
       </Border>
 
       <!-- ── Stream connecting spinner ── -->
@@ -285,107 +477,9 @@
         </StackPanel>
       </Panel>
 
-      <!-- ── Media player widget (opposite edge from toolbar) ── -->
-      <Border HorizontalAlignment="Center"
-              VerticalAlignment="{Binding MediaVerticalAlignment}"
-              Margin="0,20,0,20"
-              IsVisible="{Binding Media.HasMedia}"
-              CornerRadius="20"
-              Background="#e8101018"
-              BorderBrush="#1affffff"
-              BorderThickness="1"
-              ZIndex="40">
-       <Panel>
-        <!-- Expanded view -->
-        <Grid Margin="6,5" IsVisible="{Binding !Media.IsCollapsed}">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="4"/>
-          </Grid.RowDefinitions>
-          <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="0" Margin="0,0,0,6">
-            <Border Width="34" Height="34" CornerRadius="6" ClipToBounds="True"
-                    Margin="2,0,8,0" VerticalAlignment="Center"
-                    Background="{DynamicResource ThemeCardUp}"
-                    IsVisible="{Binding Media.AlbumArt,
-                      Converter={x:Static conv:ObjectConverters.IsNotNull}}">
-              <Image Source="{Binding Media.AlbumArt}" Stretch="UniformToFill"/>
-            </Border>
-            <Button Width="30" Height="30" Content="⏮"
-                    Background="Transparent" Foreground="#40b0aaa0"
-                    BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
-                    Command="{Binding Media.PrevCommand}"/>
-            <StackPanel VerticalAlignment="Center" Spacing="1"
-                        MinWidth="80" MaxWidth="200" Margin="8,0">
-              <TextBlock Text="{Binding Media.Title}"
-                         FontSize="11" FontWeight="Medium" Foreground="{DynamicResource ThemeText}"
-                         TextTrimming="CharacterEllipsis"
-                         HorizontalAlignment="Center"/>
-              <TextBlock Text="{Binding Media.Artist}"
-                         FontSize="10" Foreground="{DynamicResource ThemeText3}"
-                         TextTrimming="CharacterEllipsis"
-                         HorizontalAlignment="Center"
-                         IsVisible="{Binding Media.Artist,
-                           Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
-            </StackPanel>
-            <Button Width="30" Height="30"
-                    Background="Transparent" Foreground="{DynamicResource ThemeText2}"
-                    BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
-                    Command="{Binding Media.PlayPauseCommand}">
-              <Panel>
-                <TextBlock Text="▶" FontSize="13"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           IsVisible="{Binding !Media.IsPlaying}"/>
-                <TextBlock Text="⏸" FontSize="13"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           IsVisible="{Binding Media.IsPlaying}"/>
-              </Panel>
-            </Button>
-            <Button Width="30" Height="30" Content="⏭"
-                    Background="Transparent" Foreground="#40b0aaa0"
-                    BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
-                    Command="{Binding Media.NextCommand}"/>
-            <Button Width="22" Height="22" Content="▸"
-                    Margin="4,0,0,0" Padding="0"
-                    Background="Transparent" Foreground="#30b0aaa0"
-                    BorderThickness="0" Cursor="Hand" FontSize="10"
-                    ToolTip.Tip="Collapse"
-                    Command="{Binding Media.ToggleCollapseCommand}"/>
-          </StackPanel>
-          <ProgressBar Grid.Row="1" Minimum="0" Maximum="100"
-                       Value="{Binding Media.ProgressPercent}"
-                       HorizontalAlignment="Stretch" Margin="8,0,8,6"
-                       Height="4" Background="{DynamicResource ThemeCardUp}" Foreground="{DynamicResource ThemeAccent}"/>
-        </Grid>
-
-        <!-- Collapsed view: play-pause pill only -->
-        <StackPanel Orientation="Horizontal" Spacing="0" Margin="4,3"
-                    IsVisible="{Binding Media.IsCollapsed}">
-          <Button Width="30" Height="30"
-                  Background="Transparent" Foreground="{DynamicResource ThemeText2}"
-                  BorderThickness="0" Padding="0" Cursor="Hand" FontSize="13"
-                  Command="{Binding Media.PlayPauseCommand}">
-            <Panel>
-              <TextBlock Text="▶" FontSize="13"
-                         HorizontalAlignment="Center" VerticalAlignment="Center"
-                         IsVisible="{Binding !Media.IsPlaying}"/>
-              <TextBlock Text="⏸" FontSize="13"
-                         HorizontalAlignment="Center" VerticalAlignment="Center"
-                         IsVisible="{Binding Media.IsPlaying}"/>
-            </Panel>
-          </Button>
-          <Button Width="22" Height="30" Content="◂"
-                  Padding="0"
-                  Background="Transparent" Foreground="#30b0aaa0"
-                  BorderThickness="0" Cursor="Hand" FontSize="10"
-                  ToolTip.Tip="Expand"
-                  Command="{Binding Media.ToggleCollapseCommand}"/>
-        </StackPanel>
-       </Panel>
-      </Border>
-
       <!-- ── Continue banner (bottom-left) ── -->
-      <Border VerticalAlignment="Bottom" HorizontalAlignment="Left"
-              Margin="20,0,0,20"
+      <Border VerticalAlignment="Bottom" HorizontalAlignment="Center"
+              Margin="0,0,0,60"
               IsVisible="{Binding ShowContinueBanner}"
               CornerRadius="12"
               Background="#e8101018"
@@ -418,17 +512,34 @@
                        FontSize="10"
                        Foreground="#60b0aaa0"/>
           </StackPanel>
-          <Button Content="▶  Play" VerticalAlignment="Center"
-                  Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
+          <Button VerticalAlignment="Center"
+                  Background="#1fd4a853" Foreground="{DynamicResource ThemeAccent}"
                   FontSize="11" FontWeight="Bold"
-                  CornerRadius="8" Padding="14,7" BorderThickness="0" Cursor="Hand"
+                  CornerRadius="8" Padding="14,7" BorderThickness="1" BorderBrush="#4dd4a853" Cursor="Hand"
                   Command="{Binding LaunchGameCommand}"
-                  CommandParameter="{Binding ContinueGame}"/>
-          <Button Content="×" VerticalAlignment="Center"
+                  CommandParameter="{Binding ContinueGame}">
+            <Button.Styles>
+              <Style Selector="Button:pointerover /template/ ContentPresenter">
+                <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeVoid}"/>
+              </Style>
+            </Button.Styles>
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <PathIcon Width="12" Height="12"
+                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        Data="M8,6 V18 L18,12 Z"/>
+              <TextBlock Text="Play" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button VerticalAlignment="Center"
                   Background="Transparent" Foreground="#50b0aaa0"
                   FontSize="16" Width="28" Height="28"
                   CornerRadius="14" Padding="0" BorderThickness="0" Cursor="Hand"
-                  Command="{Binding DismissContinueBannerCommand}"/>
+                  Command="{Binding DismissContinueBannerCommand}">
+            <PathIcon Width="10" Height="10"
+                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M1,1 L9,9 M9,1 L1,9"/>
+          </Button>
         </StackPanel>
       </Border>
 
@@ -468,10 +579,8 @@
           <TextBlock Grid.Column="1" Grid.Row="1" FontSize="11"
                      Foreground="{DynamicResource ThemeText3}"
                      TextTrimming="CharacterEllipsis"
-                     IsVisible="{Binding AppUpdateDownloading}">
-            <Run Text="Downloading v"/>
-            <Run Text="{Binding AppUpdateVersion}"/>
-          </TextBlock>
+                     IsVisible="{Binding AppUpdateDownloading}"
+                     Text="{Binding AppUpdateDownloadLabel}"/>
           <TextBlock Grid.Column="1" Grid.Row="1" FontSize="11"
                      Foreground="{DynamicResource ThemeText3}"
                      TextTrimming="CharacterEllipsis"
@@ -490,13 +599,17 @@
                   CornerRadius="6" Padding="10,5"
                   BorderThickness="0" Cursor="Hand"
                   Command="{Binding InstallAppUpdateCommand}"/>
-          <Button Grid.Column="2" Grid.RowSpan="2" Content="✕"
+          <Button Grid.Column="2" Grid.RowSpan="2"
                   IsVisible="{Binding !AppUpdateReady}"
                   VerticalAlignment="Center"
                   Background="Transparent" Foreground="{DynamicResource ThemeText3}"
                   FontSize="11"
                   BorderThickness="0" Cursor="Hand"
-                  Command="{Binding DismissAppUpdateCommand}"/>
+                  Command="{Binding DismissAppUpdateCommand}">
+            <PathIcon Width="9" Height="9"
+                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M1,1 L8,8 M8,1 L1,8"/>
+          </Button>
         </Grid>
       </Border>
 
@@ -525,22 +638,30 @@
       </ItemsControl>
 
       <!-- ── Media player (SMTC now-playing widget) — Electron MediaPlayer.tsx parity.
-           Positioned bottom-left, shows thumbnail + title/artist + transport controls. -->
+           Follows ToolbarPosition: opposite edge from the toolbar. -->
       <Border DataContext="{Binding Media}"
-              VerticalAlignment="Bottom" HorizontalAlignment="Left"
-              Margin="16,0,0,16"
+              VerticalAlignment="{Binding $parent[Window].((vm:MainViewModel)DataContext).MediaVerticalAlignment}"
+              HorizontalAlignment="Left"
+              Margin="{Binding $parent[Window].((vm:MainViewModel)DataContext).MediaWidgetMargin}"
               CornerRadius="22"
-              Background="#e8101018"
-              BorderBrush="#1affffff" BorderThickness="1"
-              BoxShadow="0 12 40 0 #80000000"
+              Background="#d20d0d16"
+              BorderBrush="#17ffffff" BorderThickness="1"
+              BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
               IsVisible="{Binding HasMedia}"
-              ZIndex="55">
+              ZIndex="55"
+              RenderTransformOrigin="0.5,0.5">
+        <Border.RenderTransform>
+          <ScaleTransform ScaleX="{Binding $parent[Window].((vm:MainViewModel)DataContext).ToolbarScale}"
+                          ScaleY="{Binding $parent[Window].((vm:MainViewModel)DataContext).ToolbarScale}"/>
+        </Border.RenderTransform>
         <!-- Collapsed compact pill -->
         <Panel>
           <Border IsVisible="{Binding IsCollapsed}"
                   CornerRadius="22" Padding="10,8" Cursor="Hand"
                   PointerPressed="MediaCollapsedPill_Click">
-            <TextBlock Text="♪" FontSize="14" Foreground="{DynamicResource ThemeAccent}"/>
+            <PathIcon Width="14" Height="14"
+                      Foreground="{DynamicResource ThemeAccent}"
+                      Data="M14,3 V13.5 A3,3 0 1 1 12,10.66 V6.5 L20,4.5 V11.5 A3,3 0 1 1 18,8.66 V2 Z"/>
           </Border>
 
           <!-- Expanded player -->
@@ -554,9 +675,12 @@
                 <Panel>
                   <Image Source="{Binding AlbumArt}" Stretch="UniformToFill"
                          IsVisible="{Binding AlbumArt, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
-                  <TextBlock Text="♪" FontSize="18" HorizontalAlignment="Center"
-                             VerticalAlignment="Center" Foreground="#50b0aaa0"
-                             IsVisible="{Binding AlbumArt, Converter={x:Static conv:ObjectConverters.IsNull}}"/>
+                  <PathIcon Width="16" Height="16"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="#50b0aaa0"
+                            Data="M14,3 V13.5 A3,3 0 1 1 12,10.66 V6.5 L20,4.5 V11.5 A3,3 0 1 1 18,8.66 V2 Z"
+                            IsVisible="{Binding AlbumArt, Converter={x:Static conv:ObjectConverters.IsNull}}"/>
                 </Panel>
               </Border>
 
@@ -575,7 +699,9 @@
                         BorderThickness="0" Foreground="{DynamicResource ThemeText2}"
                         CornerRadius="13" Cursor="Hand" ToolTip.Tip="Previous"
                         Command="{Binding PrevCommand}">
-                  <TextBlock Text="⏮" FontSize="12" HorizontalAlignment="Center"/>
+                  <PathIcon Width="12" Height="12"
+                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            Data="M6,5 L6,19 M8,12 L18,5 V19 Z"/>
                 </Button>
                 <Button Width="30" Height="30" Padding="0"
                         Background="#1fd4a853"
@@ -584,17 +710,23 @@
                         ToolTip.Tip="Play / Pause"
                         Command="{Binding PlayPauseCommand}">
                   <Panel>
-                    <TextBlock Text="⏸" FontSize="12" HorizontalAlignment="Center"
-                               IsVisible="{Binding IsPlaying}"/>
-                    <TextBlock Text="▶" FontSize="12" HorizontalAlignment="Center"
-                               IsVisible="{Binding !IsPlaying}"/>
+                    <PathIcon Width="12" Height="12"
+                              Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Data="M8,6 H11 V18 H8 Z M13,6 H16 V18 H13 Z"
+                              IsVisible="{Binding IsPlaying}"/>
+                    <PathIcon Width="12" Height="12"
+                              Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Data="M8,6 V18 L18,12 Z"
+                              IsVisible="{Binding !IsPlaying}"/>
                   </Panel>
                 </Button>
                 <Button Width="26" Height="26" Padding="0" Background="Transparent"
                         BorderThickness="0" Foreground="{DynamicResource ThemeText2}"
                         CornerRadius="13" Cursor="Hand" ToolTip.Tip="Next"
                         Command="{Binding NextCommand}">
-                  <TextBlock Text="⏭" FontSize="12" HorizontalAlignment="Center"/>
+                  <PathIcon Width="12" Height="12"
+                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            Data="M18,5 L18,19 M6,5 L16,12 L6,19 Z"/>
                 </Button>
               </StackPanel>
             </StackPanel>
@@ -610,84 +742,134 @@
         </Panel>
       </Border>
 
-      <!-- ── Search overlay (Ctrl+K) — index.css 456-459: fullscreen blur, centered 32px input -->
+      <!-- ── Search overlay (Ctrl+K) — index.css .search-overlay / .search-hit / .search-esc -->
       <Panel IsVisible="{Binding ShowSearch}" ZIndex="300">
-        <!-- Backdrop fills everything -->
         <Border Background="#eb07070d"
                 PointerPressed="SearchBackdrop_PointerPressed"/>
-        <!-- Centered column — input + results (60% width) -->
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top"
-                    Margin="0,140,0,0" Width="700"
-                    PointerPressed="ContentCard_PointerPressedNoop">
-          <!-- Big 32px light search input with underline (index.css 457) -->
-          <Border BorderBrush="#17ffffff" BorderThickness="0,0,0,1"
-                  Padding="0,0,0,16">
-            <TextBox Text="{Binding SearchQuery}"
-                     Watermark="Search your library…"
-                     BorderThickness="0" Background="Transparent"
-                     Foreground="{DynamicResource ThemeText}"
-                     CaretBrush="{DynamicResource ThemeAccent}"
-                     FontSize="32" FontWeight="Light"
-                     LetterSpacing="1"
-                     HorizontalAlignment="Stretch"
-                     HorizontalContentAlignment="Center"
-                     Padding="0"
-                     AttachedToVisualTree="SearchBox_AttachedToVisualTree"/>
-          </Border>
+        <Grid PointerPressed="ContentCard_PointerPressedNoop">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.2*"/>
+            <ColumnDefinition Width="0.6*"/>
+            <ColumnDefinition Width="0.2*"/>
+          </Grid.ColumnDefinitions>
 
-          <!-- Platform chips (when results span multiple platforms) -->
-          <ItemsControl ItemsSource="{Binding SearchActivePlatforms}"
-                        Margin="0,16,0,0"
-                        HorizontalAlignment="Center"
-                        IsVisible="{Binding SearchActivePlatforms,
-                          Converter={x:Static conv:ObjectConverters.IsNotNull}}">
-              <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <WrapPanel Orientation="Horizontal"/>
-                </ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Button Content="{Binding}" Margin="0,0,6,0" Padding="8,3"
-                          FontSize="10" CornerRadius="10" BorderThickness="1"
-                          Cursor="Hand"
-                          Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SetSearchPlatformFilterCommand}"
-                          CommandParameter="{Binding}">
-                    <Button.Styles>
-                      <Style Selector="Button">
-                        <Setter Property="Background" Value="#10ffffff"/>
-                        <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-                        <Setter Property="BorderBrush" Value="#10ffffff"/>
-                      </Style>
-                    </Button.Styles>
-                  </Button>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+          <Button Grid.ColumnSpan="3"
+                  Classes="search-esc"
+                  Content="ESC"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Top"
+                  Margin="0,24,32,0"
+                  ZIndex="2"
+                  Command="{Binding CloseSearchCommand}"/>
 
-            <!-- Results -->
+          <StackPanel Grid.Column="1"
+                      VerticalAlignment="Top"
+                      Margin="0,120,0,0"
+                      Spacing="0">
+            <Border BorderBrush="#0fffffff" BorderThickness="0,0,0,1"
+                    Padding="0,0,0,16">
+              <TextBox Text="{Binding SearchQuery}"
+                       Watermark="Search your library…"
+                       BorderThickness="0" Background="Transparent"
+                       Foreground="{DynamicResource ThemeText}"
+                       CaretBrush="{DynamicResource ThemeAccent}"
+                       FontSize="32" FontWeight="ExtraLight"
+                       LetterSpacing="1"
+                       HorizontalAlignment="Stretch"
+                       HorizontalContentAlignment="Center"
+                       Padding="0"
+                       AttachedToVisualTree="SearchBox_AttachedToVisualTree"/>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,16,0,0"
+                        HorizontalAlignment="Center">
+              <Button Classes="search-plat-chip" Content="All"
+                      Margin="0,0,5,0"
+                      Command="{Binding SetSearchPlatformFilterCommand}"
+                      CommandParameter="__all">
+                <Button.Background>
+                  <MultiBinding Converter="{x:Static conv:SearchChipConverters.Appearance}"
+                                ConverterParameter="bg">
+                    <Binding Path="SearchPlatformFilter"/>
+                    <Binding Source="__all"/>
+                  </MultiBinding>
+                </Button.Background>
+                <Button.Foreground>
+                  <MultiBinding Converter="{x:Static conv:SearchChipConverters.Appearance}"
+                                ConverterParameter="fg">
+                    <Binding Path="SearchPlatformFilter"/>
+                    <Binding Source="__all"/>
+                  </MultiBinding>
+                </Button.Foreground>
+                <Button.BorderBrush>
+                  <MultiBinding Converter="{x:Static conv:SearchChipConverters.Appearance}"
+                                ConverterParameter="border">
+                    <Binding Path="SearchPlatformFilter"/>
+                    <Binding Source="__all"/>
+                  </MultiBinding>
+                </Button.BorderBrush>
+              </Button>
+              <ItemsControl ItemsSource="{Binding SearchActivePlatforms}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal"/>
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Button Classes="search-plat-chip" Content="{Binding}"
+                            Margin="0,0,5,0"
+                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SetSearchPlatformFilterCommand}"
+                            CommandParameter="{Binding}">
+                      <Button.Background>
+                        <MultiBinding Converter="{x:Static conv:SearchChipConverters.Appearance}"
+                                      ConverterParameter="bg">
+                          <Binding Path="$parent[Window].((vm:MainViewModel)DataContext).SearchPlatformFilter"/>
+                          <Binding/>
+                        </MultiBinding>
+                      </Button.Background>
+                      <Button.Foreground>
+                        <MultiBinding Converter="{x:Static conv:SearchChipConverters.Appearance}"
+                                      ConverterParameter="fg">
+                          <Binding Path="$parent[Window].((vm:MainViewModel)DataContext).SearchPlatformFilter"/>
+                          <Binding/>
+                        </MultiBinding>
+                      </Button.Foreground>
+                      <Button.BorderBrush>
+                        <MultiBinding Converter="{x:Static conv:SearchChipConverters.Appearance}"
+                                      ConverterParameter="border">
+                          <Binding Path="$parent[Window].((vm:MainViewModel)DataContext).SearchPlatformFilter"/>
+                          <Binding/>
+                        </MultiBinding>
+                      </Button.BorderBrush>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+
             <ScrollViewer MaxHeight="400" Margin="0,8,0,0"
                           VerticalScrollBarVisibility="Auto">
               <ItemsControl ItemsSource="{Binding SearchResults}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:GameCardViewModel">
-                    <Border Padding="16,10" Cursor="Hand"
+                    <Border Padding="10,16" CornerRadius="10" Cursor="Hand"
                             PointerPressed="SearchResult_PointerPressed"
                             Background="{Binding IsSearchHighlighted,
                               Converter={x:Static conv:BoolConverters.IsSearchHighlighted}}">
                       <Border.Styles>
                         <Style Selector="Border:pointerover">
-                          <Setter Property="Background" Value="#0cffffff"/>
+                          <Setter Property="Background" Value="#0bffffff"/>
                         </Style>
                       </Border.Styles>
-                      <Grid ColumnDefinitions="44,*,Auto">
-                        <!-- Cover thumb -->
-                        <Border Grid.Column="0" Width="36" Height="50"
-                                CornerRadius="4" ClipToBounds="True"
-                                Background="#16161f" VerticalAlignment="Center">
+                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Border Grid.Column="0" Width="40" Height="40"
+                                CornerRadius="20" ClipToBounds="True"
+                                Background="{DynamicResource ThemeCardUp}"
+                                VerticalAlignment="Center">
                           <Panel>
                             <TextBlock Text="{Binding Initial}"
-                                       FontSize="18" Foreground="#1de8e4de"
+                                       FontSize="14" FontWeight="UltraLight" Foreground="{DynamicResource ThemeText3}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                             <Image Source="{Binding CoverPath}"
@@ -695,31 +877,33 @@
                                    Stretch="UniformToFill"/>
                           </Panel>
                         </Border>
-                        <!-- Name + meta -->
-                        <StackPanel Grid.Column="1" Spacing="3"
+                        <StackPanel Grid.Column="1" Spacing="2"
                                     VerticalAlignment="Center">
                           <TextBlock Text="{Binding Name}"
-                                     FontSize="13" FontWeight="SemiBold"
+                                     FontSize="14"
                                      Foreground="{DynamicResource ThemeText}"
                                      TextTrimming="CharacterEllipsis"/>
                           <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="{Binding PlatformLabel}"
-                                       FontSize="11" Foreground="#50b0aaa0"/>
+                                       FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
                             <TextBlock Text="{Binding PlaytimeLabel}"
                                        FontSize="11" Foreground="{DynamicResource ThemeText4}"
                                        IsVisible="{Binding PlaytimeLabel,
                                          Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
                           </StackPanel>
                         </StackPanel>
-                        <!-- Launch button -->
-                        <Button Grid.Column="2" Content="▶"
+                        <Button Grid.Column="2"
                                 VerticalAlignment="Center"
                                 Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
                                 FontSize="11" FontWeight="Bold"
                                 CornerRadius="6" Padding="10,6"
                                 BorderThickness="0" Cursor="Hand"
                                 Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SearchLaunchCommand}"
-                                CommandParameter="{Binding}"/>
+                                CommandParameter="{Binding}">
+                          <PathIcon Width="11" Height="11"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    Data="M8,6 V18 L18,12 Z"/>
+                        </Button>
                       </Grid>
                     </Border>
                   </DataTemplate>
@@ -727,13 +911,13 @@
               </ItemsControl>
             </ScrollViewer>
 
-            <!-- Empty state -->
             <TextBlock IsVisible="{Binding HasNoSearchResults}"
                        Text="No matches"
                        FontSize="13" Foreground="{DynamicResource ThemeText4}"
                        HorizontalAlignment="Center"
                        Margin="0,20"/>
-        </StackPanel>
+          </StackPanel>
+        </Grid>
       </Panel>
 
     </Panel>

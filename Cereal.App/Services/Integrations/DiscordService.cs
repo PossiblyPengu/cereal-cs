@@ -23,6 +23,16 @@ public class DiscordService : IDisposable
         ["itchio"] = "itch.io",
     };
 
+    /// <summary>
+    /// Asset keys that must exist on the Discord application (Developer Portal → Rich Presence Artwork).
+    /// Only these are used for <see cref="Assets.SmallImageKey"/>; unknown platforms omit the small asset
+    /// so Discord does not show a broken icon.
+    /// </summary>
+    private static readonly HashSet<string> KnownSmallImageKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "steam", "epic", "gog", "psn", "xbox", "custom", "battlenet", "ea", "ubisoft", "itchio", "psremote",
+    };
+
     private DiscordRpcClient? _client;
     private bool _ready;
 
@@ -66,6 +76,8 @@ public class DiscordService : IDisposable
     {
         if (_client is null || !_ready) return;
 
+        platform = string.IsNullOrWhiteSpace(platform) ? "custom" : platform.Trim().ToLowerInvariant();
+
         var state = "via " + (PlatformLabels.GetValueOrDefault(platform) ?? "Cereal Launcher");
         var tsStart = startTimestamp.HasValue
             ? Timestamps.FromUnixMilliseconds((ulong)startTimestamp.Value)
@@ -74,18 +86,24 @@ public class DiscordService : IDisposable
 
         try
         {
+            var label = PlatformLabels.GetValueOrDefault(platform) ?? "Game";
+            var assets = new Assets
+            {
+                LargeImageKey = "cereal_logo",
+                LargeImageText = "Cereal Launcher",
+            };
+            if (KnownSmallImageKeys.Contains(platform))
+            {
+                assets.SmallImageKey = platform;
+                assets.SmallImageText = label;
+            }
+
             _client.SetPresence(new RichPresence
             {
                 Details = gameName,
                 State = state,
                 Timestamps = ts,
-                Assets = new Assets
-                {
-                    LargeImageKey = "cereal_logo",
-                    LargeImageText = "Cereal Launcher",
-                    SmallImageKey = platform,
-                    SmallImageText = PlatformLabels.GetValueOrDefault(platform) ?? "Game",
-                },
+                Assets = assets,
             });
             Log.Debug("[discord] Presence set: {Game} ({Platform})", gameName, platform);
         }

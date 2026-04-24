@@ -2,48 +2,69 @@ using Avalonia.Data.Converters;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Cereal.App.Models;
 using System.Globalization;
 
 namespace Cereal.App.ViewModels;
 
 // ─── StartupWizard ViewModel ─────────────────────────────────────────────────
 // Mirrors the 7-step wizard from src/components/StartupWizard.tsx.
-// Steps: Welcome → Appearance → Performance → Accounts → Behavior → PlayStation
-//        → Artwork (SteamGridDB) → Done.
+// Steps: Welcome → Appearance → Performance → Accounts → Behavior
+//        → PlayStation → Done.
 public partial class StartupWizardViewModel : ObservableObject
 {
-    public const int TotalSteps = 8;
+    public const int TotalSteps = 7;
+    public static readonly AppTheme[] ThemeOptions = AppThemes.All;
+    public const string DefaultAccent = "#d4a853";
 
     [ObservableProperty] private int _step = 0;
 
     // Appearance
-    [ObservableProperty] private string _defaultView = "cards";
+    [ObservableProperty] private string _defaultView = "orbit";
+    [ObservableProperty] private string _theme = "midnight";
+    [ObservableProperty] private string _accentColor = DefaultAccent;
 
     // Performance / layout
     [ObservableProperty] private string _starDensity = "normal";  // low | normal | high
     [ObservableProperty] private string _uiScale = "100%";        // 90% | 100% | 110% | 125%
     [ObservableProperty] private bool _showAnimations = true;
     [ObservableProperty] private string _toolbarPosition = "top"; // top | bottom | left | right
+    [ObservableProperty] private string _hardwareTier = "Balanced";
+    [ObservableProperty] private string _performanceRecommendation = "Balanced defaults recommended";
 
     // Behavior
     [ObservableProperty] private bool _minimizeOnLaunch;
     [ObservableProperty] private bool _closeToTray;
-    [ObservableProperty] private bool _discordPresence = true;
-    [ObservableProperty] private bool _autoSyncPlaytime = true;
+    [ObservableProperty] private bool _discordPresence = false;
+    [ObservableProperty] private bool _autoSyncPlaytime = false;
+
+    // PlayStation
+    [ObservableProperty] private bool _chiakiReady;
 
     // Final: artwork
     [ObservableProperty] private string _steamGridDbKey = string.Empty;
 
     public bool CanGoBack => Step > 0;
-    public string NextLabel => Step >= TotalSteps - 1 ? "Get started" : "Next";
+    public bool CanSkip => Step > 0 && Step < TotalSteps - 1;
+    public string NextLabel => Step >= TotalSteps - 1 ? "Launch Cereal" : "Next";
+    public string AppearanceSummary => $"{Theme} theme, {AccentColor}, default {DefaultView}";
+    public string PerformanceSummary => $"{StarDensity} stars, {UiScale} UI, toolbar {ToolbarPosition}, animations {(ShowAnimations ? "on" : "off")}";
+    [ObservableProperty] private string _accountsSummary = "No connected platforms yet";
+    public string BehaviorSummary => $"Minimize on launch {(MinimizeOnLaunch ? "on" : "off")}, close to tray {(CloseToTray ? "on" : "off")}, Discord {(DiscordPresence ? "on" : "off")}, auto-sync playtime {(AutoSyncPlaytime ? "on" : "off")}";
+    public string PlayStationSummary => ChiakiReady ? "chiaki-ng installed" : "chiaki-ng not detected";
+    public string ArtworkSummary => string.IsNullOrWhiteSpace(SteamGridDbKey) ? "SteamGridDB key not set" : "SteamGridDB key configured";
 
     partial void OnStepChanged(int value)
     {
         OnPropertyChanged(nameof(CanGoBack));
+        OnPropertyChanged(nameof(CanSkip));
         OnPropertyChanged(nameof(NextLabel));
         for (int i = 0; i < TotalSteps; i++)
             OnPropertyChanged($"DotBrush{i}");
     }
+
+    public IEnumerable<ThemeSwatchViewModel> ThemeSwatches =>
+        ThemeOptions.Select(t => new ThemeSwatchViewModel(t, Theme));
 
     // Dot brushes — one per step. Accessed dynamically via indexer.
     private IBrush DotFor(int i) =>
@@ -58,7 +79,6 @@ public partial class StartupWizardViewModel : ObservableObject
     public IBrush DotBrush4 => DotFor(4);
     public IBrush DotBrush5 => DotFor(5);
     public IBrush DotBrush6 => DotFor(6);
-    public IBrush DotBrush7 => DotFor(7);
 
     [RelayCommand]
     private void Next()
@@ -73,16 +93,71 @@ public partial class StartupWizardViewModel : ObservableObject
         if (Step > 0) Step--;
     }
 
+    [RelayCommand]
+    private void Skip()
+    {
+        if (CanSkip) Step++;
+    }
+
+    [RelayCommand]
+    private void SelectTheme(string? themeId)
+    {
+        if (!string.IsNullOrWhiteSpace(themeId))
+            Theme = themeId;
+    }
+
+    [RelayCommand]
+    private void ResetAccentColor() => AccentColor = DefaultAccent;
+
+    [RelayCommand]
+    private void ApplyRecommendedPerformance()
+    {
+        switch (HardwareTier)
+        {
+            case "High":
+                StarDensity = "high";
+                UiScale = "100%";
+                ShowAnimations = true;
+                break;
+            case "Low":
+                StarDensity = "low";
+                UiScale = "110%";
+                ShowAnimations = false;
+                break;
+            default:
+                StarDensity = "normal";
+                UiScale = "100%";
+                ShowAnimations = true;
+                break;
+        }
+    }
+
+    partial void OnThemeChanged(string value) => OnPropertyChanged(nameof(ThemeSwatches));
+    partial void OnDefaultViewChanged(string value) => OnPropertyChanged(nameof(AppearanceSummary));
+    partial void OnAccentColorChanged(string value) => OnPropertyChanged(nameof(AppearanceSummary));
+    partial void OnStarDensityChanged(string value) => OnPropertyChanged(nameof(PerformanceSummary));
+    partial void OnUiScaleChanged(string value) => OnPropertyChanged(nameof(PerformanceSummary));
+    partial void OnShowAnimationsChanged(bool value) => OnPropertyChanged(nameof(PerformanceSummary));
+    partial void OnToolbarPositionChanged(string value) => OnPropertyChanged(nameof(PerformanceSummary));
+    partial void OnMinimizeOnLaunchChanged(bool value) => OnPropertyChanged(nameof(BehaviorSummary));
+    partial void OnCloseToTrayChanged(bool value) => OnPropertyChanged(nameof(BehaviorSummary));
+    partial void OnDiscordPresenceChanged(bool value) => OnPropertyChanged(nameof(BehaviorSummary));
+    partial void OnAutoSyncPlaytimeChanged(bool value) => OnPropertyChanged(nameof(BehaviorSummary));
+    partial void OnChiakiReadyChanged(bool value) => OnPropertyChanged(nameof(PlayStationSummary));
+    partial void OnSteamGridDbKeyChanged(string value) => OnPropertyChanged(nameof(ArtworkSummary));
+
     public event EventHandler<WizardResult>? Completed;
 
     private void Finish() =>
         Completed?.Invoke(this, new WizardResult(
-            DefaultView, SteamGridDbKey, StarDensity, UiScale, ShowAnimations,
+            DefaultView, Theme, AccentColor, SteamGridDbKey, StarDensity, UiScale, ShowAnimations,
             ToolbarPosition, MinimizeOnLaunch, CloseToTray, DiscordPresence, AutoSyncPlaytime));
 }
 
 public sealed record WizardResult(
     string DefaultView,
+    string Theme,
+    string AccentColor,
     string SteamGridDbKey,
     string StarDensity,
     string UiScale,

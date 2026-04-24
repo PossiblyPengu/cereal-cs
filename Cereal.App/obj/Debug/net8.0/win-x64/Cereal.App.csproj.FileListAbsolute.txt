@@ -370,6 +370,12 @@ E:\CODE\cereal-cs\Cereal.App\obj\Debug\net8.0\win-x64\refint\Cereal.App.dll
 E:\CODE\cereal-cs\Cereal.App\obj\Debug\net8.0\win-x64\Cereal.App.pdb
 E:\CODE\cereal-cs\Cereal.App\obj\Debug\net8.0\win-x64\Cereal.App.genruntimeconfig.cache
 E:\CODE\cereal-cs\Cereal.App\obj\Debug\net8.0\win-x64\ref\Cereal.App.dll
+E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\setup-chiaki.ps1
+E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\win32-stream.ps1
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\setup-chiaki.ps1
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\win32-stream.ps1
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\System.CodeDom.dll
+D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\System.Management.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.CSharp.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.VisualBasic.Core.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.VisualBasic.dll
@@ -552,9 +558,3 @@ E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\mscordaccore_amd64_amd64_8
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\mscordbi.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\mscorrc.dll
 E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\msquic.dll
-E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\setup-chiaki.ps1
-E:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\win32-stream.ps1
-D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\setup-chiaki.ps1
-D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\resources\scripts\win32-stream.ps1
-D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\System.CodeDom.dll
-D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\System.Management.dll

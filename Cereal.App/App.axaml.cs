@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using AvaloniaWebView;
+using Cereal.App.Models;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
 using Cereal.App.Services.Metadata;
@@ -39,6 +40,10 @@ public partial class App : Application
         Services = BuildServices();
         RunStartupSequence();
 
+        // React to settings changes so tray visibility stays in sync at runtime.
+        Services.GetRequiredService<SettingsService>().SettingsSaved += (_, s) =>
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyTrayVisibility(s));
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var window = new MainWindow();
@@ -47,12 +52,12 @@ public partial class App : Application
 
             window.Opened += async (_, _) =>
             {
-                var settings = Services.GetRequiredService<SettingsService>();
-                if (settings.Get().FirstRun)
-                {
-                    var wizard = new StartupWizardDialog();
-                    await wizard.ShowDialog(window);
-                }
+                var settingsSvc = Services.GetRequiredService<SettingsService>();
+                if (settingsSvc.Get().FirstRun)
+                    await new StartupWizardDialog().ShowDialog(window);
+                // Wizard (and older DBs without defaultView) may disagree with ctor — sync from disk.
+                if (window.DataContext is MainViewModel mvm)
+                    mvm.ViewMode = MainViewModel.NormalizeViewMode(settingsSvc.Get().DefaultView);
             };
 
             // Bring window to foreground when a secondary launch pokes us.
@@ -86,6 +91,7 @@ public partial class App : Application
         sc.AddSingleton<UpdateService>();
         sc.AddSingleton<PlaytimeSyncService>();
         sc.AddSingleton<GamepadService>();
+        sc.AddSingleton<DevDataService>();
 
         // Integration services
         sc.AddSingleton<DiscordService>();
@@ -111,9 +117,17 @@ public partial class App : Application
         sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<SteamProvider>());
         sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<EpicProvider>());
         sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<GogProvider>());
+        sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<BattleNetProvider>());
+        sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<EaProvider>());
+        sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<UbisoftProvider>());
         sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<ItchioProvider>());
         sc.AddSingleton<IImportProvider>(sp => sp.GetRequiredService<XboxProvider>());
 
+        // Register import-capable providers as IProvider too so status/detect
+        // checks in Platforms panel work uniformly across all rows.
+        sc.AddSingleton<IProvider>(sp => sp.GetRequiredService<SteamProvider>());
+        sc.AddSingleton<IProvider>(sp => sp.GetRequiredService<EpicProvider>());
+        sc.AddSingleton<IProvider>(sp => sp.GetRequiredService<GogProvider>());
         sc.AddSingleton<IProvider>(sp => sp.GetRequiredService<BattleNetProvider>());
         sc.AddSingleton<IProvider>(sp => sp.GetRequiredService<EaProvider>());
         sc.AddSingleton<IProvider>(sp => sp.GetRequiredService<UbisoftProvider>());
@@ -133,6 +147,8 @@ public partial class App : Application
         var db = Services.GetRequiredService<DatabaseService>();
         db.Load();
         Log.Information("[startup] Database loaded — {Count} games", db.Db.Games.Count);
+        Services.GetRequiredService<AuthService>().MigrateLegacySecrets();
+        SeedDevPlaceholdersIfEnabled();
 
         Services.GetRequiredService<ThemeService>().ApplyCurrent();
 
@@ -142,6 +158,10 @@ public partial class App : Application
 
         // Keep the Windows Run key in sync with the persisted setting.
         StartupService.ApplyLaunchOnStartup(settings.LaunchOnStartup);
+
+        // Only show the system-tray icon when at least one tray feature is enabled,
+        // matching Electron's create/destroy-on-setting behaviour.
+        ApplyTrayVisibility(settings);
 
         var covers = Services.GetRequiredService<CoverService>();
         _ = Task.Run(covers.EnqueueAll);
@@ -186,6 +206,31 @@ public partial class App : Application
         Log.Information("[startup] Startup sequence complete");
     }
 
+    private static void SeedDevPlaceholdersIfEnabled()
+    {
+        var clearRaw = Environment.GetEnvironmentVariable("CEREAL_DEV_PLACEHOLDERS_CLEAR");
+        var clear = string.Equals(clearRaw, "1", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(clearRaw, "true", StringComparison.OrdinalIgnoreCase);
+        if (clear)
+        {
+            var removed = Services.GetRequiredService<DevDataService>().ClearPlaceholders();
+            Log.Information("[startup] Cleared {Count} placeholder dev games", removed);
+        }
+
+        var raw = Environment.GetEnvironmentVariable("CEREAL_DEV_PLACEHOLDERS");
+        if (!int.TryParse(raw, out var count) || count <= 0) return;
+
+        var forceRaw = Environment.GetEnvironmentVariable("CEREAL_DEV_PLACEHOLDERS_FORCE");
+        var force = string.Equals(forceRaw, "1", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(forceRaw, "true", StringComparison.OrdinalIgnoreCase);
+
+        var added = Services.GetRequiredService<DevDataService>().SeedPlaceholders(count, force);
+        if (added > 0)
+            Log.Information("[startup] Seeded {Count} placeholder dev games", added);
+        else
+            Log.Information("[startup] Placeholder seed requested but skipped (already present)");
+    }
+
     /// <summary>
     /// Best-effort clipboard read. Used by paste-key buttons that mirror the
     /// Electron version's `window.api.readClipboard()`.
@@ -211,6 +256,15 @@ public partial class App : Application
     }
 
     // ─── Tray icon handlers ───────────────────────────────────────────────────
+
+    private static void ApplyTrayVisibility(Settings s)
+    {
+        var icons = TrayIcon.GetIcons(Current!);
+        if (icons is null) return;
+        var visible = s.CloseToTray || s.MinimizeToTray;
+        foreach (var icon in icons)
+            icon.IsVisible = visible;
+    }
 
     private static void ShowWindow()
     {

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
@@ -65,6 +66,20 @@ public partial class XcloudPanel : UserControl
             ShowSession(next.GameId);
         else
             SetHostContent(null);
+    }
+
+    private void Browser_Click(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var tb = this.FindControl<TextBox>("UrlBox");
+            var url = string.IsNullOrWhiteSpace(tb?.Text) ? "https://www.xbox.com/play" : tb.Text!;
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[xcloud] Browser_Click failed");
+        }
     }
 
     private void Session_Click(object? sender, RoutedEventArgs e)

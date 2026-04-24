@@ -15,34 +15,41 @@ public sealed class AuthService
     private readonly DatabaseService _db;
     private readonly CredentialService _creds;
     private readonly HttpClient _http;
+    private readonly Dictionary<string, string> _pendingStates = new(StringComparer.OrdinalIgnoreCase);
+    private const string CredService = "cereal";
 
     // OAuth app credentials (public values from the JS source)
     private static class Cfg
     {
+        private static string EnvOr(string key, string fallback) =>
+            string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(key))
+                ? fallback
+                : Environment.GetEnvironmentVariable(key)!;
+
         public static class Gog
         {
-            public const string ClientId     = "46899977096215655";
-            public const string ClientSecret = "9d85c43b1482497dbbce61f6e4aa173a433796eeae2ca8c5f6129f2dc4de46d9";
-            public const string RedirectUri  = "https://embed.gog.com/on_login_success?origin=client";
-            public const string AuthUrl      = "https://login.gog.com/auth";
-            public const string TokenUrl     = "https://auth.gog.com/token";
+            public static readonly string ClientId     = EnvOr("CEREAL_GOG_CLIENT_ID", "46899977096215655");
+            public static readonly string ClientSecret = EnvOr("CEREAL_GOG_CLIENT_SECRET", "9d85c43b1482497dbbce61f6e4aa173a433796eeae2ca8c5f6129f2dc4de46d9");
+            public const string RedirectUri = "https://embed.gog.com/on_login_success?origin=client";
+            public const string AuthUrl = "https://login.gog.com/auth";
+            public const string TokenUrl = "https://auth.gog.com/token";
         }
         public static class Epic
         {
-            public const string ClientId      = "34a02cf8f4414e29b15921876da36f9a";
-            public const string ClientSecret  = "daafbccc737745039dffe53d94fc76cf";
+            public static readonly string ClientId = EnvOr("CEREAL_EPIC_CLIENT_ID", "34a02cf8f4414e29b15921876da36f9a");
+            public static readonly string ClientSecret = EnvOr("CEREAL_EPIC_CLIENT_SECRET", "daafbccc737745039dffe53d94fc76cf");
             public const string RedirectApiUrl = "https://www.epicgames.com/id/api/redirect";
-            public const string AuthUrl       = "https://www.epicgames.com/id/login";
-            public const string TokenUrl      = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
+            public const string AuthUrl = "https://www.epicgames.com/id/login";
+            public const string TokenUrl = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
         }
         public static class Xbox
         {
-            public const string ClientId    = "1fec8e78-bce4-4aaf-ab1b-5451cc387264";
+            public static readonly string ClientId = EnvOr("CEREAL_XBOX_CLIENT_ID", "1fec8e78-bce4-4aaf-ab1b-5451cc387264");
             public const string RedirectUri = "https://login.microsoftonline.com/common/oauth2/nativeclient";
-            public const string Scope       = "XboxLive.signin XboxLive.offline_access openid profile";
-            public const string AuthUrl     = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
-            public const string TokenUrl    = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
-            public const string XblAuthUrl  = "https://user.auth.xboxlive.com/user/authenticate";
+            public const string Scope = "XboxLive.signin XboxLive.offline_access openid profile";
+            public const string AuthUrl = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
+            public const string TokenUrl = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
+            public const string XblAuthUrl = "https://user.auth.xboxlive.com/user/authenticate";
             public const string XstsAuthUrl = "https://xsts.auth.xboxlive.com/xsts/authorize";
         }
         public static class Steam
@@ -65,11 +72,14 @@ public sealed class AuthService
 
     public string GetSteamAuthUrl()
     {
+        var state = Guid.NewGuid().ToString("N");
+        _pendingStates["steam"] = state;
+        var returnUrl = $"{Cfg.Steam.ReturnUrl}?state={Uri.EscapeDataString(state)}";
         var p = new Dictionary<string, string>
         {
             ["openid.ns"]         = "http://specs.openid.net/auth/2.0",
             ["openid.mode"]       = "checkid_setup",
-            ["openid.return_to"]  = Cfg.Steam.ReturnUrl,
+            ["openid.return_to"]  = returnUrl,
             ["openid.realm"]      = Cfg.Steam.Realm,
             ["openid.identity"]   = "http://specs.openid.net/auth/2.0/identifier_select",
             ["openid.claimed_id"] = "http://specs.openid.net/auth/2.0/identifier_select",
@@ -80,6 +90,7 @@ public sealed class AuthService
     public string GetGogAuthUrl()
     {
         var state = Guid.NewGuid().ToString("N");
+        _pendingStates["gog"] = state;
         return $"{Cfg.Gog.AuthUrl}?client_id={Cfg.Gog.ClientId}" +
                $"&redirect_uri={Uri.EscapeDataString(Cfg.Gog.RedirectUri)}" +
                $"&response_type=code&layout=client2&state={state}";
@@ -87,13 +98,16 @@ public sealed class AuthService
 
     public string GetEpicAuthUrl()
     {
-        var redirectUrl = $"{Cfg.Epic.RedirectApiUrl}?clientId={Cfg.Epic.ClientId}&responseType=code";
+        var state = Guid.NewGuid().ToString("N");
+        _pendingStates["epic"] = state;
+        var redirectUrl = $"{Cfg.Epic.RedirectApiUrl}?clientId={Cfg.Epic.ClientId}&responseType=code&state={Uri.EscapeDataString(state)}";
         return $"{Cfg.Epic.AuthUrl}?redirectUrl={Uri.EscapeDataString(redirectUrl)}";
     }
 
     public string GetXboxAuthUrl()
     {
         var state = Guid.NewGuid().ToString("N");
+        _pendingStates["xbox"] = state;
         return $"{Cfg.Xbox.AuthUrl}?client_id={Cfg.Xbox.ClientId}" +
                $"&response_type=code&redirect_uri={Uri.EscapeDataString(Cfg.Xbox.RedirectUri)}" +
                $"&scope={Uri.EscapeDataString(Cfg.Xbox.Scope)}&response_mode=query&state={state}";
@@ -130,6 +144,7 @@ public sealed class AuthService
         }
 
         var query = ctx.Request.QueryString;
+        ValidateState(platform, query["state"]);
         ctx.Response.StatusCode = 200;
         var html = "<html><body style='font-family:sans-serif;background:#111;color:#fff;text-align:center;padding:60px'>" +
                    "<h2>Authenticated ✓</h2><p>You can close this window.</p></body></html>";
@@ -175,6 +190,8 @@ public sealed class AuthService
         {
             AccountId = steamId,
             Username = GetCdata("steamID").Length > 0 ? GetCdata("steamID") : GetTag("steamID"),
+            DisplayName = GetCdata("steamID").Length > 0 ? GetCdata("steamID") : GetTag("steamID"),
+            AvatarUrl = GetCdata("avatarFull"),
         };
         _db.Db.Accounts["steam"] = account;
         _db.Save();
@@ -195,12 +212,13 @@ public sealed class AuthService
 
         var account = new AccountInfo
         {
-            AccessToken  = data.GetStringOrNull("access_token")  ?? throw new Exception("No access_token"),
-            RefreshToken = data.GetStringOrNull("refresh_token"),
             ExpiresAt    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() +
                            (data.GetLongOrNull("expires_in") ?? 3600) * 1000,
             AccountId    = data.GetStringOrNull("user_id"),
+            DisplayName = data.GetStringOrNull("username"),
         };
+        SetAccessToken("gog", data.GetStringOrNull("access_token") ?? throw new Exception("No access_token"));
+        SetRefreshToken("gog", data.GetStringOrNull("refresh_token"));
         _db.Db.Accounts["gog"] = account;
         _db.Save();
         Log.Information("[auth] GOG authenticated (user_id={Id})", account.AccountId);
@@ -210,16 +228,17 @@ public sealed class AuthService
     public async Task<bool> RefreshGogTokenAsync(CancellationToken ct = default)
     {
         var account = _db.Db.Accounts.GetValueOrDefault("gog");
-        if (account?.RefreshToken is null) return false;
+        var refresh = GetRefreshToken("gog");
+        if (account is null || string.IsNullOrWhiteSpace(refresh)) return false;
 
         var url = $"{Cfg.Gog.TokenUrl}?client_id={Cfg.Gog.ClientId}&client_secret={Cfg.Gog.ClientSecret}" +
-                  $"&grant_type=refresh_token&refresh_token={Uri.EscapeDataString(account.RefreshToken)}";
+                  $"&grant_type=refresh_token&refresh_token={Uri.EscapeDataString(refresh)}";
         try
         {
             using var resp = await _http.GetAsync(url, ct);
             var data = await ParseJsonAsync(resp, ct);
-            account.AccessToken  = data.GetStringOrNull("access_token") ?? account.AccessToken;
-            account.RefreshToken = data.GetStringOrNull("refresh_token") ?? account.RefreshToken;
+            SetAccessToken("gog", data.GetStringOrNull("access_token"));
+            SetRefreshToken("gog", data.GetStringOrNull("refresh_token") ?? refresh);
             account.ExpiresAt    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() +
                                    (data.GetLongOrNull("expires_in") ?? 3600) * 1000;
             _db.Save();
@@ -247,13 +266,14 @@ public sealed class AuthService
 
         var account = new AccountInfo
         {
-            AccessToken  = data.GetStringOrNull("access_token") ?? throw new Exception("No access_token"),
-            RefreshToken = data.GetStringOrNull("refresh_token"),
             ExpiresAt    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() +
                            (data.GetLongOrNull("expires_in") ?? 3600) * 1000,
             AccountId    = data.GetStringOrNull("account_id"),
             Username     = data.GetStringOrNull("displayName") ?? data.GetStringOrNull("display_name"),
+            DisplayName  = data.GetStringOrNull("displayName") ?? data.GetStringOrNull("display_name"),
         };
+        SetAccessToken("epic", data.GetStringOrNull("access_token") ?? throw new Exception("No access_token"));
+        SetRefreshToken("epic", data.GetStringOrNull("refresh_token"));
         _db.Db.Accounts["epic"] = account;
         _db.Save();
         Log.Information("[auth] Epic authenticated as {Name}", account.Username);
@@ -311,17 +331,18 @@ public sealed class AuthService
 
         var account = new AccountInfo
         {
-            AccessToken  = xblToken,
-            RefreshToken = ms.GetStringOrNull("refresh_token"),
             ExpiresAt    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() +
                            (ms.GetLongOrNull("expires_in") ?? 3600) * 1000,
             AccountId    = xuid,
             Username     = gamertag,
-            Extra        = new Dictionary<string, object?> { ["xstsToken"] = xstsToken, ["userHash"] = userHash },
+            DisplayName  = gamertag,
+            Extra        = new Dictionary<string, object?> { ["userHash"] = userHash },
         };
+        SetAccessToken("xbox", xblToken);
+        SetRefreshToken("xbox", ms.GetStringOrNull("refresh_token"));
+        SetXstsToken("xbox", xstsToken);
         _db.Db.Accounts["xbox"] = account;
         _db.Save();
-        _creds.SetPassword("cereal", "xbox_xsts", xstsToken);
         Log.Information("[auth] Xbox authenticated as {Gamertag} (xuid={Xuid})", gamertag, xuid);
         return account;
     }
@@ -334,7 +355,65 @@ public sealed class AuthService
     public void SignOut(string platform)
     {
         _db.Db.Accounts.Remove(platform);
+        DeleteCredential(platform, "access_token");
+        DeleteCredential(platform, "refresh_token");
+        DeleteCredential(platform, "xsts_token");
+        DeleteCredential(platform, "xsts");
         _db.Save();
+    }
+
+    public async Task<bool> RefreshTokenIfNeededAsync(string platform, CancellationToken ct = default)
+    {
+        var acct = _db.Db.Accounts.GetValueOrDefault(platform);
+        if (acct is null) return false;
+        var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var expSoon = acct.ExpiresAt is null || acct.ExpiresAt <= nowMs + (5 * 60 * 1000);
+        if (!expSoon) return true;
+        if (string.IsNullOrWhiteSpace(GetRefreshToken(platform))) return false;
+
+        try
+        {
+            return platform switch
+            {
+                "gog" => await RefreshGogTokenAsync(ct),
+                "epic" => await RefreshEpicTokenAsync(acct, ct),
+                "xbox" => await RefreshXboxTokenAsync(acct, ct),
+                _ => true,
+            };
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public void MigrateLegacySecrets()
+    {
+        var changed = false;
+        foreach (var (platform, account) in _db.Db.Accounts)
+        {
+            if (!string.IsNullOrWhiteSpace(account.AccessToken))
+            {
+                SetAccessToken(platform, account.AccessToken);
+                account.AccessToken = null;
+                changed = true;
+            }
+            if (!string.IsNullOrWhiteSpace(account.RefreshToken))
+            {
+                SetRefreshToken(platform, account.RefreshToken);
+                account.RefreshToken = null;
+                changed = true;
+            }
+            var legacyXsts = account.Extra?.GetValueOrDefault("xstsToken")?.ToString();
+            if (!string.IsNullOrWhiteSpace(legacyXsts))
+            {
+                SetXstsToken(platform, legacyXsts);
+                account.Extra?.Remove("xstsToken");
+                changed = true;
+            }
+        }
+        if (changed)
+            _db.Save();
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -348,6 +427,155 @@ public sealed class AuthService
 
     private static string ToQueryString(Dictionary<string, string> p) =>
         string.Join("&", p.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+    private void ValidateState(string platform, string? state)
+    {
+        // All current auth flows issue a state token; callbacks without a pending
+        // state should be rejected to prevent unsolicited callback acceptance.
+        if (!_pendingStates.TryGetValue(platform, out var expected))
+            throw new InvalidOperationException($"Missing pending OAuth state for {platform}.");
+
+        _pendingStates.Remove(platform);
+        if (string.IsNullOrWhiteSpace(state) || !string.Equals(expected, state, StringComparison.Ordinal))
+            throw new InvalidOperationException($"OAuth state mismatch for {platform}.");
+    }
+
+    private async Task<bool> RefreshEpicTokenAsync(AccountInfo account, CancellationToken ct)
+    {
+        var refresh = GetRefreshToken("epic");
+        if (string.IsNullOrWhiteSpace(refresh)) return false;
+        var basic = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{Cfg.Epic.ClientId}:{Cfg.Epic.ClientSecret}"));
+        using var req = new HttpRequestMessage(HttpMethod.Post, Cfg.Epic.TokenUrl);
+        req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", basic);
+        req.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = refresh,
+            ["token_type"] = "eg1",
+        });
+        using var resp = await _http.SendAsync(req, ct);
+        var data = await ParseJsonAsync(resp, ct);
+        SetAccessToken("epic", data.GetStringOrNull("access_token"));
+        SetRefreshToken("epic", data.GetStringOrNull("refresh_token") ?? refresh);
+        account.ExpiresAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + (data.GetLongOrNull("expires_in") ?? 3600) * 1000;
+        _db.Save();
+        return true;
+    }
+
+    private async Task<bool> RefreshXboxTokenAsync(AccountInfo account, CancellationToken ct)
+    {
+        var refresh = GetRefreshToken("xbox");
+        if (string.IsNullOrWhiteSpace(refresh)) return false;
+        using var tokenReq = new HttpRequestMessage(HttpMethod.Post, Cfg.Xbox.TokenUrl);
+        tokenReq.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["client_id"] = Cfg.Xbox.ClientId,
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = refresh,
+            ["redirect_uri"] = Cfg.Xbox.RedirectUri,
+            ["scope"] = Cfg.Xbox.Scope,
+        });
+        using var tokenResp = await _http.SendAsync(tokenReq, ct);
+        var ms = await ParseJsonAsync(tokenResp, ct);
+        var msToken = ms.GetStringOrNull("access_token");
+        if (string.IsNullOrWhiteSpace(msToken)) return false;
+
+        var xblBody = JsonSerializer.Serialize(new
+        {
+            Properties = new { AuthMethod = "RPS", SiteName = "user.auth.xboxlive.com", RpsTicket = "d=" + msToken },
+            RelyingParty = "http://auth.xboxlive.com",
+            TokenType = "JWT",
+        });
+        using var xblReq = new HttpRequestMessage(HttpMethod.Post, Cfg.Xbox.XblAuthUrl);
+        xblReq.Headers.Add("x-xbl-contract-version", "1");
+        xblReq.Content = new StringContent(xblBody, Encoding.UTF8, "application/json");
+        using var xblResp = await _http.SendAsync(xblReq, ct);
+        var xbl = await ParseJsonAsync(xblResp, ct);
+        var xblToken = xbl.GetStringOrNull("Token");
+        if (string.IsNullOrWhiteSpace(xblToken)) return false;
+
+        SetAccessToken("xbox", xblToken);
+        SetRefreshToken("xbox", ms.GetStringOrNull("refresh_token") ?? refresh);
+        account.ExpiresAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + (ms.GetLongOrNull("expires_in") ?? 3600) * 1000;
+        _db.Save();
+        return true;
+    }
+
+    public string? GetAccessToken(string platform)
+    {
+        var token = _creds.GetPassword(CredService, $"{platform}_access_token");
+        if (!string.IsNullOrWhiteSpace(token)) return token;
+        var legacy = _db.Db.Accounts.GetValueOrDefault(platform)?.AccessToken;
+        if (!string.IsNullOrWhiteSpace(legacy))
+        {
+            SetAccessToken(platform, legacy);
+            _db.Save();
+            return legacy;
+        }
+        return null;
+    }
+
+    public string? GetRefreshToken(string platform)
+    {
+        var token = _creds.GetPassword(CredService, $"{platform}_refresh_token");
+        if (!string.IsNullOrWhiteSpace(token)) return token;
+        var legacy = _db.Db.Accounts.GetValueOrDefault(platform)?.RefreshToken;
+        if (!string.IsNullOrWhiteSpace(legacy))
+        {
+            SetRefreshToken(platform, legacy);
+            _db.Save();
+            return legacy;
+        }
+        return null;
+    }
+
+    public string? GetXstsToken(string platform)
+    {
+        var token = _creds.GetPassword(CredService, $"{platform}_xsts_token");
+        if (!string.IsNullOrWhiteSpace(token)) return token;
+        var legacy = _creds.GetPassword(CredService, $"{platform}_xsts");
+        if (!string.IsNullOrWhiteSpace(legacy))
+        {
+            SetXstsToken(platform, legacy);
+            _creds.DeletePassword(CredService, $"{platform}_xsts");
+            return legacy;
+        }
+        var dbLegacy = _db.Db.Accounts.GetValueOrDefault(platform)?.Extra?.GetValueOrDefault("xstsToken")?.ToString();
+        if (!string.IsNullOrWhiteSpace(dbLegacy))
+        {
+            SetXstsToken(platform, dbLegacy);
+            var acct = _db.Db.Accounts.GetValueOrDefault(platform);
+            acct?.Extra?.Remove("xstsToken");
+            _db.Save();
+            return dbLegacy;
+        }
+        return null;
+    }
+
+    private void SetAccessToken(string platform, string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return;
+        _creds.SetPassword(CredService, $"{platform}_access_token", token);
+        var acct = _db.Db.Accounts.GetValueOrDefault(platform);
+        if (acct is not null) acct.AccessToken = null;
+    }
+
+    private void SetRefreshToken(string platform, string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return;
+        _creds.SetPassword(CredService, $"{platform}_refresh_token", token);
+        var acct = _db.Db.Accounts.GetValueOrDefault(platform);
+        if (acct is not null) acct.RefreshToken = null;
+    }
+
+    private void SetXstsToken(string platform, string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return;
+        _creds.SetPassword(CredService, $"{platform}_xsts_token", token);
+    }
+
+    private void DeleteCredential(string platform, string kind) =>
+        _creds.DeletePassword(CredService, $"{platform}_{kind}");
 }
 
 // Extension helpers for JsonElement

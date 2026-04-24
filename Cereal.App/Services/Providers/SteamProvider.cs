@@ -101,6 +101,14 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
 
         if (games is null)
         {
+            ctx.Notify?.Invoke(new ImportProgress { Status = "running", Name = "Trying storefront page…" });
+            (games, var err) = await FetchViaStorefront(steamId, ctx.Http);
+            if (games is not null) source = "storefront";
+            else failures.Add("storefront: " + err);
+        }
+
+        if (games is null)
+        {
             ctx.Notify?.Invoke(new ImportProgress { Status = "running", Name = "Trying public XML feed…" });
             (games, var err) = await FetchViaXml(steamId, ctx.Http);
             if (games is not null) source = "xml";
@@ -121,17 +129,25 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
         }
 
         if (games is null)
-            return new ImportResult([], [], 0, $"Could not fetch Steam library. ({string.Join("; ", failures)})");
+        {
+            var f = string.Join("; ", failures);
+            if (f.Contains("profile-private", StringComparison.OrdinalIgnoreCase))
+                return new ImportResult([], [], 0, "Steam profile is private. Add an API key or set game details to public.");
+            if (f.Contains("not-logged-in", StringComparison.OrdinalIgnoreCase))
+                return new ImportResult([], [], 0, "Steam session expired. Re-authenticate and retry.");
+            return new ImportResult([], [], 0, $"Could not fetch Steam library. ({f})");
+        }
 
         ctx.Notify?.Invoke(new ImportProgress { Status = "running", Name = $"Processing {games.Count} games (via {source})…", Total = games.Count });
 
         var imported = new List<string>();
         var updated = new List<string>();
+        var index = ProviderUtils.GameImportIndex.FromGames(db.Db.Games);
 
         for (var i = 0; i < games.Count; i++)
         {
             var g = games[i];
-            var existing = ProviderUtils.FindExisting(db, "steam", g.AppId, g.Name);
+            var existing = index.Find("steam", g.AppId, g.Name);
             if (existing is not null)
             {
                 var changed = false;
@@ -142,8 +158,10 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
             }
             else
             {
-                db.Db.Games.Add(ProviderUtils.MakeGameEntry("steam", "steam", g.Name, g.AppId,
-                    g.CoverUrl, g.HeaderUrl, g.Minutes, source == "local"));
+                var entry = ProviderUtils.MakeGameEntry("steam", "steam", g.Name, g.AppId,
+                    g.CoverUrl, g.HeaderUrl, g.Minutes, source == "local");
+                db.Db.Games.Add(entry);
+                index.Track(entry);
                 imported.Add(g.Name);
             }
 
@@ -187,8 +205,16 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
         {
             var raw = await http.GetStringAsync(
                 $"https://steamcommunity.com/profiles/{steamId}/games/?tab=all&xml=1");
-            if (string.IsNullOrEmpty(raw) || raw.Contains("<error>") || !raw.Contains("<game>"))
-                return (null, "private or no games");
+            if (string.IsNullOrEmpty(raw))
+                return (null, "empty");
+            if (raw.Contains("<error>", StringComparison.OrdinalIgnoreCase))
+            {
+                if (raw.Contains("private", StringComparison.OrdinalIgnoreCase))
+                    return (null, "profile-private");
+                return (null, "xml-error");
+            }
+            if (!raw.Contains("<game>", StringComparison.OrdinalIgnoreCase))
+                return (null, "no-games");
 
             var list = new List<SteamGame>();
             foreach (Match block in XmlGameBlock().Matches(raw))
@@ -206,6 +232,80 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
             return list.Count > 0 ? (list, null) : (null, "no games parsed");
         }
         catch (Exception ex) { return (null, ex.Message); }
+    }
+
+    private static async Task<(List<SteamGame>? Games, string? Error)> FetchViaStorefront(
+        string steamId, HttpClient http)
+    {
+        try
+        {
+            var html = await http.GetStringAsync($"https://steamcommunity.com/profiles/{steamId}/games/?tab=all");
+            if (string.IsNullOrWhiteSpace(html)) return (null, "empty");
+            if (html.Contains("This profile is private", StringComparison.OrdinalIgnoreCase) ||
+                html.Contains("profile_private", StringComparison.OrdinalIgnoreCase))
+                return (null, "profile-private");
+            if (html.Contains("Sign In", StringComparison.OrdinalIgnoreCase) &&
+                html.Contains("store.steampowered.com/login", StringComparison.OrdinalIgnoreCase))
+                return (null, "not-logged-in");
+
+            var json = TryExtractGamesJsonArray(html);
+            if (string.IsNullOrWhiteSpace(json))
+                return (null, "no-games-data");
+
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array) return (null, "bad-json");
+            var list = new List<SteamGame>();
+            foreach (var g in doc.RootElement.EnumerateArray())
+            {
+                var appId = g.TryGetProperty("appid", out var aid) ? aid.GetRawText().Trim('"') : "";
+                var name = g.TryGetProperty("name", out var n) ? (n.GetString() ?? "Unknown") : "Unknown";
+                if (string.IsNullOrWhiteSpace(appId)) continue;
+                var minutes = g.TryGetProperty("hours_forever", out var hf) &&
+                              double.TryParse(hf.GetRawText().Trim('"'), out var hrs)
+                    ? (int)Math.Round(hrs * 60)
+                    : 0;
+                list.Add(new SteamGame(appId, name, minutes, CoverUrl(appId), HeaderUrl(appId)));
+            }
+            return list.Count > 0 ? (list, null) : (null, "no-games-data");
+        }
+        catch (Exception ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
+    private static string? TryExtractGamesJsonArray(string html)
+    {
+        foreach (var v in new[] { "var rgGames", "var g_rgGames", "rgGames", "g_rgGames" })
+        {
+            var idx = html.IndexOf(v, StringComparison.Ordinal);
+            if (idx < 0) continue;
+            var start = html.IndexOf('[', idx);
+            if (start < 0) continue;
+            var depth = 0;
+            var inString = false;
+            var esc = false;
+            for (var i = start; i < html.Length; i++)
+            {
+                var c = html[i];
+                if (inString)
+                {
+                    if (esc) { esc = false; continue; }
+                    if (c == '\\') { esc = true; continue; }
+                    if (c == '"') inString = false;
+                    continue;
+                }
+                if (c == '"') { inString = true; continue; }
+                if (c == '[') depth++;
+                else if (c == ']')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return html[start..(i + 1)];
+                }
+            }
+        }
+        return null;
     }
 
     public static string? FindSteamRoot()

@@ -1,0 +1,51 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Cereal: Publish (Debug)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/run.ps1",
+                "-NoLaunch"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Cereal: Publish (Release)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/run.ps1",
+                "-Release",
+                "-NoLaunch"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Cereal: Publish (Debug, dev placeholders)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/run.ps1",
+                "-NoLaunch"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}

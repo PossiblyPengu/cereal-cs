@@ -12,20 +12,42 @@
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="BorderBrush" Value="#0fffffff"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="FontSize" Value="12"/>
+    </Style>
+    <Style Selector="Button.xc-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#22ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+      <Setter Property="BorderBrush" Value="#18ffffff"/>
+    </Style>
+    <Style Selector="Button.xc-btn:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.xc-btn:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
     <Style Selector="Button.xc-primary">
       <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="14,7"/>
+      <Setter Property="MinHeight" Value="30"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Button.xc-primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#e8b85e"/>
+    </Style>
+    <Style Selector="Button.xc-primary:disabled /template/ ContentPresenter">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+    <Style Selector="Button.xc-primary:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
   </UserControl.Styles>
 
@@ -36,16 +58,17 @@
             Background="{DynamicResource ThemeCard}"
             BorderBrush="#0fffffff"
             BorderThickness="0,0,0,1"
-            Padding="16,10">
-      <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+            Padding="14,8">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
         <!-- URL box -->
         <Border Grid.Column="0" CornerRadius="7" Background="#0cffffff"
                 BorderBrush="#0fffffff" BorderThickness="1"
                 Padding="10,0" Margin="0,0,8,0">
           <Grid ColumnDefinitions="Auto,*">
-            <TextBlock Grid.Column="0" Text="☁" FontSize="13"
-                       Foreground="#40b0aaa0" VerticalAlignment="Center"
-                       Margin="0,0,6,0"/>
+            <PathIcon Grid.Column="0" Width="13" Height="13"
+                      Foreground="#40b0aaa0" VerticalAlignment="Center"
+                      Margin="0,0,6,0"
+                      Data="M7,18 H18 A4,4 0 0 0 18,10 A6,6 0 0 0 6.4,8.2 A4,4 0 0 0 7,18 Z"/>
             <TextBox Grid.Column="1" x:Name="UrlBox"
                      Watermark="https://www.xbox.com/play"
                      BorderThickness="0" Background="Transparent"
@@ -59,9 +82,16 @@
         <!-- Stop current session -->
         <Button Grid.Column="2" Classes="xc-btn" Content="Stop"
                 Margin="0,0,6,0" Click="Stop_Click"/>
+        <!-- Open externally in browser -->
+        <Button Grid.Column="3" Classes="xc-btn" Content="Browser"
+                Margin="0,0,6,0" Click="Browser_Click"/>
         <!-- Close panel -->
-        <Button Grid.Column="3" Classes="xc-btn" Content="✕"
-                Width="34" Padding="0" Click="Close_Click"/>
+        <Button Grid.Column="4" Classes="xc-btn"
+                Width="34" Padding="0" Click="Close_Click">
+          <PathIcon Width="10" Height="10"
+                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    Data="M1,1 L9,9 M9,1 L1,9"/>
+        </Button>
       </Grid>
     </Border>
 
@@ -69,13 +99,14 @@
     <Border Grid.Row="1" x:Name="WebViewHost"
             Background="{DynamicResource ThemeBodyBg}"
             ClipToBounds="True">
-      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
-        <TextBlock Text="☁" FontSize="56" Foreground="#1affffff"
-                   HorizontalAlignment="Center"/>
-        <TextBlock Text="Xbox Cloud Gaming" FontSize="20" FontWeight="SemiBold"
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+        <PathIcon Width="56" Height="56" Foreground="#1affffff"
+                  HorizontalAlignment="Center"
+                  Data="M7,18 H18 A4,4 0 0 0 18,10 A6,6 0 0 0 6.4,8.2 A4,4 0 0 0 7,18 Z"/>
+        <TextBlock Text="Xbox Cloud Gaming" FontSize="18" FontWeight="SemiBold"
                    Foreground="{DynamicResource ThemeText2}" HorizontalAlignment="Center"/>
         <TextBlock Text="Enter a URL and click &quot;Open Xbox Cloud&quot; to start."
-                   FontSize="13" Foreground="{DynamicResource ThemeText3}"
+                   FontSize="12" Foreground="{DynamicResource ThemeText3}"
                    HorizontalAlignment="Center" TextAlignment="Center"/>
       </StackPanel>
     </Border>
@@ -85,7 +116,7 @@
             Background="{DynamicResource ThemeCard}"
             BorderBrush="#0fffffff"
             BorderThickness="0,1,0,0"
-            Padding="16,10">
+            Padding="14,8">
       <ItemsControl ItemsSource="{Binding Sessions}">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
@@ -94,7 +125,7 @@
         </ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate DataType="services:XcloudSessionInfo">
-            <Button Padding="10,6" CornerRadius="6"
+            <Button Padding="10,6" CornerRadius="6" MinHeight="30"
                     Background="#14ffffff" BorderBrush="#0fffffff" BorderThickness="1"
                     Cursor="Hand" Click="Session_Click">
               <StackPanel Orientation="Horizontal" Spacing="8">
