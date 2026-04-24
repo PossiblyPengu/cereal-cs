@@ -4,6 +4,7 @@
     <OutputType Condition="$(RuntimeIdentifier.StartsWith('linux'))">Exe</OutputType>
     <OutputType Condition="!$(RuntimeIdentifier.StartsWith('linux'))">WinExe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- app.manifest is Windows-only -->

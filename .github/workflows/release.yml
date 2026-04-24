@@ -32,7 +32,7 @@ jobs:
         run: dotnet tool install -g vpk
 
       - name: Restore
-        run: dotnet restore Cereal.App/Cereal.App.csproj
+        run: dotnet restore Cereal.App/Cereal.App.csproj -r win-x64
 
       - name: Publish win-x64
         run: |
@@ -40,6 +40,7 @@ jobs:
             -c Release `
             -r win-x64 `
             --self-contained `
+            --no-restore `
             -o publish/win
 
       - name: Extract version (strip v prefix)
@@ -88,7 +89,7 @@ jobs:
         run: dotnet tool install -g vpk
 
       - name: Restore
-        run: dotnet restore Cereal.App/Cereal.App.csproj
+        run: dotnet restore Cereal.App/Cereal.App.csproj -r linux-x64
 
       - name: Publish linux-x64
         run: |
@@ -96,6 +97,7 @@ jobs:
             -c Release \
             -r linux-x64 \
             --self-contained \
+            --no-restore \
             -o publish/linux
 
       - name: Extract version (strip v prefix)

@@ -34,7 +34,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore Cereal.App/Cereal.App.csproj
+        run: dotnet restore Cereal.App/Cereal.App.csproj -r ${{ matrix.rid }}
 
       - name: Build
         run: dotnet build Cereal.App/Cereal.App.csproj -c Release --no-restore
