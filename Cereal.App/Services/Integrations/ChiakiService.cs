@@ -129,7 +129,11 @@ public sealed class ChiakiService : IDisposable
         if (dir is null) return null;
         var vf = Path.Combine(dir, ".version");
         try { return File.Exists(vf) ? File.ReadAllText(vf).Trim() : null; }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[chiaki] Failed reading bundled version file");
+            return null;
+        }
     }
 
     public string? ResolveExe(string? fallback = null)
@@ -166,7 +170,7 @@ public sealed class ChiakiService : IDisposable
         {
             foreach (var id in _sessions.Keys.ToList()) StopSession(id);
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Log.Debug(ex, "[chiaki] Failed stopping sessions during uninstall"); }
 
         var dir = Path.Combine(_paths.AppDataDir, "chiaki-ng");
         if (!Directory.Exists(dir)) return false;
@@ -385,7 +389,7 @@ public sealed class ChiakiService : IDisposable
                     HandleJsonEvent(gameId, doc.RootElement);
                     return;
                 }
-                catch { /* not JSON */ }
+                catch (Exception ex) { Log.Debug(ex, "[chiaki] Non-JSON process line ignored"); }
             }
             HandleLogLine(gameId, trimmed);
         }
@@ -397,7 +401,7 @@ public sealed class ChiakiService : IDisposable
                 while (await session.Process.StandardOutput.ReadLineAsync() is { } line)
                     ProcessLine(line);
             }
-            catch { /* process ended */ }
+            catch (Exception ex) { Log.Debug(ex, "[chiaki] stdout read loop ended"); }
         });
 
         _ = Task.Run(async () =>
@@ -416,7 +420,7 @@ public sealed class ChiakiService : IDisposable
                     ProcessLine(line);
                 }
             }
-            catch { /* process ended */ }
+            catch (Exception ex) { Log.Debug(ex, "[chiaki] stderr read loop ended"); }
         });
 
         _ = Task.Run(async () =>
@@ -425,7 +429,7 @@ public sealed class ChiakiService : IDisposable
             {
                 await session.Process.WaitForExitAsync();
             }
-            catch { /* process ended */ }
+            catch (Exception ex) { Log.Debug(ex, "[chiaki] process wait loop ended"); }
 
             session.ExitCode = session.Process.ExitCode;
             session.State = "disconnected";
@@ -473,6 +477,8 @@ public sealed class ChiakiService : IDisposable
                 var next = reconnectAttempts + 1;
                 var delayMs = (int)Math.Min(1000 * Math.Pow(2, next - 1), 16000);
                 RaiseEvent(gameId, "reconnecting", new { attempt = next, maxAttempts = 5, delayMs });
+                session.ReconnectCts?.Cancel();
+                session.ReconnectCts?.Dispose();
                 session.ReconnectCts = new CancellationTokenSource();
                 var cts = session.ReconnectCts;
                 _ = Task.Run(async () =>
@@ -509,6 +515,8 @@ public sealed class ChiakiService : IDisposable
         if (!_sessions.TryRemove(gameId, out var session)) return false;
 
         session.ReconnectCts?.Cancel();
+        session.ReconnectCts?.Dispose();
+        session.ReconnectCts = null;
         StopEmbedding(session);
 
         if (session.Process is { HasExited: false })
@@ -525,10 +533,10 @@ public sealed class ChiakiService : IDisposable
                 {
                     await Task.Delay(3000);
                     try { if (!session.Process.HasExited) session.Process.Kill(); }
-                    catch { /* already dead */ }
+                    catch (Exception ex) { Log.Debug(ex, "[chiaki] force-kill fallback found dead process"); }
                 });
             }
-            catch { /* already dead */ }
+            catch (Exception ex) { Log.Debug(ex, "[chiaki] stop-session process already dead"); }
         }
         return true;
     }
@@ -599,22 +607,6 @@ public sealed class ChiakiService : IDisposable
         if (session.CurrentTitleId == titleId) return;
 
         // Attribute elapsed time to previous game
-        if (session.CurrentGameId is not null)
-        {
-            var elapsed = (now - session.TitleStartTimeMs) / 60000;
-            if (elapsed > 0)
-            {
-                var prev = _db.Db.Games.Find(g => g.Id == session.CurrentGameId);
-                if (prev is not null)
-                {
-                    prev.PlaytimeMinutes = (prev.PlaytimeMinutes ?? 0) + (int)elapsed;
-                    prev.LastPlayed = DateTime.UtcNow.ToString("O");
-                    _db.Save();
-                    GamesRefreshed?.Invoke(this, EventArgs.Empty);
-                }
-            }
-        }
-
         session.CurrentTitleId = titleId;
         session.TitleStartTimeMs = now;
 
@@ -625,52 +617,15 @@ public sealed class ChiakiService : IDisposable
             return;
         }
 
-        // Match by platformId then by name
-        var matched = _db.Db.Games.Find(g =>
-            g.Platform == "psn" && g.PlatformId?.ToUpperInvariant() == titleId.ToUpperInvariant());
-
-        if (matched is null && !string.IsNullOrEmpty(titleName))
-            matched = _db.Db.Games.Find(g =>
-                g.Platform == "psn" && string.Equals(g.Name, titleName, StringComparison.OrdinalIgnoreCase));
-
-        // Auto-create if not found
-        if (matched is null && !string.IsNullOrEmpty(titleName))
-        {
-            var origin = _db.Db.Games.Find(g => g.Id == originalGameId);
-            matched = new Game
-            {
-                Id = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString("x") +
-                     Random.Shared.Next(0, 0xFFFFF).ToString("x5"),
-                Name = titleName,
-                Platform = "psn",
-                PlatformId = titleId,
-                Categories = [],
-                PlaytimeMinutes = 0,
-                LastPlayed = DateTime.UtcNow.ToString("O"),
-                AddedAt = DateTime.UtcNow.ToString("O"),
-                Favorite = false,
-                ChiakiNickname = origin?.ChiakiNickname,
-                ChiakiHost = origin?.ChiakiHost,
-            };
-            _db.Db.Games.Add(matched);
-            _db.Save();
-            GamesRefreshed?.Invoke(this, EventArgs.Empty);
-        }
-
-        if (matched is not null && string.IsNullOrEmpty(matched.PlatformId) && !string.IsNullOrEmpty(titleId))
-        {
-            matched.PlatformId = titleId;
-            _db.Save();
-        }
-
-        session.CurrentGameId = matched?.Id;
+        // PlayStation is streaming-only: we do not create/persist tracked game rows.
+        session.CurrentGameId = null;
 
         RaiseEvent(originalGameId, "title_change", new
         {
             titleId,
             titleName,
-            gameId   = matched?.Id,
-            gameName = matched?.Name ?? titleName,
+            gameId   = (string?)null,
+            gameName = titleName,
         });
     }
 
@@ -778,7 +733,7 @@ public sealed class ChiakiService : IDisposable
                     ParseDiscoveryResponse(result.Buffer, result.RemoteEndPoint.Address.ToString(), found);
                 }
             }
-            catch { /* socket closed or cancelled */ }
+            catch (Exception ex) { Log.Debug(ex, "[chiaki] discovery receive loop ended"); }
         }, ct);
 
         // Compute broadcast addresses
@@ -807,7 +762,7 @@ public sealed class ChiakiService : IDisposable
                         var ep = new IPEndPoint(IPAddress.Parse(bcast), port);
                         await udp.SendAsync(srch, srch.Length, ep);
                     }
-                    catch { /* ignore send errors */ }
+                    catch (Exception ex) { Log.Debug(ex, "[chiaki] discovery send failed to {Broadcast}:{Port}", bcast, port); }
                 }
             }
         }
@@ -820,7 +775,7 @@ public sealed class ChiakiService : IDisposable
         await Task.Delay(2500, ct);
 
         udp.Close();
-        try { await receiveTask; } catch { /* expected */ }
+        try { await receiveTask; } catch (Exception ex) { Log.Debug(ex, "[chiaki] discovery receive task completion"); }
 
         return (true, [.. found.Values], null);
     }
@@ -888,9 +843,13 @@ public sealed class ChiakiService : IDisposable
                     await p.WaitForExitAsync(cts.Token);
                     return (p.ExitCode == 0, null, "chiaki-cli");
                 }
-                catch (OperationCanceledException) { try { p.Kill(); } catch { /* ok */ } }
+                catch (OperationCanceledException)
+                {
+                    try { p.Kill(); }
+                    catch (Exception ex) { Log.Debug(ex, "[chiaki] wake cli process already exited"); }
+                }
             }
-            catch { /* fall through to UDP */ }
+            catch (Exception ex) { Log.Debug(ex, "[chiaki] wake via cli failed; falling back to UDP"); }
         }
 
         // Direct UDP wake packet (PS4 port 987, PS5 port 9302)
@@ -962,7 +921,12 @@ public sealed class ChiakiService : IDisposable
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(30_000);
         try { await p.WaitForExitAsync(cts.Token); }
-        catch { try { p.Kill(); } catch { /* ok */ } return (false, null, null, "Registration timed out"); }
+        catch
+        {
+            try { p.Kill(); }
+            catch (Exception ex) { Log.Debug(ex, "[chiaki] register process already exited after timeout"); }
+            return (false, null, null, "Registration timed out");
+        }
 
         var raw = output.ToString();
         if (p.ExitCode != 0) return (false, null, null, raw.Length > 0 ? raw : $"Exit {p.ExitCode}");
@@ -1193,6 +1157,9 @@ internal static class Win32Interop
             var style = GetWindowLong(childHwnd, GWL_STYLE);
             SetWindowLong(childHwnd, GWL_STYLE, style & ~(long)WS_CHILD);
         }
-        catch { /* best-effort */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[win32] UnembedWindow best-effort failure");
+        }
     }
 }

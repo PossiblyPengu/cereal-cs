@@ -113,8 +113,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _uiScale = "100%";
 
     [ObservableProperty] private string? _statusMessage;
+    [ObservableProperty] private bool _hasPendingChanges;
+    [ObservableProperty] private string _saveHint = "Autosave is active for most toggles.";
     [ObservableProperty] private bool _steamGridDbKeyValid;
     [ObservableProperty] private bool _isValidatingKey;
+    [ObservableProperty] private bool _accentColorValid = true;
+    [ObservableProperty] private string _accentColorValidationMessage = string.Empty;
 
     // ─── Section navigation ───────────────────────────────────────────────────
 
@@ -196,11 +200,28 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
     partial void OnMetadataSourceChanged(string value) => AutoSave();
+    partial void OnSteamPathChanged(string? value) => MarkPendingChange();
+    partial void OnEpicPathChanged(string? value) => MarkPendingChange();
+    partial void OnGogPathChanged(string? value) => MarkPendingChange();
+    partial void OnChiakiPathChanged(string? value) => MarkPendingChange();
 
     // Silent, partial save used by the OnX partials above. Swallows exceptions
     // to avoid crashing the UI if the user is typing into one of the path
     // TextBoxes while we race to persist.
     private bool _loadingFromModel;
+    private void MarkPendingChange()
+    {
+        if (_loadingFromModel) return;
+        HasPendingChanges = true;
+        SaveHint = "You have unsaved changes.";
+    }
+
+    private void ClearPendingChanges(string message)
+    {
+        HasPendingChanges = false;
+        SaveHint = message;
+    }
+
     private void AutoSave()
     {
         if (_loadingFromModel) return;
@@ -229,6 +250,8 @@ public partial class SettingsViewModel : ObservableObject
 
             if (DiscordPresence && !_discord.IsConnected) _discord.Connect();
             else if (!DiscordPresence && _discord.IsConnected) _discord.Disconnect();
+            if (!HasPendingChanges)
+                SaveHint = "Autosaved.";
         }
         catch (Exception ex)
         {
@@ -547,6 +570,12 @@ public partial class SettingsViewModel : ObservableObject
         HasSteamGridDbSecret && string.IsNullOrWhiteSpace(SteamGridDbKey)
             ? "Saved — paste to replace"
             : "Paste API key here";
+    public string SteamGridDbInlineHint =>
+        IsValidatingKey ? "Validating key..."
+        : SteamGridDbKeyInvalid ? "Key is invalid."
+        : SteamGridDbKeyValid ? "Key is valid."
+        : HasSteamGridDbSecret ? "A key is saved. Paste to replace."
+        : "Enter your SteamGridDB API key.";
 
     private void SyncSteamGridDbSecret() =>
         HasSteamGridDbSecret = !string.IsNullOrEmpty(
@@ -565,6 +594,7 @@ public partial class SettingsViewModel : ObservableObject
         SteamGridDbShowStatusMissing = !IsValidatingKey && !SteamGridDbKeyInvalid
             && !HasSteamGridDbSecret && string.IsNullOrWhiteSpace(SteamGridDbKey) && !okValid;
         OnPropertyChanged(nameof(SteamGridDbKeyWatermark));
+        OnPropertyChanged(nameof(SteamGridDbInlineHint));
     }
 
     partial void OnIsValidatingKeyChanged(bool value) => RefreshSteamGridDbUi();
@@ -596,7 +626,15 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnAccentColorChanged(string value)
     {
-        _themeSvc.Apply(Theme, value);
+        var isBlank = string.IsNullOrWhiteSpace(value);
+        var isValid = isBlank || Color.TryParse(value, out _);
+        AccentColorValid = isValid;
+        AccentColorValidationMessage = isValid ? string.Empty : "Use a valid hex color like #d4a853.";
+        if (isValid)
+        {
+            _themeSvc.Apply(Theme, value);
+            MarkPendingChange();
+        }
     }
 
     // Live UI-scale application (mirror Electron's applyUiScale() in utils.ts 9-12 —
@@ -622,6 +660,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             Log.Debug(ex, "[settings] Live ApplyUiScale failed");
         }
+        MarkPendingChange();
     }
 
     // Live default-view update so changing the dropdown previews the new view.
@@ -635,6 +674,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             mvm.ViewMode = MainViewModel.NormalizeViewMode(value);
         }
+        MarkPendingChange();
     }
 
     // Live nav-position: floating toolbar immediately snaps to top/bottom
@@ -649,6 +689,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             mvm.ToolbarPosition = value;
         }
+        MarkPendingChange();
     }
 
     private void LoadFromModel(Settings s)
@@ -679,6 +720,9 @@ public partial class SettingsViewModel : ObservableObject
         UiScale = NormalizeUiScale(s.UiScale);
         }
         finally { _loadingFromModel = false; }
+        AccentColorValid = string.IsNullOrWhiteSpace(AccentColor) || Color.TryParse(AccentColor, out _);
+        AccentColorValidationMessage = AccentColorValid ? string.Empty : "Use a valid hex color like #d4a853.";
+        ClearPendingChanges("No unsaved changes.");
     }
 
     // ─── Settings commands ────────────────────────────────────────────────────
@@ -686,6 +730,11 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void Save()
     {
+        if (!AccentColorValid)
+        {
+            StatusMessage = "Fix accent color before saving.";
+            return;
+        }
         var s = _settingsSvc.Get();
         s.DefaultView = DefaultView;
         s.Theme = Theme;
@@ -733,6 +782,7 @@ public partial class SettingsViewModel : ObservableObject
         else if (!DiscordPresence && _discord.IsConnected) _discord.Disconnect();
 
         StatusMessage = "Settings saved.";
+        ClearPendingChanges("All changes saved.");
     }
 
     [RelayCommand]
@@ -741,6 +791,7 @@ public partial class SettingsViewModel : ObservableObject
         var s = _settingsSvc.Reset();
         LoadFromModel(s);
         StatusMessage = "Settings reset to defaults.";
+        ClearPendingChanges("Settings restored to defaults.");
     }
 
     [RelayCommand]
@@ -1046,6 +1097,8 @@ public partial class SettingsViewModel : ObservableObject
 
         // Auto-expire the undo window.
         _undoCts?.Cancel();
+        _undoCts?.Dispose();
+        _undoCts = null;
         _undoCts = new CancellationTokenSource();
         var token = _undoCts.Token;
         _ = Task.Delay(10_000, token).ContinueWith(_ =>
@@ -1068,6 +1121,8 @@ public partial class SettingsViewModel : ObservableObject
         _clearedSnapshot = null;
         CanUndoClear = false;
         _undoCts?.Cancel();
+        _undoCts?.Dispose();
+        _undoCts = null;
         RefreshLibraryStats();
     }
 

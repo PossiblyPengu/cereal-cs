@@ -180,7 +180,7 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
         {
             var url = $"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={Uri.EscapeDataString(apiKey)}&steamid={steamId}&include_appinfo=1&include_played_free_games=1&format=json";
             var json = await http.GetStringAsync(url);
-            var doc = JsonDocument.Parse(json);
+            using var doc = JsonDocument.Parse(json);
             if (!doc.RootElement.TryGetProperty("response", out var resp) ||
                 !resp.TryGetProperty("games", out var gamesEl))
                 return (null, "no games in response");

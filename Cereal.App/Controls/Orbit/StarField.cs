@@ -30,12 +30,13 @@ public class StarField : Control
     private DispatcherTimer? _tick;
     private DateTime _t0;
 
-    // Quantized brush LUT: 2 hues × 32 alpha levels. Avoids per-star allocation
+    // Quantized brush LUT: 3 hues × 32 alpha levels. Avoids per-star allocation
     // on the render path and avoids the "shared mutable brush" pitfall where
     // assigning .Opacity would retro-actively affect already-queued draws.
     private const int AlphaLevels = 32;
     private static readonly ImmutableSolidColorBrush[] WhiteLut = BuildLut(Colors.White);
     private static readonly ImmutableSolidColorBrush[] BlueLut = BuildLut(Color.FromRgb(0xaa, 0xaa, 0xff));
+    private static readonly ImmutableSolidColorBrush[] WarmLut = BuildLut(Color.FromRgb(0xff, 0xee, 0xcf));
 
     private static ImmutableSolidColorBrush[] BuildLut(Color baseColor)
     {
@@ -124,15 +125,19 @@ public class StarField : Control
         _stars = new Star[count];
         for (var i = 0; i < count; i++)
         {
-            var bluish = rng.NextDouble() < 0.3;
+            var tone = rng.NextDouble();
+            var rgb = tone < 0.62 ? 0xffffffu : tone < 0.88 ? 0xaaaaffu : 0xffeecfu;
+            var isLarge = rng.NextDouble() < 0.12;
             _stars[i] = new Star
             {
                 X = (float)(rng.NextDouble() * OrbitWorld.WorldWidth),
                 Y = (float)(rng.NextDouble() * OrbitWorld.WorldHeight),
-                Size = rng.NextDouble() < 0.1 ? 2f : 1f,
-                BaseAlpha = (float)(0.2 + rng.NextDouble() * 0.6),
-                Rgb = bluish ? 0xaaaaffu : 0xffffffu,
-                Twinkles = AnimationsEnabled && rng.NextDouble() < 0.15,
+                Size = isLarge ? (float)(1.7 + rng.NextDouble() * 1.2) : 1f,
+                BaseAlpha = isLarge
+                    ? (float)(0.45 + rng.NextDouble() * 0.42)
+                    : (float)(0.18 + rng.NextDouble() * 0.48),
+                Rgb = rgb,
+                Twinkles = AnimationsEnabled && (isLarge ? rng.NextDouble() < 0.30 : rng.NextDouble() < 0.14),
                 TwinkleDuration = (float)(3.0 + rng.NextDouble() * 4.0),
                 TwinklePhase = (float)rng.NextDouble(),
             };
@@ -160,14 +165,27 @@ public class StarField : Control
                 alpha = 0.2 + (0.7 - 0.2) * wave;
             }
 
-            var lut = s.Rgb == 0xffffffu ? WhiteLut : BlueLut;
+            var lut = s.Rgb switch
+            {
+                0xaaaaffu => BlueLut,
+                0xffeecfu => WarmLut,
+                _ => WhiteLut,
+            };
             var idx = Math.Clamp((int)(alpha * AlphaLevels), 0, AlphaLevels - 1);
             var brush = lut[idx];
 
             if (s.Size <= 1.01f)
                 context.FillRectangle(brush, new Rect(s.X, s.Y, 1, 1));
             else
+            {
+                // Give larger stars a faint halo to avoid hard-edged dots.
+                var haloAlpha = Math.Clamp(alpha * 0.18, 0.04, 0.22);
+                var haloIdx = Math.Clamp((int)(haloAlpha * AlphaLevels), 0, AlphaLevels - 1);
+                var haloBrush = lut[haloIdx];
+                var haloR = s.Size * 2.1;
+                context.DrawEllipse(haloBrush, null, new Point(s.X, s.Y), haloR, haloR);
                 context.DrawEllipse(brush, null, new Point(s.X, s.Y), s.Size, s.Size);
+            }
         }
     }
 }

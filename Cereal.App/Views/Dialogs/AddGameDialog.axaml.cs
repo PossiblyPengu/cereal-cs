@@ -347,6 +347,9 @@ public partial class AddGameDialog : Window
             preview.Source = bmp;
             preview.IsVisible = true;
         }
-        catch { /* preview is best-effort */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[AddGame] Preview load failed for {Url}", url);
+        }
     }
 }

@@ -144,7 +144,10 @@ public sealed class MetadataService
                     };
                 }
             }
-            catch { /* SGDB art fetch failed, continue without */ }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[metadata] SGDB art fetch failed, continuing without");
+            }
         }
 
         if (meta is not null)
@@ -633,7 +636,11 @@ public sealed class MetadataService
             var doc = JsonDocument.Parse(text);
             return doc.RootElement.Clone();
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[metadata] Failed to parse JSON response from {Url}", url);
+            return null;
+        }
     }
 
     private async Task<bool> HeadOkAsync(string url, CancellationToken ct)
@@ -644,7 +651,11 @@ public sealed class MetadataService
             using var resp = await _http.SendAsync(req, ct);
             return resp.IsSuccessStatusCode;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[metadata] HEAD request failed for {Url}", url);
+            return false;
+        }
     }
 
     private async Task<JsonElement?> SgdbGetAsync(string url, string apiKey, CancellationToken ct)
@@ -654,7 +665,12 @@ public sealed class MetadataService
         using var resp = await _http.SendAsync(req, ct);
         if (!resp.IsSuccessStatusCode) return null;
         var text = await resp.Content.ReadAsStringAsync(ct);
-        try { return JsonDocument.Parse(text).RootElement.Clone(); } catch { return null; }
+        try { return JsonDocument.Parse(text).RootElement.Clone(); }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[metadata] SGDB JSON parse failed for {Url}", url);
+            return null;
+        }
     }
 
     private static string Normalize(string s) =>

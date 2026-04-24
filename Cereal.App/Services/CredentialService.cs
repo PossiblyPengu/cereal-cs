@@ -62,7 +62,10 @@ public class CredentialService
                 var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path));
                 if (dict is not null) { _cache = dict; return; }
             }
-            catch { /* try backup */ }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[creds] Failed to load credential store from {Path}", path);
+            }
         }
         _cache = [];
     }
@@ -74,7 +77,10 @@ public class CredentialService
             if (File.Exists(_storePath))
                 File.Copy(_storePath, _backupPath, overwrite: true);
         }
-        catch { /* best-effort */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[creds] Failed to update credential backup");
+        }
 
         var tmp = _storePath + ".tmp";
         File.WriteAllText(tmp, JsonSerializer.Serialize(_cache, new JsonSerializerOptions { WriteIndented = true }));

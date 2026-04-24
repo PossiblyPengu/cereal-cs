@@ -12,16 +12,28 @@
     <Style Selector="TextBlock.lbl">
       <Setter Property="Foreground" Value="#50b0aaa0"/>
       <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Margin" Value="0,10,0,4"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0,14,0,6"/>
     </Style>
     <Style Selector="TextBox.field">
       <Setter Property="Background" Value="#08ffffff"/>
       <Setter Property="BorderBrush" Value="#14ffffff"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
       <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="MinHeight" Value="34"/>
+      <Setter Property="FontSize" Value="12"/>
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+      <Setter Property="MinHeight" Value="34"/>
+      <Setter Property="FontSize" Value="12"/>
     </Style>
     <Style Selector="ToggleSwitch">
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="Margin" Value="0,0,0,10"/>
     </Style>
 
     <!-- Nav button: inactive (index.css 168) — rounded-right pill w/ 2px left border -->
@@ -137,6 +149,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="12,7"/>
+      <Setter Property="MinHeight" Value="34"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="BorderBrush" Value="#10ffffff"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -162,6 +175,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="12,7"/>
+      <Setter Property="MinHeight" Value="34"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
@@ -195,7 +209,8 @@
       <Setter Property="BorderBrush" Value="#0fffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="Padding" Value="14,12"/>
+      <Setter Property="Padding" Value="16,14"/>
+      <Setter Property="MinHeight" Value="74"/>
       <Setter Property="HorizontalAlignment" Value="Stretch"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -230,6 +245,39 @@
       <Setter Property="Padding" Value="12,8"/>
     </Style>
 
+    <Style Selector="TextBlock.nav-group">
+      <Setter Property="FontSize" Value="9"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="LetterSpacing" Value="1.1"/>
+      <Setter Property="Foreground" Value="#45b0aaa0"/>
+      <Setter Property="Margin" Value="10,10,6,4"/>
+    </Style>
+    <Style Selector="TextBlock.section-lead">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Foreground" Value="#66b0aaa0"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="Margin" Value="0,0,0,10"/>
+    </Style>
+    <Style Selector="Border.setting-card">
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Background" Value="#0cffffff"/>
+      <Setter Property="BorderBrush" Value="#14ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="16,14"/>
+      <Setter Property="Margin" Value="0,0,0,14"/>
+    </Style>
+    <Style Selector="Border.save-bar">
+      <Setter Property="Background" Value="#de121220"/>
+      <Setter Property="BorderBrush" Value="#1effffff"/>
+      <Setter Property="BorderThickness" Value="1,1,0,0"/>
+      <Setter Property="Padding" Value="16,12"/>
+    </Style>
+    <Style Selector="TextBlock.validation-error">
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Foreground" Value="#ff7d7d"/>
+      <Setter Property="Margin" Value="0,4,0,0"/>
+    </Style>
+
   </UserControl.Styles>
 
   <!-- Two-pane layout; outer Border = index.css .side-panel left edge -->
@@ -237,14 +285,16 @@
           BorderBrush="#14ffffff"
           BorderThickness="1,0,0,0"
           MinHeight="600">
-  <Grid ColumnDefinitions="140,*">
+  <Grid ColumnDefinitions="170,*">
 
     <!-- ── Left nav ── -->
     <Border Grid.Column="0"
             Background="#08ffffff"
             BorderBrush="#0fffffff"
             BorderThickness="0,0,1,0">
-      <StackPanel Margin="4,8,4,4" Spacing="1">
+      <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="6,10,6,6" Spacing="2">
 
         <!-- Stats mini-header -->
         <Border CornerRadius="8" Background="#08ffffff" BorderBrush="#0fffffff"
@@ -257,18 +307,23 @@
           </StackPanel>
         </Border>
 
-        <Button Classes="nav" Content="Appearance"
+        <TextBlock Classes="nav-group" Text="PERSONALIZATION"/>
+        <Button Classes="nav" Content="Appearance &amp; Layout"
                 Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=appearance}"
                 Command="{Binding SetSectionCommand}" CommandParameter="appearance"/>
-        <Button Classes="nav" Content="Library"
+        <Button Classes="nav" Content="Library &amp; Integrations"
                 Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=library}"
                 Command="{Binding SetSectionCommand}" CommandParameter="library"/>
+
+        <TextBlock Classes="nav-group" Text="RUNTIME"/>
         <Button Classes="nav" Content="Behavior"
                 Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=behavior}"
                 Command="{Binding SetSectionCommand}" CommandParameter="behavior"/>
-        <Button Classes="nav" Content="System"
+        <Button Classes="nav" Content="System &amp; Updates"
                 Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=system}"
                 Command="{Binding SetSectionCommand}" CommandParameter="system"/>
+
+        <TextBlock Classes="nav-group" Text="INFO"/>
         <Button Classes="nav" Content="About"
                 Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=about}"
                 Command="{Binding SetSectionCommand}" CommandParameter="about"/>
@@ -277,17 +332,20 @@
         <Border Height="1" Background="#0fffffff" Margin="0,8"/>
 
         <!-- Danger Zone pushed to bottom-ish -->
+        <TextBlock Classes="nav-group" Text="DANGER"/>
         <Button Classes="nav" Content="Danger Zone"
                 Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=danger}"
                 Command="{Binding SetSectionCommand}" CommandParameter="danger"
                 Foreground="#40ff6060"/>
 
       </StackPanel>
+      </ScrollViewer>
     </Border>
 
     <!-- ── Right content pane ── -->
-    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-      <StackPanel Margin="16,14" MaxWidth="640" Spacing="0">
+    <Grid Grid.Column="1" RowDefinitions="*,Auto">
+    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+      <StackPanel Margin="20,18" MaxWidth="760" Spacing="0">
 
         <!-- ══════════════════════════════════════════════
              SETTINGS HEADER (index.css .settings-header — Cereal + version + live stats)
@@ -334,8 +392,11 @@
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=appearance}">
 
           <TextBlock Classes="sec-hdr" Text="APPEARANCE" Margin="0,0,0,6"/>
+          <TextBlock Classes="section-lead" Text="Tune visual style, toolbar placement, and Orbit ambiance."/>
           <Border Height="1" Background="#0fffffff" Margin="0,0,0,14"/>
 
+          <Border Classes="setting-card">
+          <StackPanel>
           <!-- Theme swatches -->
           <TextBlock Classes="lbl" Text="Theme" Margin="0,0,0,8"/>
           <ItemsControl ItemsSource="{Binding ThemeSwatches}">
@@ -393,35 +454,34 @@
           </Grid>
           <TextBlock Text="Leave blank to use theme default"
                      FontSize="10" Foreground="#40b0aaa0" Margin="0,2,0,0"/>
+          <TextBlock Classes="validation-error"
+                     Text="{Binding AccentColorValidationMessage}"
+                     IsVisible="{Binding !AccentColorValid}"/>
+          </StackPanel>
+          </Border>
 
           <!-- Other appearance options -->
+          <Border Classes="setting-card">
+          <StackPanel>
           <TextBlock Classes="lbl" Text="Default view"/>
           <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ViewOptionLabels}"
-                    SelectedIndex="{Binding DefaultViewIndex}"
-                    Background="#08ffffff" Foreground="{DynamicResource ThemeText}"/>
+                    SelectedIndex="{Binding DefaultViewIndex}"/>
 
           <TextBlock Classes="lbl" Text="Nav pill position"/>
           <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.NavPositionLabels}"
-                    SelectedIndex="{Binding NavPositionIndex}"
-                    Background="#08ffffff" Foreground="{DynamicResource ThemeText}"/>
+                    SelectedIndex="{Binding NavPositionIndex}"/>
 
           <TextBlock Classes="lbl" Text="UI scale"/>
           <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.UiScaleOptions}"
-                    SelectedItem="{Binding UiScale}"
-                    Background="#08ffffff" Foreground="{DynamicResource ThemeText}"/>
+                    SelectedItem="{Binding UiScale}"/>
 
           <TextBlock Classes="lbl" Text="Orbit star density"/>
           <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.StarDensityLabels}"
-                    SelectedIndex="{Binding StarDensityIndex}"
-                    Background="#08ffffff" Foreground="{DynamicResource ThemeText}"/>
+                    SelectedIndex="{Binding StarDensityIndex}"/>
 
           <ToggleSwitch Content="Show animations" IsChecked="{Binding ShowAnimations}" Margin="0,8,0,0"/>
-
-          <!-- Save -->
-          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,20,0,0">
-            <Button Classes="primary" Content="Save settings" Command="{Binding SaveCommand}"/>
-            <Button Classes="ghost" Content="Reset to defaults" Command="{Binding ResetCommand}"/>
           </StackPanel>
+          </Border>
 
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#50b0aaa0"
                      IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
@@ -434,8 +494,11 @@
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=library}">
 
           <TextBlock Classes="sec-hdr" Text="ACTIONS" Margin="0,0,0,10"/>
+          <TextBlock Classes="section-lead" Text="Library maintenance, backups, and account integrations."/>
 
           <!-- 2-column action card grid (Electron .settings-action-grid) -->
+          <Border Classes="setting-card">
+          <StackPanel>
           <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Margin="0,0,0,8">
             <Grid.Styles>
               <Style Selector="Button.action-card">
@@ -503,9 +566,12 @@
               </StackPanel>
             </Button>
           </Grid>
+          </StackPanel>
+          </Border>
 
           <!-- Backup -->
           <TextBlock Classes="sec-hdr" Text="BACKUP" Margin="0,10,0,10"/>
+          <Border Classes="setting-card">
           <Grid ColumnDefinitions="*,*" Margin="0,0,0,8">
             <Button Grid.Column="0" Classes="action-card" Margin="0,0,4,8"
                     Click="ExportLibrary_Click">
@@ -536,6 +602,7 @@
               </StackPanel>
             </Button>
           </Grid>
+          </Border>
 
           <!-- SteamGridDB — SettingsPanel.tsx lib-key-card -->
           <TextBlock Classes="sec-hdr" Text="INTEGRATIONS" Margin="0,10,0,0"/>
@@ -585,6 +652,8 @@
                         Foreground="#ff7070"
                         IsVisible="{Binding HasSteamGridDbSecret}"/>
               </Grid>
+              <TextBlock Text="{Binding SteamGridDbInlineHint}" FontSize="10"
+                         Foreground="#50b0aaa0"/>
             </StackPanel>
           </Border>
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#50b0aaa0"
@@ -615,8 +684,11 @@
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=behavior}">
 
           <TextBlock Classes="sec-hdr" Text="BEHAVIOR" Margin="0,0,0,6"/>
+          <TextBlock Classes="section-lead" Text="Startup, tray behavior, sync preferences, and runtime integrations."/>
           <Border Height="1" Background="#0fffffff" Margin="0,0,0,14"/>
 
+          <Border Classes="setting-card">
+          <StackPanel>
           <ToggleSwitch Content="Minimize to tray when a game launches" IsChecked="{Binding MinimizeOnLaunch}"/>
           <ToggleSwitch Content="Close to tray" IsChecked="{Binding CloseToTray}"/>
           <ToggleSwitch Content="Minimize to tray" IsChecked="{Binding MinimizeToTray}"/>
@@ -634,9 +706,11 @@
                     VerticalAlignment="Center"/>
           </Grid>
           <ToggleSwitch Content="Hide Steam software &amp; tools" IsChecked="{Binding FilterHideSteamSoftware}"/>
+          </StackPanel>
+          </Border>
 
           <!-- Discord -->
-          <Border Height="1" Background="#0fffffff" Margin="0,16,0,12"/>
+          <Border Classes="setting-card">
           <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
             <StackPanel Grid.Column="0" Spacing="2">
               <TextBlock Text="Discord Rich Presence" FontSize="12" FontWeight="Medium"
@@ -651,11 +725,7 @@
             <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordPresence}"
                           VerticalAlignment="Center"/>
           </Grid>
-
-          <!-- Save -->
-          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,20,0,0">
-            <Button Classes="primary" Content="Save settings" Command="{Binding SaveCommand}"/>
-          </StackPanel>
+          </Border>
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#50b0aaa0"
                      IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
                      Margin="0,8,0,0"/>
@@ -667,10 +737,13 @@
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=system}">
 
           <TextBlock Classes="sec-hdr" Text="SYSTEM" Margin="0,0,0,6"/>
+          <TextBlock Classes="section-lead" Text="Platform paths, metadata source, and update management."/>
           <Border Height="1" Background="#0fffffff" Margin="0,0,0,14"/>
 
           <!-- Platform paths -->
           <TextBlock Classes="sec-hdr" Text="PLATFORM PATHS" Margin="0,0,0,8"/>
+          <Border Classes="setting-card">
+          <StackPanel>
 
           <TextBlock Classes="lbl" Text="Steam path (optional)"/>
           <TextBox Classes="field" Text="{Binding SteamPath}" Watermark="Auto-detected"/>
@@ -680,15 +753,21 @@
           <TextBox Classes="field" Text="{Binding GogPath}" Watermark="Auto-detected"/>
           <TextBlock Classes="lbl" Text="Chiaki-ng executable (optional)"/>
           <TextBox Classes="field" Text="{Binding ChiakiPath}" Watermark="Auto-detected"/>
+          </StackPanel>
+          </Border>
 
           <!-- Metadata source selector -->
           <TextBlock Classes="sec-hdr" Text="METADATA" Margin="0,16,0,8"/>
+          <Border Classes="setting-card">
+          <StackPanel>
           <TextBlock Classes="lbl" Text="Primary metadata source"/>
           <ComboBox ItemsSource="{Binding MetadataSourceOptions}"
                     SelectedItem="{Binding MetadataSource}"
                     HorizontalAlignment="Stretch"/>
           <TextBlock Text="Steam's catalog is preferred for commercial titles; Wikipedia is used as a fallback."
                      FontSize="11" Foreground="#50b0aaa0" Margin="0,4,0,0" TextWrapping="Wrap"/>
+          </StackPanel>
+          </Border>
 
           <!-- Cereal update card -->
           <TextBlock Classes="sec-hdr" Text="UPDATES" Margin="0,16,0,8"/>
@@ -755,10 +834,6 @@
             </Grid>
           </Border>
 
-          <!-- Save -->
-          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,20,0,0">
-            <Button Classes="primary" Content="Save settings" Command="{Binding SaveCommand}"/>
-          </StackPanel>
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#50b0aaa0"
                      IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
                      Margin="0,8,0,0"/>
@@ -768,6 +843,7 @@
              ABOUT
         ══════════════════════════════════════════════ -->
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=about}">
+          <TextBlock Classes="section-lead" Text="At-a-glance library and system diagnostics." Margin="0,0,0,10"/>
 
           <!-- Hero block (Electron .about-hero) -->
           <StackPanel Margin="0,0,0,18">
@@ -937,6 +1013,7 @@
 
           <TextBlock Classes="sec-hdr" Text="DANGER ZONE" Margin="0,0,0,6"
                      Foreground="#50ff6060"/>
+          <TextBlock Classes="section-lead" Text="Destructive tools. These actions can permanently remove local data."/>
           <Border Height="1" Background="#1fff4444" Margin="0,0,0,14"/>
 
           <!-- Clear covers -->
@@ -1051,6 +1128,21 @@
 
       </StackPanel>
     </ScrollViewer>
+      <Border Grid.Row="1" Classes="save-bar">
+        <Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
+          <TextBlock Grid.Column="0" Text="{Binding SaveHint}"
+                     FontSize="11" Foreground="#75b0aaa0"
+                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+          <Button Grid.Column="1" Classes="ghost" Content="Reset"
+                  Margin="8,0,0,0"
+                  Command="{Binding ResetCommand}"/>
+          <Button Grid.Column="2" Classes="primary" Content="Save settings"
+                  Margin="8,0,0,0"
+                  IsEnabled="{Binding HasPendingChanges}"
+                  Command="{Binding SaveCommand}"/>
+        </Grid>
+      </Border>
+    </Grid>
 
   </Grid>
   </Border>

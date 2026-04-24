@@ -59,11 +59,11 @@
             BorderBrush="#0fffffff"
             BorderThickness="0,0,0,1"
             Padding="14,8">
-      <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+      <StackPanel Spacing="8">
         <!-- URL box -->
-        <Border Grid.Column="0" CornerRadius="7" Background="#0cffffff"
+        <Border CornerRadius="7" Background="#0cffffff"
                 BorderBrush="#0fffffff" BorderThickness="1"
-                Padding="10,0" Margin="0,0,8,0">
+                Padding="10,0">
           <Grid ColumnDefinitions="Auto,*">
             <PathIcon Grid.Column="0" Width="13" Height="13"
                       Foreground="#40b0aaa0" VerticalAlignment="Center"
@@ -76,23 +76,26 @@
                      FontSize="12" Padding="0,6" VerticalAlignment="Center"/>
           </Grid>
         </Border>
-        <!-- Launch -->
-        <Button Grid.Column="1" Classes="xc-primary" Content="Open Xbox Cloud"
-                Margin="0,0,6,0" Click="Start_Click"/>
-        <!-- Stop current session -->
-        <Button Grid.Column="2" Classes="xc-btn" Content="Stop"
-                Margin="0,0,6,0" Click="Stop_Click"/>
-        <!-- Open externally in browser -->
-        <Button Grid.Column="3" Classes="xc-btn" Content="Browser"
-                Margin="0,0,6,0" Click="Browser_Click"/>
-        <!-- Close panel -->
-        <Button Grid.Column="4" Classes="xc-btn"
-                Width="34" Padding="0" Click="Close_Click">
-          <PathIcon Width="10" Height="10"
-                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                    Data="M1,1 L9,9 M9,1 L1,9"/>
-        </Button>
-      </Grid>
+
+        <WrapPanel Orientation="Horizontal">
+          <!-- Launch -->
+          <Button Classes="xc-primary" Content="Open Xbox Cloud"
+                  Margin="0,0,6,0" Click="Start_Click"/>
+          <!-- Stop current session -->
+          <Button Classes="xc-btn" Content="Stop"
+                  Margin="0,0,6,0" Click="Stop_Click"/>
+          <!-- Open externally in browser -->
+          <Button Classes="xc-btn" Content="Browser"
+                  Margin="0,0,6,0" Click="Browser_Click"/>
+          <!-- Close panel -->
+          <Button Classes="xc-btn"
+                  Width="34" Padding="0" Click="Close_Click">
+            <PathIcon Width="10" Height="10"
+                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Data="M1,1 L9,9 M9,1 L1,9"/>
+          </Button>
+        </WrapPanel>
+      </StackPanel>
     </Border>
 
     <!-- ── WebView host ── -->

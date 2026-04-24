@@ -244,7 +244,11 @@ public sealed class AuthService
             _db.Save();
             return true;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[auth] RefreshGogTokenAsync failed");
+            return false;
+        }
     }
 
     // ─── Epic ─────────────────────────────────────────────────────────────────

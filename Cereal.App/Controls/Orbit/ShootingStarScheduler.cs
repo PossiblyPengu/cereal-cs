@@ -51,11 +51,18 @@ internal sealed class ShootingStarScheduler
 
     private void Spawn()
     {
-        var len = 80 + _rng.NextDouble() * 120;
-        var angleDeg = -15 + _rng.NextDouble() * 30;
+        var len = 90 + _rng.NextDouble() * 150;
+        var angleDeg = -22 + _rng.NextDouble() * 44;
         var x = _rng.NextDouble() * OrbitWorld.WorldWidth;
         var y = _rng.NextDouble() * OrbitWorld.WorldHeight;
-        var durMs = 600 + _rng.NextDouble() * 500;
+        var durMs = 520 + _rng.NextDouble() * 420;
+        var coolTone = _rng.NextDouble() < 0.65;
+        var head = coolTone
+            ? Color.FromArgb(0xd8, 0xdb, 0xe6, 0xff)
+            : Color.FromArgb(0xd8, 0xff, 0xef, 0xd8);
+        var tail = coolTone
+            ? Color.FromArgb(0, 0xdb, 0xe6, 0xff)
+            : Color.FromArgb(0, 0xff, 0xef, 0xd8);
 
         // The streak is a thin gradient-filled rectangle, rotated and translated
         // along its own X axis. We use a TransformOperations-based RenderTransform
@@ -64,21 +71,27 @@ internal sealed class ShootingStarScheduler
         var streak = new Rectangle
         {
             Width = len,
-            Height = 1,
+            Height = 1.4,
             Fill = new LinearGradientBrush
             {
                 StartPoint = new RelativePoint(0, 0.5, RelativeUnit.Relative),
                 EndPoint = new RelativePoint(1, 0.5, RelativeUnit.Relative),
                 GradientStops =
                 {
-                    new GradientStop(Color.FromArgb(0, 255, 255, 255), 0),
-                    new GradientStop(Color.FromArgb(0xcc, 255, 255, 255), 0.5),
-                    new GradientStop(Color.FromArgb(0, 255, 255, 255), 1),
+                    new GradientStop(tail, 0),
+                    new GradientStop(head, 0.55),
+                    new GradientStop(tail, 1),
                 },
             },
             IsHitTestVisible = false,
             Opacity = 0,
             RenderTransformOrigin = new RelativePoint(0, 0.5, RelativeUnit.Relative),
+            Effect = new ImmutableDropShadowEffect(
+                offsetX: 0,
+                offsetY: 0,
+                blurRadius: 8,
+                color: Color.FromArgb(0x82, head.R, head.G, head.B),
+                opacity: 1),
         };
         Canvas.SetLeft(streak, x);
         Canvas.SetTop(streak, y);

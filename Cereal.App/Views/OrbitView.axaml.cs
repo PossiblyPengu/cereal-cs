@@ -250,9 +250,10 @@ public partial class OrbitView : UserControl
 
         // 3–4. Library orbs — parity with Vite App.tsx orbData: multi-arm spiral per
         //    platform hub, collision separation, installed-only, normalized platform keys.
-        var dbGames = App.Services.GetRequiredService<GameService>().GetAll();
-        var games = dbGames.Where(g => g.Installed != false).ToList();
-        var sortOrder = (DataContext as MainViewModel)?.SortOrder ?? "name";
+        var vm = DataContext as MainViewModel;
+        var games = vm?.GetOrbitGames()
+            ?? App.Services.GetRequiredService<GameService>().GetAll().ToList();
+        var sortOrder = vm?.SortOrder ?? "name";
 
         var byPlat = games
             .GroupBy(g => NebulaCluster.NormalizeOrbitPlatform(g.Platform))

@@ -325,7 +325,8 @@ public class DatabaseService
 
             foreach (var stale in existing.Skip(RollingBackupCount - 1))
             {
-                try { File.Delete(stale); } catch { /* best-effort */ }
+                try { File.Delete(stale); }
+                catch (Exception ex) { Log.Debug(ex, "[db] Failed deleting stale rolling backup: {Path}", stale); }
             }
         }
         catch (Exception ex) { Log.Debug(ex, "[db] Rolling backup rotation failed"); }

@@ -10,6 +10,7 @@ using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
 using Cereal.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace Cereal.App;
 
@@ -226,7 +227,10 @@ public partial class MainWindow : Window
                     return true;
             }
         }
-        catch { /* fall through */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[window] Failed checking saved window position visibility");
+        }
         return false;
     }
 
@@ -237,7 +241,10 @@ public partial class MainWindow : Window
             using var stream = AssetLoader.Open(new Uri("avares://Cereal.App/Assets/icon.png"));
             Icon = new WindowIcon(stream);
         }
-        catch { /* icon is cosmetic — ignore failures */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[window] Failed to set window icon");
+        }
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)

@@ -229,7 +229,6 @@ D:\CODE\cereal-cs\out\win-x64\Microsoft.Extensions.DependencyInjection.Abstracti
 D:\CODE\cereal-cs\out\win-x64\Microsoft.Extensions.FileProviders.Abstractions.dll
 D:\CODE\cereal-cs\out\win-x64\Microsoft.Extensions.FileProviders.Physical.dll
 D:\CODE\cereal-cs\out\win-x64\Microsoft.Extensions.FileSystemGlobbing.dll
-D:\CODE\cereal-cs\out\win-x64\Microsoft.Extensions.Logging.Abstractions.dll
 D:\CODE\cereal-cs\out\win-x64\Microsoft.Extensions.Primitives.dll
 D:\CODE\cereal-cs\out\win-x64\Newtonsoft.Json.dll
 D:\CODE\cereal-cs\out\win-x64\NuGet.Versioning.dll

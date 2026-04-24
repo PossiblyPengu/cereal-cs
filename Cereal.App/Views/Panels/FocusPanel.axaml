@@ -319,8 +319,8 @@
 
             <!-- Notes -->
             <StackPanel IsVisible="{Binding SelectedGame.HasNotes}" Margin="0,0,0,10">
-              <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold"
-                         LetterSpacing="1" Foreground="#40b0aaa0" Margin="0,0,0,4"/>
+              <TextBlock Text="NOTES" FontSize="9" FontWeight="SemiBold"
+                         LetterSpacing="0.8" Foreground="#40b0aaa0" Margin="0,0,0,4"/>
               <TextBlock Text="{Binding SelectedGame.Notes}"
                          FontSize="12" Foreground="{DynamicResource ThemeText3}"
                          TextWrapping="Wrap"/>
@@ -389,14 +389,13 @@
             </StackPanel>
 
             <!-- Secondary actions (mirrors electron games:install / games:openInClient) -->
-            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+            <Border Height="1" Background="#0bffffff" Margin="0,8,0,4"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
               <Button Classes="focus-ghost" Content="Install"
                       Command="{Binding InstallGameCommand}"
                       IsVisible="{Binding SelectedGame.IsNotInstalled}"/>
               <Button Classes="focus-ghost" Content="Open in client"
                       Command="{Binding OpenInClientCommand}"/>
-              <Button Classes="focus-ghost" Content="Refresh info"
-                      Command="{Binding RefreshGameInfoCommand}"/>
             </StackPanel>
 
           </StackPanel>

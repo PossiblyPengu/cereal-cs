@@ -1,4 +1,5 @@
 using System.Reflection;
+using Serilog;
 
 namespace Cereal.App.Services;
 
@@ -51,7 +52,10 @@ public class PathService
             var first = matches.FirstOrDefault();
             if (first is not null) return first;
         }
-        catch { /* dir missing is fine */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[paths] Failed resolving asset path in {Dir}", dir);
+        }
         return Path.Combine(dir, $"{prefix}{safe}.jpg");
     }
 

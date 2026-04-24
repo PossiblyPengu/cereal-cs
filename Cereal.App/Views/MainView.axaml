@@ -370,6 +370,33 @@
       <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
     </Style>
 
+    <!-- ── Filter flyout buttons (sort + categories) ── -->
+    <Style Selector="Button.filter-btn">
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="BorderBrush" Value="#10ffffff"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="8,4"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.filter-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#18ffffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.filter-btn:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#22ffffff"/>
+    </Style>
+    <Style Selector="Button.filter-btn:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+    </Style>
+    <Style Selector="Button.filter-btn.active">
+      <Setter Property="Background" Value="#1fd4a853"/>
+      <Setter Property="BorderBrush" Value="#4dd4a853"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
+    </Style>
+
   </UserControl.Styles>
 
   <!-- Root panel — content + floating nav pill -->
@@ -481,57 +508,6 @@
                 Command="{Binding SetQuickFilterCommand}"
                 CommandParameter="recent"/>
 
-        <!-- Platform chips (App.tsx 950-964): colored letter · label · count -->
-        <ItemsControl ItemsSource="{Binding PlatformChips}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="2"/>
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:PlatformChipViewModel">
-              <Button Classes="chip"
-                      Classes.active="{Binding IsActive}"
-                      ToolTip.Tip="{Binding Label}"
-                      Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).TogglePlatformFilterCommand}"
-                      CommandParameter="{Binding Id}">
-                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                  <Panel Width="14" Height="14" VerticalAlignment="Center">
-                    <Viewbox Width="14" Height="14" IsVisible="{Binding ShowLogoFill}">
-                      <Canvas Width="24" Height="24">
-                        <Path Fill="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
-                              Data="{Binding LogoPathData}"/>
-                      </Canvas>
-                    </Viewbox>
-                    <Viewbox Width="14" Height="14" IsVisible="{Binding ShowLogoStroke}">
-                      <Canvas Width="24" Height="24">
-                        <Path Stroke="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
-                              StrokeThickness="{Binding LogoStrokeWidth}"
-                              StrokeLineCap="Round"
-                              Fill="Transparent"
-                              Data="{Binding LogoPathData}"/>
-                      </Canvas>
-                    </Viewbox>
-                    <TextBlock Text="{Binding Letter}" FontSize="9" FontWeight="Bold"
-                               Foreground="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                               IsVisible="{Binding ShowLogoLetter}"/>
-                  </Panel>
-                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding Count}"
-                             IsVisible="{Binding HasCount}"
-                             FontSize="9" FontWeight="Medium"
-                             Foreground="{DynamicResource ThemeText4}"
-                             Margin="2,0,0,0"
-                             VerticalAlignment="Center"/>
-                </StackPanel>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
-
         <!-- Filter flyout — trigger icon matches Vite I.search (constants.tsx) -->
         <Button Classes="nav-btn" ToolTip.Tip="Filter games">
           <Panel>
@@ -560,68 +536,32 @@
           <Button.Flyout>
             <Flyout Placement="Bottom">
               <Border Background="{DynamicResource ThemeSurface}" BorderBrush="#0fffffff" BorderThickness="1"
-                      CornerRadius="10" Padding="16,14" MinWidth="220">
+                      CornerRadius="10" Padding="16,14" MinWidth="320" MaxWidth="420"
+                      BoxShadow="0 12 40 0 #cc000000, 0 4 12 0 #66000000">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              MaxHeight="540">
                 <StackPanel Spacing="12">
 
                   <!-- Sort section -->
                   <TextBlock Text="SORT BY" FontSize="9" FontWeight="Bold"
-                             LetterSpacing="1.5" Foreground="#40b0aaa0"/>
+                             LetterSpacing="1.5" Foreground="#60b0aaa0"/>
                   <WrapPanel Orientation="Horizontal">
-                    <Button Content="Name" Margin="0,0,4,4" Padding="8,4" FontSize="10"
-                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
-                            Command="{Binding SetSortCommand}" CommandParameter="name">
-                      <Button.Styles>
-                        <Style Selector="Button">
-                          <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-                          <Setter Property="BorderBrush" Value="#10ffffff"/>
-                        </Style>
-                      </Button.Styles>
-                    </Button>
-                    <Button Content="Most Played" Margin="0,0,4,4" Padding="8,4" FontSize="10"
-                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
-                            Command="{Binding SetSortCommand}" CommandParameter="played">
-                      <Button.Styles>
-                        <Style Selector="Button">
-                          <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-                          <Setter Property="BorderBrush" Value="#10ffffff"/>
-                        </Style>
-                      </Button.Styles>
-                    </Button>
-                    <Button Content="Recent" Margin="0,0,4,4" Padding="8,4" FontSize="10"
-                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
-                            Command="{Binding SetSortCommand}" CommandParameter="recent">
-                      <Button.Styles>
-                        <Style Selector="Button">
-                          <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-                          <Setter Property="BorderBrush" Value="#10ffffff"/>
-                        </Style>
-                      </Button.Styles>
-                    </Button>
-                    <Button Content="Added" Margin="0,0,4,4" Padding="8,4" FontSize="10"
-                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
-                            Command="{Binding SetSortCommand}" CommandParameter="added">
-                      <Button.Styles>
-                        <Style Selector="Button">
-                          <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-                          <Setter Property="BorderBrush" Value="#10ffffff"/>
-                        </Style>
-                      </Button.Styles>
-                    </Button>
-                    <Button Content="Installed" Margin="0,0,4,4" Padding="8,4" FontSize="10"
-                            CornerRadius="6" BorderThickness="1" Cursor="Hand"
-                            Command="{Binding SetSortCommand}" CommandParameter="installed">
-                      <Button.Styles>
-                        <Style Selector="Button">
-                          <Setter Property="Background" Value="#10ffffff"/>
-                          <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-                          <Setter Property="BorderBrush" Value="#10ffffff"/>
-                        </Style>
-                      </Button.Styles>
-                    </Button>
+                    <Button Classes="filter-btn" Content="Name" Margin="0,0,4,4"
+                            Classes.active="{Binding SortOrder, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=name}"
+                            Command="{Binding SetSortCommand}" CommandParameter="name"/>
+                    <Button Classes="filter-btn" Content="Most Played" Margin="0,0,4,4"
+                            Classes.active="{Binding SortOrder, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=played}"
+                            Command="{Binding SetSortCommand}" CommandParameter="played"/>
+                    <Button Classes="filter-btn" Content="Recent" Margin="0,0,4,4"
+                            Classes.active="{Binding SortOrder, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=recent}"
+                            Command="{Binding SetSortCommand}" CommandParameter="recent"/>
+                    <Button Classes="filter-btn" Content="Added" Margin="0,0,4,4"
+                            Classes.active="{Binding SortOrder, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=added}"
+                            Command="{Binding SetSortCommand}" CommandParameter="added"/>
+                    <Button Classes="filter-btn" Content="Installed" Margin="0,0,4,4"
+                            Classes.active="{Binding SortOrder, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=installed}"
+                            Command="{Binding SetSortCommand}" CommandParameter="installed"/>
                   </WrapPanel>
 
                   <!-- Divider -->
@@ -630,7 +570,7 @@
                   <!-- Text filter (parity with source gameFilter in filter popover) -->
                   <StackPanel Spacing="4">
                     <TextBlock Text="SEARCH" FontSize="9" FontWeight="Bold"
-                               LetterSpacing="1.5" Foreground="#40b0aaa0"/>
+                               LetterSpacing="1.5" Foreground="#60b0aaa0"/>
                     <TextBox Text="{Binding SearchText}" Watermark="Filter games..."
                              Background="#0affffff" BorderBrush="#18ffffff"
                              Foreground="{DynamicResource ThemeText}"
@@ -659,8 +599,58 @@
                   </StackPanel>
 
                   <!-- Category chips -->
+                  <TextBlock Text="PLATFORMS" FontSize="9" FontWeight="Bold"
+                             LetterSpacing="1.5" Foreground="#60b0aaa0"/>
+                  <ItemsControl ItemsSource="{Binding PlatformChips}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:PlatformChipViewModel">
+                        <Button Classes="filter-btn" Margin="0,0,4,4"
+                                Classes.active="{Binding IsActive}"
+                                ToolTip.Tip="{Binding Label}"
+                                Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).TogglePlatformFilterCommand}"
+                                CommandParameter="{Binding Id}">
+                          <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                            <Panel Width="14" Height="14" VerticalAlignment="Center">
+                              <Viewbox Width="14" Height="14" IsVisible="{Binding ShowLogoFill}">
+                                <Canvas Width="24" Height="24">
+                                  <Path Fill="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                                        Data="{Binding LogoPathData}"/>
+                                </Canvas>
+                              </Viewbox>
+                              <Viewbox Width="14" Height="14" IsVisible="{Binding ShowLogoStroke}">
+                                <Canvas Width="24" Height="24">
+                                  <Path Stroke="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                                        StrokeThickness="{Binding LogoStrokeWidth}"
+                                        StrokeLineCap="Round"
+                                        Fill="Transparent"
+                                        Data="{Binding LogoPathData}"/>
+                                </Canvas>
+                              </Viewbox>
+                              <TextBlock Text="{Binding Letter}" FontSize="9" FontWeight="Bold"
+                                         Foreground="{Binding Color, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         IsVisible="{Binding ShowLogoLetter}"/>
+                            </Panel>
+                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Count}"
+                                       IsVisible="{Binding HasCount}"
+                                       FontSize="9" FontWeight="Medium"
+                                       Foreground="{DynamicResource ThemeText4}"
+                                       Margin="2,0,0,0"
+                                       VerticalAlignment="Center"/>
+                          </StackPanel>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
                   <TextBlock Text="CATEGORIES" FontSize="9" FontWeight="Bold"
-                             LetterSpacing="1.5" Foreground="#40b0aaa0"
+                             LetterSpacing="1.5" Foreground="#60b0aaa0"
                              IsVisible="{Binding AllCategories, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
                   <ItemsControl ItemsSource="{Binding AllCategories}">
                     <ItemsControl.ItemsPanel>
@@ -670,37 +660,20 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <Button Content="{Binding}" Margin="0,0,4,4" Padding="8,4" FontSize="10"
-                                CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                        <Button Classes="filter-btn" Content="{Binding}" Margin="0,0,4,4"
                                 Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).ToggleCategoryFilterCommand}"
-                                CommandParameter="{Binding}">
-                          <Button.Styles>
-                            <Style Selector="Button">
-                              <Setter Property="Background" Value="#10ffffff"/>
-                              <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-                              <Setter Property="BorderBrush" Value="#10ffffff"/>
-                            </Style>
-                          </Button.Styles>
-                        </Button>
+                                CommandParameter="{Binding}"/>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
 
                   <!-- Reset -->
-                  <Button Content="Reset filters" FontSize="11" Padding="8,4"
-                          CornerRadius="6" BorderThickness="1" Cursor="Hand"
+                  <Button Classes="filter-btn" Content="Reset filters"
                           HorizontalAlignment="Right"
-                          Command="{Binding ClearFiltersCommand}">
-                    <Button.Styles>
-                      <Style Selector="Button">
-                        <Setter Property="Background" Value="#10ffffff"/>
-                        <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
-                        <Setter Property="BorderBrush" Value="#10ffffff"/>
-                      </Style>
-                    </Button.Styles>
-                  </Button>
+                          Command="{Binding ClearFiltersCommand}"/>
 
                 </StackPanel>
+                </ScrollViewer>
               </Border>
             </Flyout>
           </Button.Flyout>
@@ -931,7 +904,7 @@
                   Command="{Binding OpenSettingsCommand}">
             <PathIcon Width="14" Height="14"
                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                      Data="M12,9 A3,3 0 1 0 12,15 A3,3 0 1 0 12,9 M19.4,15 C19.62,15.56 20.12,15.95 20.72,15.99 L21,16 A2,2 0 1 1 21,20 H20.91 C20.35,20 19.84,20.22 19.46,20.61 L19.4,20.67 A2,2 0 1 1 16.57,17.84 L16.63,17.78 C17.04,17.37 17.19,16.76 17,16.22 C16.78,15.66 16.28,15.27 15.68,15.23 L15.59,15.22 A2,2 0 1 1 15.59,8.78 L15.68,8.77 C16.28,8.73 16.78,8.34 17,7.78 C17.19,7.24 17.04,6.63 16.63,6.22 L16.57,6.16 A2,2 0 1 1 19.4,3.33 L19.46,3.39 C19.84,3.78 20.35,4 20.91,4 H21 A2,2 0 1 1 21,8 L20.72,8.01 C20.12,8.05 19.62,8.44 19.4,9 C19.21,9.54 19.36,10.15 19.77,10.56 L19.83,10.62 A2,2 0 1 1 17,13.45 L16.94,13.39 C16.53,12.98 15.92,12.83 15.38,13.02"/>
+                      Data="M12,15.5 A3.5,3.5 0 1 0 12,8.5 A3.5,3.5 0 1 0 12,15.5 M19.43,12.98 C19.47,12.66 19.5,12.34 19.5,12 C19.5,11.66 19.47,11.34 19.43,11.02 L21.54,9.37 C21.73,9.22 21.78,8.95 21.66,8.73 L19.66,5.27 C19.54,5.05 19.27,4.97 19.05,5.05 L16.56,6.05 C16.04,5.65 15.5,5.32 14.87,5.07 L14.5,2.42 C14.46,2.18 14.25,2 14,2 H10 C9.75,2 9.54,2.18 9.5,2.42 L9.13,5.07 C8.5,5.32 7.96,5.65 7.44,6.05 L4.95,5.05 C4.73,4.97 4.46,5.05 4.34,5.27 L2.34,8.73 C2.22,8.95 2.27,9.22 2.46,9.37 L4.57,11.02 C4.53,11.34 4.5,11.66 4.5,12 C4.5,12.34 4.53,12.66 4.57,12.98 L2.46,14.63 C2.27,14.78 2.22,15.05 2.34,15.27 L4.34,18.73 C4.46,18.95 4.73,19.03 4.95,18.95 L7.44,17.95 C7.96,18.35 8.5,18.68 9.13,18.93 L9.5,21.58 C9.54,21.82 9.75,22 10,22 H14 C14.25,22 14.46,21.82 14.5,21.58 L14.87,18.93 C15.5,18.68 16.04,18.35 16.56,17.95 L19.05,18.95 C19.27,19.03 19.54,18.95 19.66,18.73 L21.66,15.27 C21.78,15.05 21.73,14.78 21.54,14.63 L19.43,12.98 Z"/>
           </Button>
         </StackPanel>
 
@@ -1008,7 +981,7 @@
             IsVisible="{Binding ShowProgressPill}">
       <StackPanel Spacing="6">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <!-- Spinner (inactive) / check (done) -->
+          <!-- Check (done) / spinner (in progress) -->
           <Border Width="14" Height="14" CornerRadius="7"
                   Background="{DynamicResource ThemeAccent}"
                   IsVisible="{Binding ProgressPillDone}">
@@ -1016,9 +989,15 @@
                        Foreground="{DynamicResource ThemeVoid}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
-          <Border Width="14" Height="14" CornerRadius="7"
-                  BorderBrush="{DynamicResource ThemeAccent}" BorderThickness="2"
-                  IsVisible="{Binding !ProgressPillDone}"/>
+          <Canvas Width="14" Height="14"
+                  RenderTransformOrigin="0.5,0.5"
+                  IsVisible="{Binding !ProgressPillDone}">
+            <Ellipse Width="11" Height="11" Canvas.Left="1.5" Canvas.Top="1.5"
+                     Stroke="#22d4a853" StrokeThickness="2" Fill="Transparent"/>
+            <Path Stroke="{DynamicResource ThemeAccent}" StrokeThickness="2"
+                  StrokeLineCap="Round" Fill="Transparent"
+                  Data="M 7,1.5 A 5.5,5.5 0 1 1 1.5,7"/>
+          </Canvas>
 
           <TextBlock Text="{Binding ProgressPillText}" FontSize="11"
                      Foreground="{DynamicResource ThemeText2}"

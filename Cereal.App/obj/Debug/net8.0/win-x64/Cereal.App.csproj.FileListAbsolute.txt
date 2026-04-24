@@ -45,7 +45,6 @@ D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.Extensions.Depen
 D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.Extensions.FileProviders.Abstractions.dll
 D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.Extensions.FileProviders.Physical.dll
 D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.Extensions.FileSystemGlobbing.dll
-D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.Extensions.Logging.Abstractions.dll
 D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Microsoft.Extensions.Primitives.dll
 D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\Newtonsoft.Json.dll
 D:\CODE\cereal-cs\Cereal.App\bin\Debug\net8.0\win-x64\NuGet.Versioning.dll

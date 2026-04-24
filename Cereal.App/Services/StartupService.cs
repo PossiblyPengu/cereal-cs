@@ -47,6 +47,10 @@ public static class StartupService
             using var key = Registry.CurrentUser.OpenSubKey(RunKey);
             return key?.GetValue(EntryName) is not null;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[startup] Failed to query launch-on-startup state");
+            return false;
+        }
     }
 }

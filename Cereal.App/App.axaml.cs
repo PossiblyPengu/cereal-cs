@@ -296,12 +296,12 @@ public partial class App : Application
         catch (Exception ex) { Log.Warning(ex, "[shutdown] DB flush failed"); }
 
         try { Services.GetRequiredService<DiscordService>().Dispose(); }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Log.Debug(ex, "[shutdown] Discord dispose failed"); }
         try { Services.GetRequiredService<ChiakiService>().Dispose(); }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Log.Debug(ex, "[shutdown] Chiaki dispose failed"); }
         try { Services.GetRequiredService<XcloudService>().Dispose(); }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Log.Debug(ex, "[shutdown] Xcloud dispose failed"); }
         try { Services.GetRequiredService<CoverService>().Dispose(); }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Log.Debug(ex, "[shutdown] CoverService dispose failed"); }
     }
 }

@@ -122,7 +122,7 @@ public partial class PlatformsPanelViewModel : ObservableObject
             InAppAuthNavigate?.Invoke(url, tabTitle);
             StatusMessage = $"Waiting for {platform} sign-in…";
 
-            var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
             var account = await _auth.WaitForCallbackAsync(platform, ct: cts.Token);
             InAppAuthFlowEnded?.Invoke();
             StatusMessage = $"{platform} connected as {account.Username ?? account.AccountId}.";
@@ -169,11 +169,12 @@ public partial class PlatformsPanelViewModel : ObservableObject
         try
         {
             await _auth.RefreshTokenIfNeededAsync(platform);
+            using var http = new HttpClient();
             var ctx = new ImportContext
             {
                 Db = _db,
                 ApiKey = _creds.GetPassword("cereal", $"{platform}_api_key"),
-                Http = new HttpClient(),
+                Http = http,
                 Notify = p => Dispatcher.UIThread.Post(() =>
                 {
                     StatusMessage = $"{platform}: {p.Processed}/{p.Total} {p.Name ?? ""}";
@@ -253,8 +254,9 @@ public partial class PlatformsPanelViewModel : ObservableObject
             var installedOnly = detected.Games.Where(g => g.Installed == true);
             return MergeGames(installedOnly);
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Debug(ex, "[platforms] ReconcileInstalledAfterImportAsync failed for {Platform}", platform);
             return 0;
         }
     }
@@ -410,7 +412,11 @@ public partial class PlatformRowViewModel : ObservableObject
                 var result = await provider.DetectInstalled();
                 InstalledCount = result.Games.Count;
             }
-            catch { InstalledCount = 0; }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[platforms] DetectInstalled failed in RefreshStatusAsync for {Platform}", Id);
+                InstalledCount = 0;
+            }
         }
 
         OnPropertyChanged(nameof(StatusLabel));

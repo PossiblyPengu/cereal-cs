@@ -262,11 +262,12 @@ public partial class StartupWizardDialog : Window
             var auth = App.Services.GetRequiredService<AuthService>();
             await auth.RefreshTokenIfNeededAsync(platform);
             var creds = App.Services.GetRequiredService<CredentialService>();
+            using var http = new HttpClient();
             var ctx = new ImportContext
             {
                 Db = App.Services.GetRequiredService<DatabaseService>(),
                 ApiKey = creds.GetPassword("cereal", $"{platform}_api_key"),
-                Http = new HttpClient(),
+                Http = http,
                 Notify = p =>
                 {
                     if (status is null) return;

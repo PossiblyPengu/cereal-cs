@@ -141,7 +141,10 @@ namespace Cereal.App
             {
                 return System.Convert.ChangeType(selected, targetType, culture);
             }
-            catch { return selected; }
+            catch (Exception)
+            {
+                return selected;
+            }
         }
 
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();

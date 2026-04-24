@@ -57,7 +57,7 @@
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="Velopack" Version="0.0.1015" />
+    <PackageReference Include="Velopack" Version="0.0.1298" />
     <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
     <PackageReference Include="WebView.Avalonia.Desktop" Version="11.0.0.1" />
   </ItemGroup>

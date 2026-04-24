@@ -132,7 +132,11 @@ public partial class StartupWizardViewModel : ObservableObject
         }
     }
 
-    partial void OnThemeChanged(string value) => OnPropertyChanged(nameof(ThemeSwatches));
+    partial void OnThemeChanged(string value)
+    {
+        OnPropertyChanged(nameof(ThemeSwatches));
+        OnPropertyChanged(nameof(AppearanceSummary));
+    }
     partial void OnDefaultViewChanged(string value) => OnPropertyChanged(nameof(AppearanceSummary));
     partial void OnAccentColorChanged(string value) => OnPropertyChanged(nameof(AppearanceSummary));
     partial void OnStarDensityChanged(string value) => OnPropertyChanged(nameof(PerformanceSummary));

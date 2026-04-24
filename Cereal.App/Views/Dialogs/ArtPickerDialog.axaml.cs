@@ -150,7 +150,10 @@ public partial class ArtPickerDialog : Window
                 }
             }
         }
-        catch { /* fallback-friendly */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[ArtPicker] SteamGridDb search failed");
+        }
         return Dedup(results);
     }
 
@@ -175,7 +178,10 @@ public partial class ArtPickerDialog : Window
                 results.Add(new ArtResult { FullUrl = hero, ThumbUrl = hero });
             }
         }
-        catch { /* fallback-friendly */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[ArtPicker] Steam fallback search failed");
+        }
         return Dedup(results);
     }
 
@@ -194,7 +200,7 @@ public partial class ArtPickerDialog : Window
     private async Task LoadThumbnailsAsync()
     {
         // Load all thumbs concurrently (max 6 at a time)
-        var semaphore = new SemaphoreSlim(6, 6);
+        using var semaphore = new SemaphoreSlim(6, 6);
         await Task.WhenAll(_results.Select(async result =>
         {
             await semaphore.WaitAsync();
@@ -220,7 +226,10 @@ public partial class ArtPickerDialog : Window
                     }
                 });
             }
-            catch { /* thumbnail failed — item stays with null Thumb */ }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[ArtPicker] Thumbnail load failed for {Url}", result.ThumbUrl);
+            }
             finally { semaphore.Release(); }
         }));
     }

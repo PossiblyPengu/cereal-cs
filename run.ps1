@@ -56,6 +56,17 @@ $prevDevForce = $env:CEREAL_DEV_PLACEHOLDERS_FORCE
 $prevDevClear = $env:CEREAL_DEV_PLACEHOLDERS_CLEAR
 $restoreDevEnv = $DevPlaceholders -or $DevPlaceholdersForce -or $ClearDevPlaceholders
 
+function Restore-DevPlaceholderEnv {
+    param(
+        $PrevCount,
+        $PrevForce,
+        $PrevClear
+    )
+    if ($null -ne $PrevCount) { $env:CEREAL_DEV_PLACEHOLDERS = $PrevCount } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS -ErrorAction Ignore }
+    if ($null -ne $PrevForce) { $env:CEREAL_DEV_PLACEHOLDERS_FORCE = $PrevForce } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS_FORCE -ErrorAction Ignore }
+    if ($null -ne $PrevClear) { $env:CEREAL_DEV_PLACEHOLDERS_CLEAR = $PrevClear } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS_CLEAR -ErrorAction Ignore }
+}
+
 if ($DevPlaceholders) {
     if ($DevPlaceholderCount -le 0) {
         Write-Error "DevPlaceholderCount must be greater than 0 when -DevPlaceholders is used."
@@ -76,12 +87,14 @@ if ($ClearDevPlaceholders) {
 }
 
 if ($Wait) {
-    & $exe
-    $code = $LASTEXITCODE
-    if ($restoreDevEnv) {
-        if ($null -ne $prevDevCount) { $env:CEREAL_DEV_PLACEHOLDERS = $prevDevCount } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS -ErrorAction Ignore }
-        if ($null -ne $prevDevForce) { $env:CEREAL_DEV_PLACEHOLDERS_FORCE = $prevDevForce } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS_FORCE -ErrorAction Ignore }
-        if ($null -ne $prevDevClear) { $env:CEREAL_DEV_PLACEHOLDERS_CLEAR = $prevDevClear } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS_CLEAR -ErrorAction Ignore }
+    try {
+        & $exe
+        $code = $LASTEXITCODE
+    }
+    finally {
+        if ($restoreDevEnv) {
+            Restore-DevPlaceholderEnv -PrevCount $prevDevCount -PrevForce $prevDevForce -PrevClear $prevDevClear
+        }
     }
     exit $code
 }
@@ -89,7 +102,5 @@ if ($Wait) {
 Start-Process -FilePath $exe -WorkingDirectory $out | Out-Null
 
 if ($restoreDevEnv) {
-    if ($null -ne $prevDevCount) { $env:CEREAL_DEV_PLACEHOLDERS = $prevDevCount } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS -ErrorAction Ignore }
-    if ($null -ne $prevDevForce) { $env:CEREAL_DEV_PLACEHOLDERS_FORCE = $prevDevForce } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS_FORCE -ErrorAction Ignore }
-    if ($null -ne $prevDevClear) { $env:CEREAL_DEV_PLACEHOLDERS_CLEAR = $prevDevClear } else { Remove-Item Env:CEREAL_DEV_PLACEHOLDERS_CLEAR -ErrorAction Ignore }
+    Restore-DevPlaceholderEnv -PrevCount $prevDevCount -PrevForce $prevDevForce -PrevClear $prevDevClear
 }

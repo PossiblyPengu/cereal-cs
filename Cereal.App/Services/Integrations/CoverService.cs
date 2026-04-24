@@ -156,7 +156,10 @@ public sealed class CoverService : IDisposable
                     changed = true;
                     break;
                 }
-                catch { /* try next candidate */ }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "[covers] Failed candidate cover URL for {GameId}: {Url}", gameId, url);
+                }
             }
 
             if (string.IsNullOrEmpty(game.LocalCoverPath))
@@ -288,14 +291,18 @@ public sealed class CoverService : IDisposable
     private static bool IsValidLocalFile(string? path)
     {
         try { return !string.IsNullOrEmpty(path) && File.Exists(path) && new FileInfo(path).Length >= 1024; }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[covers] IsValidLocalFile failed for {Path}", path);
+            return false;
+        }
     }
 
     private static void CleanupFile(string? path)
     {
         if (string.IsNullOrEmpty(path)) return;
         try { if (File.Exists(path)) File.Delete(path); }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Log.Debug(ex, "[covers] Failed deleting file {Path}", path); }
     }
 
     private static string GetUrlExtension(string url)
@@ -306,7 +313,11 @@ public sealed class CoverService : IDisposable
             var ext = Path.GetExtension(path).Split('?')[0];
             return string.IsNullOrEmpty(ext) ? ".jpg" : ext;
         }
-        catch { return ".jpg"; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[covers] Failed to infer extension from URL: {Url}", url);
+            return ".jpg";
+        }
     }
 
     private static string SanitizeId(string id) =>

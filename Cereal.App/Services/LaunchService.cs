@@ -112,7 +112,10 @@ public sealed class LaunchService
                     return result;
                 }
             }
-            catch { /* try next */ }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[launch] Failed opening URI candidate: {Uri}", uri);
+            }
         }
 
         // Fallback: launch the platform client exe directly
@@ -125,7 +128,10 @@ public sealed class LaunchService
                 MaybeMinimize();
                 return new LaunchResult { Success = true, Opened = exe };
             }
-            catch { /* try next */ }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[launch] Failed starting launcher candidate: {Exe}", exe);
+            }
         }
 
         return new LaunchResult { Success = false, Error = "Could not open game or platform client" };
@@ -151,7 +157,7 @@ public sealed class LaunchService
         _ = Task.Run(async () =>
         {
             try { await p.WaitForExitAsync(ct); }
-            catch { /* cancelled */ }
+            catch (Exception ex) { Log.Debug(ex, "[launch] WaitForExitAsync canceled/failed for {Exe}", exe); }
             RecordSessionEnd(game.Id);
         }, ct);
 
@@ -314,6 +320,7 @@ public sealed class LaunchService
         }
         catch
         {
+            Log.Debug("[launch] Failed extracting store id from URL");
             return "";
         }
     }
@@ -325,7 +332,7 @@ public sealed class LaunchService
         if (p is not null)
         {
             try { await p.WaitForExitAsync(ct).WaitAsync(TimeSpan.FromSeconds(2), ct); }
-            catch { /* expected — browser/launcher stays open */ }
+            catch (Exception ex) { Log.Debug(ex, "[launch] URI process wait timed out/failed for {Uri}", uri); }
         }
         return new LaunchResult { Success = true, Opened = uri };
     }

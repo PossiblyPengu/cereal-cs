@@ -59,7 +59,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 });
             }
             catch (OperationCanceledException) { break; }
-            catch { /* non-fatal */ }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[media] Poll failed");
+            }
 
             try { await Task.Delay(PollInterval, ct); }
             catch (OperationCanceledException) { break; }
@@ -104,5 +107,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     [RelayCommand] private void Prev()      => _smtc.SendMediaKey("prev");
     [RelayCommand] private void ToggleCollapse() => IsCollapsed = !IsCollapsed;
 
-    public void Dispose() { _cts.Cancel(); _cts.Dispose(); }
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+        AlbumArt?.Dispose();
+        AlbumArt = null;
+    }
 }

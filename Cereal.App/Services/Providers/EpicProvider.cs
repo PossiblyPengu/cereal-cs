@@ -24,7 +24,7 @@ public class EpicProvider(DatabaseService db, AuthService auth) : IImportProvide
             {
                 try
                 {
-                    var content = JsonDocument.Parse(File.ReadAllText(file));
+                    using var content = JsonDocument.Parse(File.ReadAllText(file));
                     var root = content.RootElement;
                     var displayName = root.TryGetProperty("DisplayName", out var dn) ? dn.GetString() : null;
                     var installLoc = root.TryGetProperty("InstallLocation", out var il) ? il.GetString() : null;
@@ -68,7 +68,7 @@ public class EpicProvider(DatabaseService db, AuthService auth) : IImportProvide
             req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var resp = await ctx.Http.SendAsync(req);
             var json = await resp.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(json);
+            using var doc = JsonDocument.Parse(json);
 
             var records = doc.RootElement.TryGetProperty("records", out var r) ? r : doc.RootElement;
             if (records.ValueKind != JsonValueKind.Array)
@@ -151,7 +151,10 @@ public class EpicProvider(DatabaseService db, AuthService auth) : IImportProvide
                     return first.TryGetProperty("url", out var u) ? u.GetString() : null;
             }
         }
-        catch { /* fall through */ }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[epic] PickCoverImage failed");
+        }
         return null;
     }
 

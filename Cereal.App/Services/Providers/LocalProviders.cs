@@ -27,8 +27,9 @@ public class BattleNetProvider(DatabaseService db) : IImportProvider
             {
                 try
                 {
-                    var doc = JsonDocument.Parse(File.ReadAllText(file)).RootElement;
-                    var name = doc.TryGetProperty("product_name", out var n) ? n.GetString() : null;
+                    using var doc = JsonDocument.Parse(File.ReadAllText(file));
+                    var root = doc.RootElement;
+                    var name = root.TryGetProperty("product_name", out var n) ? n.GetString() : null;
                     if (name is null) continue;
                     games.Add(new Game
                     {
@@ -39,7 +40,7 @@ public class BattleNetProvider(DatabaseService db) : IImportProvider
                         AddedAt = DateTime.UtcNow.ToString("o"),
                     });
                 }
-                catch { /* skip */ }
+                catch (Exception ex) { Log.Debug(ex, "[battlenet] Skipping bad catalog: {File}", file); }
             }
         }
         catch (Exception ex) { Log.Debug(ex, "[battlenet] DetectInstalled"); }
@@ -88,7 +89,7 @@ public class EaProvider(DatabaseService db) : IImportProvider
                         AddedAt = DateTime.UtcNow.ToString("o"),
                     });
                 }
-                catch { /* skip */ }
+                catch (Exception ex) { Log.Debug(ex, "[ea] Skipping bad registry entry: {SubName}", subName); }
             }
         }
         catch (Exception ex) { Log.Debug(ex, "[ea] DetectInstalled"); }
@@ -138,7 +139,7 @@ public class UbisoftProvider(DatabaseService db) : IImportProvider
                         AddedAt = DateTime.UtcNow.ToString("o"),
                     });
                 }
-                catch { /* skip */ }
+                catch (Exception ex) { Log.Debug(ex, "[ubisoft] Skipping bad registry entry: {SubName}", subName); }
             }
         }
         catch (Exception ex) { Log.Debug(ex, "[ubisoft] DetectInstalled"); }

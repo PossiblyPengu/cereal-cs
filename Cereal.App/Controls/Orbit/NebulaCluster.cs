@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Cereal.App.Utilities;
 
 namespace Cereal.App.Controls.Orbit;
 
@@ -104,7 +105,7 @@ internal static class NebulaCluster
         AddRings(world, cx, cy);
         AddFlare(world, cx, cy, color);
         AddCorona(world, cx, cy, color, animations);
-        AddCore(world, cx, cy, color, label);
+        AddCore(world, platform, cx, cy, color, label);
         AddWatermark(world, cx, cy, label);
     }
 
@@ -298,7 +299,7 @@ internal static class NebulaCluster
     }
 
     // ─── Sun core (letter disc) ─────────────────────────────────────────────
-    private static void AddCore(Canvas world, double cx, double cy, Color color, string label)
+    private static void AddCore(Canvas world, string platform, double cx, double cy, Color color, string label)
     {
         const double size = 56;
 
@@ -336,22 +337,62 @@ internal static class NebulaCluster
         Canvas.SetTop(core, cy - size / 2);
         world.Children.Add(core);
 
-        // Letter centered on the core.
-        var letter = new TextBlock
+        // Official platform icon centered in the core (fallback to letter if missing).
+        if (PlatformLogos.TryGet(platform) is { } logo)
         {
-            Text = label.Length > 0 ? char.ToUpperInvariant(label[0]).ToString() : "?",
-            FontSize = 20,
-            FontWeight = FontWeight.Bold,
-            Foreground = new ImmutableSolidColorBrush(Color.FromArgb(0xe6, 255, 255, 255)),
-            Width = size,
-            Height = size,
-            TextAlignment = TextAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            IsHitTestVisible = false,
-        };
-        Canvas.SetLeft(letter, cx - size / 2);
-        Canvas.SetTop(letter, cy - size / 2 + (size - 24) / 2);
-        world.Children.Add(letter);
+            var iconCanvas = new Canvas
+            {
+                Width = size,
+                Height = size,
+                IsHitTestVisible = false,
+            };
+
+            var path = new Avalonia.Controls.Shapes.Path
+            {
+                Data = Geometry.Parse(logo.PathData),
+                Stretch = Stretch.Uniform,
+                Width = 24,
+                Height = 24,
+                IsHitTestVisible = false,
+            };
+            Canvas.SetLeft(path, (size - 24) / 2);
+            Canvas.SetTop(path, (size - 24) / 2);
+
+            if (logo.IsStroke)
+            {
+                path.Stroke = new ImmutableSolidColorBrush(Color.FromArgb(0xee, 255, 255, 255));
+                path.StrokeThickness = logo.StrokeWidth;
+                path.StrokeLineCap = PenLineCap.Round;
+                path.Fill = Brushes.Transparent;
+            }
+            else
+            {
+                path.Fill = new ImmutableSolidColorBrush(Color.FromArgb(0xee, 255, 255, 255));
+            }
+
+            iconCanvas.Children.Add(path);
+            Canvas.SetLeft(iconCanvas, cx - size / 2);
+            Canvas.SetTop(iconCanvas, cy - size / 2);
+            world.Children.Add(iconCanvas);
+        }
+        else
+        {
+            var letter = new TextBlock
+            {
+                Text = label.Length > 0 ? char.ToUpperInvariant(label[0]).ToString() : "?",
+                FontSize = 20,
+                FontWeight = FontWeight.Bold,
+                Foreground = new ImmutableSolidColorBrush(Color.FromArgb(0xe6, 255, 255, 255)),
+                Width = size,
+                Height = size,
+                TextAlignment = TextAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                IsHitTestVisible = false,
+            };
+            Canvas.SetLeft(letter, cx - size / 2);
+            Canvas.SetTop(letter, cy - size / 2 + (size - 24) / 2);
+            world.Children.Add(letter);
+        }
     }
 
     // ─── Cluster watermark (giant faded label) ──────────────────────────────

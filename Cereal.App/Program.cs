@@ -22,13 +22,22 @@ class Program
         VelopackApp.Build().Run();
 
         // Single-instance guard — if another Cereal is already running, signal it
-        // and exit immediately. Primary instance keeps the mutex for its lifetime.
-        InstanceGuard = new SingleInstanceGuard();
-        if (!InstanceGuard.IsPrimary)
+        // and exit immediately. If mutex creation fails (environment policy /
+        // ACL edge-cases), fail-open and continue startup instead of hard-exiting.
+        try
         {
-            SingleInstanceGuard.SignalWake();
-            InstanceGuard.Dispose();
-            return;
+            InstanceGuard = new SingleInstanceGuard();
+            if (!InstanceGuard.IsPrimary)
+            {
+                SingleInstanceGuard.SignalWake();
+                InstanceGuard.Dispose();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            InstanceGuard = null;
+            Console.Error.WriteLine($"[cereal] Single-instance guard unavailable, continuing startup: {ex.Message}");
         }
 
         // Bootstrap Serilog to a file next to the database so logs survive crashes.

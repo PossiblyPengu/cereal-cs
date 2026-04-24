@@ -61,12 +61,13 @@ public sealed class SingleInstanceGuard : IDisposable
 
     public void Dispose()
     {
-        try { _watcher?.Dispose(); } catch { /* best-effort */ }
+        try { _watcher?.Dispose(); }
+        catch (Exception ex) { Log.Debug(ex, "[single-instance] Failed disposing file watcher"); }
         try
         {
             if (_owned) _mutex.ReleaseMutex();
             _mutex.Dispose();
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Log.Debug(ex, "[single-instance] Failed disposing mutex"); }
     }
 }

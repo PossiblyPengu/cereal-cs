@@ -60,6 +60,7 @@ public sealed class GamepadService : IDisposable
     public void Stop()
     {
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = null;
     }
 
@@ -225,7 +226,10 @@ public sealed class GamepadService : IDisposable
                 }
                 return false;
             }
-            catch { /* try next slot */ }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[gamepad] XInput read failed for slot {Slot}", i);
+            }
         }
         return false;
     }

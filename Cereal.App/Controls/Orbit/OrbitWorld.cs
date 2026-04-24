@@ -25,6 +25,8 @@ public class OrbitWorld : Border
     private const double MinZoom = 0.15;
     private const double MaxZoom = 4.0;
     private const double DragThresholdPx = 4;
+    // Larger than the previous 0.90 framing so the galaxy reads bigger by default.
+    private const double FitAllScale = 1.12;
 
     private readonly Canvas _world;
     private readonly ScaleTransform _scale = new() { ScaleX = 1, ScaleY = 1 };
@@ -50,7 +52,9 @@ public class OrbitWorld : Border
         ClipToBounds = true;
         Background = new SolidColorBrush(Color.Parse("#080818"));
         Focusable = true;
-        Cursor = new Cursor(StandardCursorType.SizeAll);
+        // Keep a normal in-app pointer; drag is still supported without forcing
+        // an always-on "move" cursor across the orbit surface.
+        Cursor = new Cursor(StandardCursorType.Arrow);
 
         _world = new Canvas
         {
@@ -122,11 +126,12 @@ public class OrbitWorld : Border
         // Ignore transient tiny layout passes during initialization.
         if (vw < 200 || vh < 120) return;
 
-        // Match the Vite implementation exactly:
-        // z = min(vw/GALAXY_W, vh/GALAXY_H) * 0.9
+        // Slightly tighter framing than the original web version so the galaxy
+        // feels larger and less distant on first open / Fit all.
+        // z = min(vw/GALAXY_W, vh/GALAXY_H) * FitAllScale
         // x = (vw - GALAXY_W * z) / 2
         // y = (vh - GALAXY_H * z) / 2
-        var z = Math.Clamp(Math.Min(vw / WorldWidth, vh / WorldHeight) * 0.9, MinZoom, MaxZoom);
+        var z = Math.Clamp(Math.Min(vw / WorldWidth, vh / WorldHeight) * FitAllScale, MinZoom, MaxZoom);
         var targetX = (vw - WorldWidth * z) / 2.0;
         var targetY = (vh - WorldHeight * z) / 2.0;
         SetCamera(targetX, targetY, z);

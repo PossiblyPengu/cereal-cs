@@ -108,7 +108,7 @@
       <Grid RowDefinitions="Auto,*">
 
         <!-- Column header -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,100,60" Margin="0,0,0,4">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,4" ColumnSpacing="12">
           <TextBlock Grid.Column="0" Text="Game" Foreground="#40b0aaa0" FontSize="11" FontWeight="SemiBold"/>
           <TextBlock Grid.Column="1" Text="Platform" Foreground="#40b0aaa0" FontSize="11" FontWeight="SemiBold"/>
           <TextBlock Grid.Column="2" Text="Add" Foreground="#40b0aaa0" FontSize="11" FontWeight="SemiBold"/>
@@ -119,14 +119,15 @@
           <ItemsControl ItemsSource="{Binding Results}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:DetectedGameRow">
-                <Grid ColumnDefinitions="*,100,60" Margin="0,3">
+                <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,3" ColumnSpacing="12">
                   <TextBlock Grid.Column="0" Text="{Binding Name}"
                              Foreground="{Binding IsImported, Converter={x:Static conv:BoolConverters.ToObject},
                                ConverterParameter='#40b0aaa0,#e8e4de'}"
                              FontSize="12"
                              VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                   <TextBlock Grid.Column="1" Text="{Binding Platform}"
-                             Foreground="#50b0aaa0" VerticalAlignment="Center" FontSize="11"/>
+                             Foreground="#50b0aaa0" VerticalAlignment="Center" FontSize="11"
+                             TextTrimming="CharacterEllipsis" MaxWidth="110"/>
                   <CheckBox Grid.Column="2" IsChecked="{Binding IsSelected}"
                             IsEnabled="{Binding !IsImported}"/>
                 </Grid>

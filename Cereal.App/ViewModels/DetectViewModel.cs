@@ -48,33 +48,44 @@ public partial class DetectViewModel : ObservableObject
         FoundCount = 0;
         AddedCount = 0;
 
-        var enabledIds = Providers.Where(p => p.Enabled).Select(p => p.PlatformId).ToHashSet();
-
-        foreach (var provider in _allProviders.Where(p => enabledIds.Contains(p.PlatformId)))
+        try
         {
-            StatusMessage = $"Scanning {provider.PlatformId}…";
-            try
-            {
-                var result = await provider.DetectInstalled();
-                foreach (var game in result.Games)
-                {
-                    Results.Add(new DetectedGameRow(game, provider.PlatformId));
-                    FoundCount++;
-                }
-                if (result.Error is not null)
-                    Results.Add(new DetectedGameRow(null, provider.PlatformId) { Error = result.Error });
-            }
-            catch (Exception ex)
-            {
-                Results.Add(new DetectedGameRow(null, provider.PlatformId) { Error = ex.Message });
-            }
-        }
+            var enabledIds = Providers.Where(p => p.Enabled).Select(p => p.PlatformId).ToHashSet();
 
-        StatusMessage = $"Scan complete — {FoundCount} games found.";
-        IsScanning = false;
+            foreach (var provider in _allProviders.Where(p => enabledIds.Contains(p.PlatformId)))
+            {
+                StatusMessage = $"Scanning {provider.PlatformId}…";
+                try
+                {
+                    var result = await provider.DetectInstalled();
+                    foreach (var game in result.Games)
+                    {
+                        Results.Add(new DetectedGameRow(game, provider.PlatformId));
+                        FoundCount++;
+                    }
+                    if (result.Error is not null)
+                        Results.Add(new DetectedGameRow(null, provider.PlatformId) { Error = result.Error });
+                }
+                catch (Exception ex)
+                {
+                    Results.Add(new DetectedGameRow(null, provider.PlatformId) { Error = ex.Message });
+                }
+            }
+
+            StatusMessage = $"Scan complete — {FoundCount} games found.";
+        }
+        finally
+        {
+            IsScanning = false;
+        }
     }
 
     private bool CanScan() => !IsScanning;
+    partial void OnIsScanningChanged(bool value)
+    {
+        ScanCommand.NotifyCanExecuteChanged();
+        ImportFromApiCommand.NotifyCanExecuteChanged();
+    }
 
     // ─── Import selected ─────────────────────────────────────────────────────
 
@@ -118,14 +129,13 @@ public partial class DetectViewModel : ObservableObject
 
         try
         {
-            var progress = new List<ImportProgress>();
+            using var http = new System.Net.Http.HttpClient();
             var ctx = new ImportContext
             {
                 Db   = _db,
-                Http = new System.Net.Http.HttpClient(),
+                Http = http,
                 Notify = p =>
                 {
-                    progress.Add(p);
                     StatusMessage = $"[{platformId}] {p.Name ?? p.Status} ({p.Processed}/{p.Total})";
                 },
             };

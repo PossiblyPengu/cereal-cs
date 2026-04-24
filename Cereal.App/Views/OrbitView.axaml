@@ -7,6 +7,26 @@
              x:DataType="vm:MainViewModel">
 
   <Grid>
+    <!-- Deep-space backdrop: layered gradients add depth behind stars. -->
+    <Border IsHitTestVisible="False">
+      <Border.Background>
+        <RadialGradientBrush Center="50%,42%" GradientOrigin="50%,42%" RadiusX="78%" RadiusY="78%">
+          <GradientStop Color="#1a2a2f46" Offset="0"/>
+          <GradientStop Color="#10111f36" Offset="0.45"/>
+          <GradientStop Color="#07080f22" Offset="1"/>
+        </RadialGradientBrush>
+      </Border.Background>
+    </Border>
+    <Border IsHitTestVisible="False">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Color="#10080a14" Offset="0"/>
+          <GradientStop Color="#0a05070d" Offset="0.55"/>
+          <GradientStop Color="#04030408" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+
     <!-- Fullscreen parallax star layers behind the world. -->
     <orbit:ParallaxStarBackground x:Name="Parallax"/>
 

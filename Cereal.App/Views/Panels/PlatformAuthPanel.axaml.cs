@@ -57,7 +57,7 @@ public partial class PlatformAuthPanel : UserControl
         if (host is null) return;
         if (_web is not null)
         {
-            try { _web = null; } catch { /* ignore */ }
+            _web = null;
         }
         host.Child = null;
     }
@@ -74,8 +74,9 @@ public partial class PlatformAuthPanel : UserControl
 
         Uri uri;
         try { uri = new Uri(_vm.PlatformAuthUrl!); }
-        catch
+        catch (Exception ex)
         {
+            Log.Debug(ex, "[auth] Invalid platform auth URL: {Url}", _vm.PlatformAuthUrl);
             ClearWeb();
             return;
         }

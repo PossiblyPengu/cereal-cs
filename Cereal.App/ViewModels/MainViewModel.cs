@@ -9,6 +9,7 @@ using Cereal.App.Services.Integrations;
 using Cereal.App.Services.Metadata;
 using Cereal.App.Utilities;
 using Microsoft.Extensions.DependencyInjection;
+using Avalonia.Threading;
 
 namespace Cereal.App.ViewModels;
 
@@ -19,6 +20,7 @@ public partial class MainViewModel : ObservableObject
     private readonly CoverService _covers;
     private readonly ChiakiService _chiaki;
     private readonly XcloudService _xcloud;
+    private bool _refreshQueued;
 
     public MediaViewModel Media { get; }
 
@@ -309,6 +311,8 @@ public partial class MainViewModel : ObservableObject
         ProgressPillText = text;
 
         _progressHideCts?.Cancel();
+        _progressHideCts?.Dispose();
+        _progressHideCts = null;
         if (done && !string.IsNullOrEmpty(text))
         {
             _progressHideCts = new CancellationTokenSource();
@@ -326,7 +330,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     // Search overlay uses full library scope (not the currently filtered view),
-    // matching the original app behavior.
+    // excluding streaming-only PlayStation session entries.
     private IEnumerable<GameCardViewModel> SearchLibrary =>
         _games.GetAll()
             .Where(g => g.Platform is not "psn" and not "psremote")
@@ -388,6 +392,8 @@ public partial class MainViewModel : ObservableObject
         _xcloud = xcloud;
         Media = new MediaViewModel(smtc);
 
+        PurgeStreamingOnlyGameData();
+
         var s = settings.Get();
         // Missing JSON key deserializes null — must not fall back to "cards" or orbit default is wrong.
         ViewMode = NormalizeViewMode(s.DefaultView);
@@ -425,7 +431,7 @@ public partial class MainViewModel : ObservableObject
             gamepad.Connected    += (_, _) => ShowToast("Controller connected");
             gamepad.Disconnected += (_, _) => ShowToast("Controller disconnected");
         }
-        catch { /* non-Windows / no-gamepad: silently skip */ }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Gamepad service wiring skipped"); }
 
         // Auto-update banner — mirrors App.tsx 1274–1294. The UpdateService
         // emits `UpdateAvailable` from its background check, then `UpdateReady`
@@ -452,13 +458,24 @@ public partial class MainViewModel : ObservableObject
                 AppUpdateReady = true;
             });
         }
-        catch { /* non-Velopack dev run: silently skip */ }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] UpdateService wiring skipped"); }
 
         _games.LibraryChanged += (_, _) =>
-            Avalonia.Threading.Dispatcher.UIThread.Post(Refresh);
+            QueueRefresh();
 
         Refresh();
         UpdateContinueBanner();
+    }
+
+    private void QueueRefresh()
+    {
+        if (_refreshQueued) return;
+        _refreshQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _refreshQueued = false;
+            Refresh();
+        }, DispatcherPriority.Background);
     }
 
     // ─── Gamepad ──────────────────────────────────────────────────────────────
@@ -525,8 +542,6 @@ public partial class MainViewModel : ObservableObject
         if (act is "lb" or "rb")
         {
             var tabs = new List<string> { "all", "favorites", "recent" };
-            foreach (var chip in PlatformChips) tabs.Add(chip.Id);
-            tabs = tabs.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             var curIdx = Math.Max(0, tabs.IndexOf(QuickFilter));
             var delta = act == "rb" ? 1 : -1;
             curIdx = ((curIdx + delta) % tabs.Count + tabs.Count) % tabs.Count;
@@ -589,7 +604,7 @@ public partial class MainViewModel : ObservableObject
                 d.MainWindow is { } w)
                 cols = Math.Max(1, (int)((w.Bounds.Width - 64) / (double)LibraryCardCellWidth));
         }
-        catch { /* use default */ }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Falling back to default library column count"); }
 
         switch (act)
         {
@@ -643,41 +658,11 @@ public partial class MainViewModel : ObservableObject
 
     public void Refresh()
     {
-        var all = _games.GetAll();
-
-        // Hide-Steam-software filter: matches heuristics in Electron metadata.js —
-        // explicit `software = true`, appdetails `type = "tool"/"application"`,
-        // or category names that smell like "tool" / "software" / "soundtrack" / "demo".
-        bool IsSteamSoftware(Game g)
-        {
-            if (g.Platform != "steam") return false;
-            if (g.Software == true) return true;
-            var type = g.Type?.ToLowerInvariant();
-            if (type is "tool" or "application" or "demo" or "soundtrack") return true;
-            if (g.Categories is { Count: > 0 } cats)
-            {
-                foreach (var c in cats)
-                {
-                    var lc = c.ToLowerInvariant();
-                    if (lc.Contains("tool") || lc.Contains("software") ||
-                        lc.Contains("soundtrack") || lc.Contains("benchmark") ||
-                        lc.Contains("utility") || lc.Contains("utilities"))
-                        return true;
-                }
-            }
-            var n = (g.Name ?? string.Empty).ToLowerInvariant();
-            if (System.Text.RegularExpressions.Regex.IsMatch(n,
-                    @"redistributable|redistrib|steamworks|sdk|runtime|\bruntime\b|dedicated server|devkit|vr runtime|mod tools|soundtrack",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                return true;
-            return false;
-        }
-
-        // Drop ephemeral streaming stubs from the main grid (matches Electron: psn/psremote
-        // live only as stream sessions, xbox tiles live in the xcloud panel).
-        var visibleAll = all
+        // Streaming-only PlayStation entries should not appear as tracked library
+        // games; they are represented by stream sessions instead.
+        var visibleAll = _games.GetAll()
             .Where(g => g.Platform is not "psn" and not "psremote")
-            .Where(g => !HideSteamSoftware || !IsSteamSoftware(g))
+            .Where(g => !HideSteamSoftware || !IsSteamSoftwareGame(g))
             .ToList();
 
         var platformCounts = visibleAll.GroupBy(g => g.Platform ?? "custom")
@@ -686,28 +671,7 @@ public partial class MainViewModel : ObservableObject
         foreach (var (plat, count) in platformCounts.OrderBy(kv => kv.Key))
             PlatformChips.Add(new PlatformChipViewModel(plat, count, ActivePlatformFilters.Contains(plat)));
 
-        var preFilter = visibleAll
-            .Where(g => ShowHidden || g.Hidden != true)
-            .Where(g => !ShowInstalledOnly || g.Installed != false)
-            .Where(g => ActivePlatformFilters.Count == 0 || ActivePlatformFilters.Contains(g.Platform))
-            .Where(g => ActiveCategoryFilters.Count == 0 ||
-                        (g.Categories?.Any(c => ActiveCategoryFilters.Contains(c)) ?? false))
-            .Where(g => QuickFilter != "favorites" || (g.Favorite ?? false))
-            .Where(g => QuickFilter != "recent" || g.LastPlayed != null)
-            .Where(g => string.IsNullOrEmpty(SearchText) ||
-                        g.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
-
-        var sorted = (QuickFilter == "recent")
-            ? preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
-            : SortOrder switch
-            {
-                "played"    => preFilter.OrderByDescending(g => g.PlaytimeMinutes ?? 0).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-                "recent"    => preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-                "added"     => preFilter.OrderByDescending(g => g.AddedAt ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-                "installed" => preFilter.OrderByDescending(g => g.Installed ?? false).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-                // "default" / "name" / anything else → alphabetical.
-                _           => preFilter.OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
-            };
+        var sorted = BuildFilteredSortedGames(visibleAll);
 
         var filtered = sorted
             .Select(g => new GameCardViewModel(g, _games))
@@ -738,6 +702,80 @@ public partial class MainViewModel : ObservableObject
         UpdateContinueBanner();
     }
 
+    private void PurgeStreamingOnlyGameData()
+    {
+        try
+        {
+            var stale = _games.GetAll()
+                .Where(g => g.Platform is "psn" or "psremote")
+                .Select(g => g.Id)
+                .ToList();
+            foreach (var id in stale)
+                _games.Delete(id);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Debug(ex, "[main] Failed purging streaming-only game data");
+        }
+    }
+
+    // Shared orbit/cards filtering pipeline so both views stay in sync.
+    public List<Game> GetOrbitGames()
+    {
+        var all = _games.GetAll()
+            .Where(g => !HideSteamSoftware || !IsSteamSoftwareGame(g))
+            .ToList();
+        return BuildFilteredSortedGames(all).ToList();
+    }
+
+    private IEnumerable<Game> BuildFilteredSortedGames(IEnumerable<Game> source)
+    {
+        var preFilter = source
+            .Where(g => ShowHidden || g.Hidden != true)
+            .Where(g => !ShowInstalledOnly || g.Installed != false)
+            .Where(g => ActivePlatformFilters.Count == 0 || ActivePlatformFilters.Contains(g.Platform))
+            .Where(g => ActiveCategoryFilters.Count == 0 ||
+                        (g.Categories?.Any(c => ActiveCategoryFilters.Contains(c)) ?? false))
+            .Where(g => QuickFilter != "favorites" || (g.Favorite ?? false))
+            .Where(g => QuickFilter != "recent" || g.LastPlayed != null)
+            .Where(g => string.IsNullOrEmpty(SearchText) ||
+                        g.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+        return (QuickFilter == "recent")
+            ? preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
+            : SortOrder switch
+            {
+                "played"    => preFilter.OrderByDescending(g => g.PlaytimeMinutes ?? 0).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "recent"    => preFilter.OrderByDescending(g => g.LastPlayed ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "added"     => preFilter.OrderByDescending(g => g.AddedAt ?? "").ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                "installed" => preFilter.OrderByDescending(g => g.Installed ?? false).ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+                _           => preFilter.OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase),
+            };
+    }
+
+    private static bool IsSteamSoftwareGame(Game g)
+    {
+        if (g.Platform != "steam") return false;
+        if (g.Software == true) return true;
+        var type = g.Type?.ToLowerInvariant();
+        if (type is "tool" or "application" or "demo" or "soundtrack") return true;
+        if (g.Categories is { Count: > 0 } cats)
+        {
+            foreach (var c in cats)
+            {
+                var lc = c.ToLowerInvariant();
+                if (lc.Contains("tool") || lc.Contains("software") ||
+                    lc.Contains("soundtrack") || lc.Contains("benchmark") ||
+                    lc.Contains("utility") || lc.Contains("utilities"))
+                    return true;
+            }
+        }
+        var n = (g.Name ?? string.Empty).ToLowerInvariant();
+        return System.Text.RegularExpressions.Regex.IsMatch(n,
+            @"redistributable|redistrib|steamworks|sdk|runtime|\bruntime\b|dedicated server|devkit|vr runtime|mod tools|soundtrack",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+
     private int _searchSelectedIndex = -1;
 
     partial void OnSearchQueryChanged(string value)
@@ -755,11 +793,11 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(SearchActivePlatforms));
     }
 
-    partial void OnSearchTextChanged(string value) { Refresh(); NotifyFilterCount(); }
-    partial void OnActivePlatformFiltersChanged(ObservableCollection<string> value) { PersistFilters(); Refresh(); NotifyFilterCount(); }
-    partial void OnActiveCategoryFiltersChanged(ObservableCollection<string> value) { PersistFilters(); Refresh(); NotifyFilterCount(); }
-    partial void OnShowHiddenChanged(bool value) => Refresh();
-    partial void OnShowInstalledOnlyChanged(bool value) { Refresh(); NotifyFilterCount(); }
+    partial void OnSearchTextChanged(string value) { QueueRefresh(); NotifyFilterCount(); }
+    partial void OnActivePlatformFiltersChanged(ObservableCollection<string> value) { PersistFilters(); QueueRefresh(); NotifyFilterCount(); }
+    partial void OnActiveCategoryFiltersChanged(ObservableCollection<string> value) { PersistFilters(); QueueRefresh(); NotifyFilterCount(); }
+    partial void OnShowHiddenChanged(bool value) => QueueRefresh();
+    partial void OnShowInstalledOnlyChanged(bool value) { QueueRefresh(); NotifyFilterCount(); }
     partial void OnHideSteamSoftwareChanged(bool value)
     {
         try
@@ -768,18 +806,18 @@ public partial class MainViewModel : ObservableObject
             s.FilterHideSteamSoftware = value;
             _settings.Save(s);
         }
-        catch { /* best-effort */ }
-        Refresh();
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed persisting HideSteamSoftware"); }
+        QueueRefresh();
         NotifyFilterCount();
     }
-    partial void OnSortOrderChanged(string value) { Refresh(); NotifyFilterCount(); }
+    partial void OnSortOrderChanged(string value) { QueueRefresh(); NotifyFilterCount(); }
 
     private void NotifyFilterCount()
     {
         OnPropertyChanged(nameof(ActiveFilterCount));
         OnPropertyChanged(nameof(HasActiveFilters));
     }
-    partial void OnQuickFilterChanged(string value) { PersistDefaultTab(); Refresh(); }
+    partial void OnQuickFilterChanged(string value) { PersistDefaultTab(); QueueRefresh(); }
 
     private void PersistFilters()
     {
@@ -790,7 +828,7 @@ public partial class MainViewModel : ObservableObject
             s.FilterCategories = ActiveCategoryFilters.ToList();
             _settings.Save(s);
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed persisting filters"); }
     }
 
     private void PersistDefaultTab()
@@ -801,7 +839,7 @@ public partial class MainViewModel : ObservableObject
             s.DefaultTab = QuickFilter;
             _settings.Save(s);
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed persisting default tab"); }
     }
 
     // Theme swatches on the main nav (ports App.tsx 1034–1069). Re-creates the
@@ -982,7 +1020,9 @@ public partial class MainViewModel : ObservableObject
     public void AddGame(Models.Game game)
     {
         var survivor = _games.Add(game);
-        if (!string.IsNullOrEmpty(survivor.CoverUrl))
+        if (string.IsNullOrEmpty(survivor.CoverUrl) && string.IsNullOrEmpty(survivor.SgdbCoverUrl))
+            _ = AutoFetchAndEnqueueAsync(survivor);
+        else
             _covers.EnqueueGame(survivor.Id);
         StatusMessage = $"Added \"{survivor.Name}\"";
     }
@@ -990,9 +1030,19 @@ public partial class MainViewModel : ObservableObject
     public void UpdateGame(Models.Game game)
     {
         _games.Update(game);
-        if (!string.IsNullOrEmpty(game.CoverUrl))
-            _covers.EnqueueGame(game.Id);
+        _covers.EnqueueGame(game.Id);
         StatusMessage = $"Saved \"{game.Name}\"";
+    }
+
+    private async Task AutoFetchAndEnqueueAsync(Models.Game game)
+    {
+        try
+        {
+            var meta = App.Services.GetRequiredService<MetadataService>();
+            await meta.FetchForGameAsync(game);
+        }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Auto metadata fetch failed for {GameId}", game.Id); }
+        _covers.EnqueueGame(game.Id);
     }
 
     [RelayCommand]
@@ -1069,7 +1119,6 @@ public partial class MainViewModel : ObservableObject
         else
             ActivePlatformFilters.Add(platform);
         PersistFilters();
-        Refresh();
     }
 
     [RelayCommand]
@@ -1080,7 +1129,6 @@ public partial class MainViewModel : ObservableObject
         else
             ActiveCategoryFilters.Add(category);
         PersistFilters();
-        Refresh();
     }
 
     [RelayCommand]
@@ -1096,7 +1144,7 @@ public partial class MainViewModel : ObservableObject
         QuickFilter = "all";
         PersistFilters();
         PersistDefaultTab();
-        Refresh();
+        QueueRefresh();
     }
 
     [RelayCommand]
@@ -1386,7 +1434,7 @@ public partial class MainViewModel : ObservableObject
             if (g is null) return;
             discord.SetPresence(g.Name, g.Platform ?? "custom", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed setting Discord presence for stream"); }
     }
 
     private void HandleChiakiEvent(ChiakiEventArgs e)
@@ -1426,7 +1474,7 @@ public partial class MainViewModel : ObservableObject
             {
                 StreamTabs.Remove(tab);
                 try { App.Services.GetRequiredService<Services.Integrations.DiscordService>().ClearPresence(); }
-                catch { /* best-effort */ }
+                catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed clearing Discord presence on Chiaki disconnect"); }
             }
         }
         else if (e.Type == "quality" && tab is not null)
@@ -1472,7 +1520,7 @@ public partial class MainViewModel : ObservableObject
                         discord.SetPresence(g.Name, g.Platform ?? "psn",
                             DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                     }
-                    catch { /* best-effort */ }
+                    catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed updating Discord presence on title change"); }
                 }
             }
 
@@ -1521,7 +1569,7 @@ public partial class MainViewModel : ObservableObject
         {
             StreamTabs.Remove(tab);
             try { App.Services.GetRequiredService<Services.Integrations.DiscordService>().ClearPresence(); }
-            catch { /* best-effort */ }
+            catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed clearing Discord presence on xCloud disconnect"); }
         }
 
         NotifyStreamEmbeddingProps();

@@ -18,6 +18,12 @@ public sealed class ParallaxStarBackground : Control
     // Offset speeds (pixels at the extremes) per layer, mirroring
     // `PARALLAX_SPEEDS = [10, 30, 60]` in useParallax.ts.
     private static readonly double[] LayerSpeed = { 10, 30, 60 };
+    private static readonly Color[] StarPalette =
+    {
+        Color.FromRgb(0xff, 0xff, 0xff), // neutral white
+        Color.FromRgb(0xea, 0xee, 0xff), // cool white
+        Color.FromRgb(0xff, 0xf3, 0xda), // warm white
+    };
 
     private struct Star
     {
@@ -25,6 +31,7 @@ public sealed class ParallaxStarBackground : Control
         public double Yp;
         public double Size;
         public double Alpha;
+        public uint Rgb;        // packed 0xRRGGBB
         public int Layer;       // 0..2
         public bool Twinkle;
         public double TwDur;    // seconds
@@ -138,12 +145,14 @@ public sealed class ParallaxStarBackground : Control
                 op = d == 0 ? 0.03 + rng.NextDouble() * 0.10
                    : d == 1 ? 0.08 + rng.NextDouble() * 0.20
                    : bright ? 0.25 + rng.NextDouble() * 0.40 : 0.10 + rng.NextDouble() * 0.20;
+                var color = StarPalette[rng.Next(StarPalette.Length)];
                 _stars[k++] = new Star
                 {
                     Xp = rng.NextDouble(),
                     Yp = rng.NextDouble(),
                     Size = sz,
                     Alpha = op,
+                    Rgb = ((uint)color.R << 16) | ((uint)color.G << 8) | color.B,
                     Layer = d,
                     Twinkle = d == 0 ? rng.NextDouble() > 0.7 : rng.NextDouble() > 0.4,
                     TwDur = 3 + rng.NextDouble() * 6,
@@ -181,7 +190,18 @@ public sealed class ParallaxStarBackground : Control
             }
 
             var a = (byte)Math.Clamp(alpha * 255, 0, 255);
-            var brush = new ImmutableSolidColorBrush(Color.FromArgb(a, 255, 255, 255));
+            var rgb = s.Rgb;
+            var r = (byte)((rgb >> 16) & 0xff);
+            var g = (byte)((rgb >> 8) & 0xff);
+            var b = (byte)(rgb & 0xff);
+            var brush = new ImmutableSolidColorBrush(Color.FromArgb(a, r, g, b));
+            if (s.Size > 1.7)
+            {
+                var haloA = (byte)Math.Clamp(a * 0.25, 8, 70);
+                var halo = new ImmutableSolidColorBrush(Color.FromArgb(haloA, r, g, b));
+                var haloSize = s.Size * 2.2;
+                ctx.DrawEllipse(halo, null, new Point(px, py), haloSize, haloSize);
+            }
             ctx.DrawEllipse(brush, null, new Point(px, py), s.Size, s.Size);
         }
     }

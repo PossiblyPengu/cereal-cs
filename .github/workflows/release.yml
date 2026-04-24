@@ -22,14 +22,8 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # vpk CLI requires .NET 9 ASP.NET Core runtime (pre-installed on windows-latest)
-      - name: Setup .NET 9 (for vpk)
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
       - name: Install vpk
-        run: dotnet tool install -g vpk
+        run: dotnet tool install -g vpk --version 0.0.1298
 
       - name: Restore
         run: dotnet restore Cereal.App/Cereal.App.csproj -r win-x64
@@ -59,6 +53,7 @@ jobs:
             --packDir publish/win \
             --mainExe Cereal.App.exe \
             --outputDir artifacts/win \
+            --channel win \
             --icon Cereal.App/Assets/icon.ico
 
       - name: Upload Windows artifacts
@@ -80,13 +75,8 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Setup .NET 9 (for vpk)
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
       - name: Install vpk
-        run: dotnet tool install -g vpk
+        run: dotnet tool install -g vpk --version 0.0.1298
 
       - name: Restore
         run: dotnet restore Cereal.App/Cereal.App.csproj -r linux-x64
@@ -113,7 +103,8 @@ jobs:
             --packVersion ${{ steps.ver.outputs.version }} \
             --packDir publish/linux \
             --mainExe Cereal.App \
-            --outputDir artifacts/linux
+            --outputDir artifacts/linux \
+            --channel linux
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4

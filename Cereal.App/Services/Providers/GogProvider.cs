@@ -25,7 +25,8 @@ public class GogProvider(DatabaseService db, AuthService auth) : IImportProvider
                 {
                     foreach (var infoFile in Directory.GetFiles(gameDir, "goggame-*.info"))
                     {
-                        var info = JsonDocument.Parse(File.ReadAllText(infoFile)).RootElement;
+                        using var infoDoc = JsonDocument.Parse(File.ReadAllText(infoFile));
+                        var info = infoDoc.RootElement;
                         var name = info.TryGetProperty("name", out var n) ? n.GetString() : null;
                         if (name is null) continue;
 
@@ -126,13 +127,17 @@ public class GogProvider(DatabaseService db, AuthService auth) : IImportProvider
                 $"https://embed.gog.com/account/getFilteredProducts?mediaType=1&page={page}");
             req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var resp = await http.SendAsync(req);
-            var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
             var root = doc.RootElement;
             if (!root.TryGetProperty("products", out var prods)) return null;
             var total = root.TryGetProperty("totalPages", out var tp) ? tp.GetInt32() : 1;
-            return (prods.EnumerateArray().ToList(), total);
+            return (prods.EnumerateArray().Select(static p => p.Clone()).ToList(), total);
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[gog] FetchPage failed for page {Page}", page);
+            return null;
+        }
     }
 
     private static string? PickCoverImage(JsonElement gp)

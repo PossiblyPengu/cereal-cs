@@ -18,7 +18,7 @@
   <Window.Styles>
     <Style Selector="Button.win-ctrl">
       <Setter Property="Width" Value="46"/>
-      <Setter Property="Height" Value="40"/>
+      <Setter Property="Height" Value="34"/>
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="CornerRadius" Value="0"/>
@@ -129,7 +129,7 @@
   </Window.Styles>
 
   <LayoutTransformControl x:Name="RootScaler">
-  <Grid x:Name="RootGrid" RowDefinitions="44,*">
+  <Grid x:Name="RootGrid" RowDefinitions="36,*">
 
     <!-- Title bar — same base as content (ThemeVoid); no seam line into main app -->
     <Border Grid.Row="0"
@@ -147,7 +147,7 @@
             <Rectangle DockPanel.Dock="Bottom" Height="2" Margin="8,0,8,0" RadiusX="1" RadiusY="1"
                        Fill="{DynamicResource ThemeAccent}" Opacity="0.65"
                        IsVisible="{Binding IsLibraryTabActive}"/>
-            <Border MinWidth="112" Height="32" CornerRadius="8"
+            <Border MinWidth="112" Height="28" CornerRadius="8"
                     Background="{Binding IsLibraryTabActive, Converter={x:Static conv:TabConverters.PanelPillBackground}}"
                     BorderBrush="{Binding IsLibraryTabActive, Converter={x:Static conv:TabConverters.PanelPillBorder}}"
                     BorderThickness="1" Padding="12,0,12,0">
@@ -191,7 +191,7 @@
                     <Rectangle DockPanel.Dock="Bottom" Height="2" Margin="8,0,8,0" RadiusX="1" RadiusY="1"
                                Fill="{DynamicResource ThemeAccent}" Opacity="0.65"
                                IsVisible="{Binding IsActive}"/>
-                    <Border MinWidth="92" MaxWidth="210" Height="32" CornerRadius="8"
+                    <Border MinWidth="92" MaxWidth="210" Height="28" CornerRadius="8"
                             Background="{Binding IsActive, Converter={x:Static conv:TabConverters.PanelPillBackground}}"
                             BorderBrush="{Binding IsActive, Converter={x:Static conv:TabConverters.PanelPillBorder}}"
                             BorderThickness="1" Padding="12,0,4,0">
@@ -238,7 +238,7 @@
                                  Fill="{Binding StreamAccentColor, Converter={x:Static vm:ColorStringToBrushConverter.Instance}}"
                                  Opacity="0.5"
                                  IsVisible="{Binding IsSessionLive}"/>
-                      <Border Height="32" CornerRadius="0,8,8,0"
+                      <Border Height="28" CornerRadius="0,8,8,0"
                               Background="{Binding IsSessionLive, Converter={x:Static conv:TabConverters.StreamPillBackground}}"
                               BorderBrush="#08000000"
                               BorderThickness="1" Padding="10,0,4,0">

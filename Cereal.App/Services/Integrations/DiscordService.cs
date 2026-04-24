@@ -66,8 +66,10 @@ public class DiscordService : IDisposable
     public void Disconnect()
     {
         if (_client is null) return;
-        try { _client.ClearPresence(); } catch { /* best-effort */ }
-        try { _client.Dispose(); } catch { /* best-effort */ }
+        try { _client.ClearPresence(); }
+        catch (Exception ex) { Log.Debug(ex, "[discord] ClearPresence during Disconnect failed"); }
+        try { _client.Dispose(); }
+        catch (Exception ex) { Log.Debug(ex, "[discord] Dispose during Disconnect failed"); }
         _client = null;
         _ready = false;
     }

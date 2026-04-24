@@ -64,7 +64,10 @@
       "Bash(\"/d/CODE/important files/dotnet-sdk-9.0.306-win-x64/dotnet.exe\" restore \"d:/CODE/cereal-cs/Cereal.App/Cereal.App.csproj\")",
       "Bash(\"/d/CODE/important files/dotnet-sdk-9.0.306-win-x64/dotnet.exe\" build \"d:/CODE/cereal-cs/Cereal.App/Cereal.App.csproj\" -c Debug)",
       "Bash(grep -v \"^$\")",
-      "Bash(\"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"d:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --nologo)"
+      "Bash(\"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"d:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --nologo)",
+      "PowerShell(Get-Command dotnet -ErrorAction SilentlyContinue; $env:PATH -split ';' | Where-Object { $_ -match 'dotnet' })",
+      "WebFetch(domain:www.nuget.org)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

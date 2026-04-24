@@ -61,7 +61,8 @@ public sealed class SmtcService
             }
             catch (OperationCanceledException)
             {
-                try { p.Kill(); } catch { /* best-effort */ }
+                try { p.Kill(); }
+                catch (Exception ex) { Log.Debug(ex, "[smtc] Timed-out MediaInfoTool process already exited"); }
                 Log.Warning("[smtc] GetMediaInfo timed out");
                 return null;
             }
