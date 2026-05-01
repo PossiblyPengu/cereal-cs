@@ -5,27 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Cereal: Publish + Run (Debug, wait)",
+            "name": "Cereal: Publish + Run (Debug)",
             "type": "PowerShell",
             "request": "launch",
-            "preLaunchTask": "Cereal: Publish (Debug)",
             "script": "${workspaceFolder}/run.ps1",
-            "args": [
-                "-SkipPublish",
-                "-Wait"
-            ],
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Cereal: Publish + Run (Release, wait)",
+            "name": "Cereal: Publish + Run (Release)",
             "type": "PowerShell",
             "request": "launch",
-            "preLaunchTask": "Cereal: Publish (Release)",
             "script": "${workspaceFolder}/run.ps1",
             "args": [
-                "-Release",
-                "-SkipPublish",
-                "-Wait"
+                "-Release"
             ],
             "cwd": "${workspaceFolder}"
         },

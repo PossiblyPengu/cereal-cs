@@ -13,6 +13,7 @@ using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
 using Cereal.App.Services.Metadata;
 using Cereal.App.Services.Providers;
+using Cereal.App.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -90,16 +91,26 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _metadataSource = "steam";
 
     /// <summary>Items for the metadata ComboBox (must match <see cref="MetadataService"/>).</summary>
-    public IReadOnlyList<string> MetadataSourceOptions { get; } = ["steam", "wikipedia"];
+    public IReadOnlyList<string> MetadataSourceOptions { get; } = ["steam", "wikipedia", "igdb"];
 
     private static string NormalizeMetadataSource(string? v) =>
-        string.Equals(v, "wikipedia", StringComparison.OrdinalIgnoreCase) ? "wikipedia" : "steam";
+        v?.ToLowerInvariant() switch
+        {
+            "wikipedia" => "wikipedia",
+            "igdb"      => "igdb",
+            _           => "steam",
+        };
     private static string NormalizeUiScale(string? raw)
     {
         var scale = Cereal.App.MainWindow.ParseUiScale(raw);
         var pct = (int)Math.Round(scale * 100.0, MidpointRounding.AwayFromZero);
         return $"{pct}%";
     }
+    [ObservableProperty] private string? _igdbClientId;
+    [ObservableProperty] private string? _igdbClientSecret;
+    [ObservableProperty] private bool _hasIgdbClientId;
+    [ObservableProperty] private bool _hasIgdbClientSecret;
+
     [ObservableProperty] private string? _steamGridDbKey;
     [ObservableProperty] private bool _hasSteamGridDbSecret;
     [ObservableProperty] private bool _steamGridDbKeyInvalid;
@@ -123,6 +134,40 @@ public partial class SettingsViewModel : ObservableObject
     // ─── Section navigation ───────────────────────────────────────────────────
 
     [ObservableProperty] private string _activeSection = "appearance";
+
+    /// <summary>Page title for the active settings section (bound in SettingsPanel header).</summary>
+    public string SectionTitle => ActiveSection switch
+    {
+        "appearance" => "Appearance & layout",
+        "library" => "Library & integrations",
+        "behavior" => "Behavior & runtime",
+        "system" => "System & updates",
+        "about" => "About & diagnostics",
+        "danger" => "Danger zone",
+        _ => "Settings",
+    };
+
+    /// <summary>One-line description under the page title.</summary>
+    public string SectionSubtitle => ActiveSection switch
+    {
+        "appearance" => "Themes, accent, navigation, and Orbit options.",
+        "library" => "Backups, metadata, platform actions, and API keys.",
+        "behavior" => "Startup, tray, sync, and runtime integrations.",
+        "system" => "Platform paths, metadata, and updates.",
+        "about" => "Library stats, platforms, and system information.",
+        "danger" => "Destructive actions — signing out and clearing data cannot be undone.",
+        _ => string.Empty,
+    };
+
+    /// <summary>True when the Danger zone section is open — used for header chrome.</summary>
+    public bool IsDangerSection => ActiveSection == "danger";
+
+    partial void OnActiveSectionChanged(string value)
+    {
+        OnPropertyChanged(nameof(SectionTitle));
+        OnPropertyChanged(nameof(SectionSubtitle));
+        OnPropertyChanged(nameof(IsDangerSection));
+    }
 
     [RelayCommand]
     private void SetSection(string section)
@@ -336,111 +381,60 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _specsGpu = "—";
     [ObservableProperty] private string _specsRam = "—";
     [ObservableProperty] private string _specsOs  = "—";
+    [ObservableProperty] private string _specsTier = "Balanced";
+    [ObservableProperty] private string _specsRecommendation = "Balanced defaults recommended.";
+    [ObservableProperty] private string _recommendedStarDensity = "normal";
+    [ObservableProperty] private string _recommendedUiScale = "100%";
+    [ObservableProperty] private bool _recommendedShowAnimations = true;
+    public string RecommendedProfileLabel =>
+        $"{RecommendedStarDensity} stars · {RecommendedUiScale} UI · animations {(RecommendedShowAnimations ? "on" : "off")}";
 
     private void LoadSystemSpecs()
     {
-        var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
-        var cpu = "—";
-        var gpu = "—";
-        var ramStr = "—";
-        var logicalCpus = Environment.ProcessorCount;
-
-        if (OperatingSystem.IsWindows())
+        HardwareSnapshot snapshot;
+        PerformanceRecommendation rec;
+        try
         {
-            try
-            {
-                using var s = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor");
-                foreach (var obj in s.Get()) { cpu = obj["Name"]?.ToString()?.Trim() ?? "—"; break; }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "[settings] WMI CPU query failed");
-            }
-            try
-            {
-                using var s = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
-                foreach (var obj in s.Get())
-                {
-                    try
-                    {
-                        var raw = obj["TotalPhysicalMemory"];
-                        if (raw is null) break;
-                        var bytes = Convert.ToUInt64(raw, System.Globalization.CultureInfo.InvariantCulture);
-                        if (bytes > 0)
-                            ramStr = $"{Math.Round(bytes / 1_073_741_824.0, MidpointRounding.AwayFromZero)} GB";
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Debug(ex, "[settings] WMI RAM cell parse failed");
-                    }
-                    break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "[settings] WMI RAM query failed");
-            }
-            try
-            {
-                using var s = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController");
-                foreach (var obj in s.Get()) { gpu = obj["Name"]?.ToString()?.Trim() ?? "—"; break; }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "[settings] WMI GPU query failed");
-            }
+            snapshot = PerformanceAdvisor.Detect();
+            rec = PerformanceAdvisor.Recommend(snapshot);
         }
-        else if (OperatingSystem.IsLinux())
+        catch (Exception ex)
         {
-            try
-            {
-                foreach (var line in File.ReadLines("/proc/cpuinfo"))
-                {
-                    if (line.StartsWith("model name", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var i = line.IndexOf(':');
-                        if (i >= 0) cpu = line[(i + 1)..].Trim();
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "[settings] /proc/cpuinfo read failed");
-            }
-            try
-            {
-                foreach (var line in File.ReadLines("/proc/meminfo"))
-                {
-                    if (!line.StartsWith("MemTotal:", StringComparison.OrdinalIgnoreCase)) continue;
-                    var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 2 && ulong.TryParse(parts[1], out var kb) && kb > 0)
-                        ramStr = $"{Math.Round(kb / 1024.0 / 1024.0, MidpointRounding.AwayFromZero)} GB";
-                    break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "[settings] /proc/meminfo read failed");
-            }
-        }
-        else
-        {
-            var ram = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-            if (ram > 0) ramStr = $"{ram / 1_073_741_824.0:F1} GB";
+            Log.Debug(ex, "[settings] Hardware detection failed");
+            snapshot = new HardwareSnapshot("—", "—", System.Runtime.InteropServices.RuntimeInformation.OSDescription, 0, Math.Max(1, Environment.ProcessorCount));
+            rec = new PerformanceRecommendation("Balanced", "Balanced defaults recommended.", "normal", "100%", true);
         }
 
-        if (logicalCpus > 1 && cpu != "—")
-            cpu += $" · {logicalCpus} cores";
+        var cpu = snapshot.Cpu;
+        if (snapshot.LogicalCores > 1 && cpu != "—")
+            cpu += $" · {snapshot.LogicalCores} threads";
 
         Dispatcher.UIThread.Post(() =>
         {
-            SpecsOs  = os;
-            SpecsRam = ramStr;
+            SpecsOs  = snapshot.Os;
+            SpecsRam = PerformanceAdvisor.FormatRam(snapshot.TotalMemoryBytes);
             SpecsCpu = cpu;
-            SpecsGpu = gpu;
+            SpecsGpu = snapshot.Gpu;
+            SpecsTier = rec.Tier;
+            SpecsRecommendation = rec.Summary;
+            RecommendedStarDensity = rec.StarDensity;
+            RecommendedUiScale = rec.UiScale;
+            RecommendedShowAnimations = rec.ShowAnimations;
         });
     }
+
+    [RelayCommand]
+    private void ApplyRecommendedPerformance()
+    {
+        StarDensity = RecommendedStarDensity;
+        UiScale = RecommendedUiScale;
+        ShowAnimations = RecommendedShowAnimations;
+        SaveHint = $"Applied {SpecsTier.ToLowerInvariant()} profile.";
+    }
+
+    partial void OnRecommendedStarDensityChanged(string value) => OnPropertyChanged(nameof(RecommendedProfileLabel));
+    partial void OnRecommendedUiScaleChanged(string value) => OnPropertyChanged(nameof(RecommendedProfileLabel));
+    partial void OnRecommendedShowAnimationsChanged(bool value) => OnPropertyChanged(nameof(RecommendedProfileLabel));
 
     // ─── Update state ─────────────────────────────────────────────────────────
 
@@ -564,6 +558,7 @@ public partial class SettingsViewModel : ObservableObject
         _ = Task.Run(LoadSystemSpecs);
         SyncSteamGridDbSecret();
         RefreshSteamGridDbUi();
+        RefreshIgdbUi();
     }
 
     public string SteamGridDbKeyWatermark =>
@@ -580,6 +575,51 @@ public partial class SettingsViewModel : ObservableObject
     private void SyncSteamGridDbSecret() =>
         HasSteamGridDbSecret = !string.IsNullOrEmpty(
             _creds.GetPassword("cereal", "steamgriddb_key"));
+
+    private void RefreshIgdbUi()
+    {
+        HasIgdbClientId     = !string.IsNullOrEmpty(_creds.GetPassword("cereal", "igdb_client_id"));
+        HasIgdbClientSecret = !string.IsNullOrEmpty(_creds.GetPassword("cereal", "igdb_client_secret"));
+    }
+
+    [RelayCommand]
+    private void SaveIgdbKeys()
+    {
+        if (string.IsNullOrWhiteSpace(IgdbClientId) || string.IsNullOrWhiteSpace(IgdbClientSecret))
+        {
+            StatusMessage = "Enter both Client ID and Client Secret from the Twitch developer console.";
+            return;
+        }
+        _creds.SetPassword("cereal", "igdb_client_id", IgdbClientId!.Trim());
+        _creds.SetPassword("cereal", "igdb_client_secret", IgdbClientSecret!.Trim());
+        IgdbClientId = null;
+        IgdbClientSecret = null;
+        RefreshIgdbUi();
+        StatusMessage = "IGDB (Twitch) credentials saved.";
+    }
+
+    [RelayCommand]
+    private void DeleteIgdbKeys()
+    {
+        _creds.DeletePassword("cereal", "igdb_client_id");
+        _creds.DeletePassword("cereal", "igdb_client_secret");
+        IgdbClientId = null;
+        IgdbClientSecret = null;
+        RefreshIgdbUi();
+        StatusMessage = "IGDB credentials removed.";
+    }
+
+    [RelayCommand]
+    private void OpenIgdbDevPortal()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+                "https://dev.twitch.tv/console/apps")
+            { UseShellExecute = true });
+        }
+        catch (Exception ex) { StatusMessage = "Couldn't open browser: " + ex.Message; }
+    }
 
     private void RefreshSteamGridDbUi()
     {
@@ -718,6 +758,7 @@ public partial class SettingsViewModel : ObservableObject
         NavPosition = s.NavPosition;
         StarDensity = s.StarDensity;
         UiScale = NormalizeUiScale(s.UiScale);
+        RefreshIgdbUi();
         }
         finally { _loadingFromModel = false; }
         AccentColorValid = string.IsNullOrWhiteSpace(AccentColor) || Color.TryParse(AccentColor, out _);
@@ -1023,19 +1064,15 @@ public partial class SettingsViewModel : ObservableObject
     private async Task RescanAll()
     {
         StatusMessage = "Scanning all platforms…";
-        var added = 0;
+        var merged = 0;
+        var toMerge = new List<Game>();
         foreach (var provider in _providers)
         {
             try
             {
                 var result = await provider.DetectInstalled();
-                foreach (var game in result.Games)
-                {
-                    var g = _games.Add(game);
-                    if (!string.IsNullOrEmpty(g.CoverUrl))
-                        _covers.EnqueueGame(g.Id);
-                    added++;
-                }
+                if (result.Games.Count > 0)
+                    toMerge.AddRange(result.Games);
             }
             catch (Exception ex)
             {
@@ -1043,7 +1080,19 @@ public partial class SettingsViewModel : ObservableObject
                     provider.GetType().Name);
             }
         }
-        StatusMessage = $"Rescan complete — {added} game(s) merged.";
+
+        if (toMerge.Count > 0)
+        {
+            var (processed, _, survivors) = _games.AddRangeWithSurvivors(toMerge);
+            merged = processed;
+            foreach (var g in survivors)
+            {
+                if (!string.IsNullOrEmpty(g.CoverUrl))
+                    _covers.EnqueueGame(g.Id);
+            }
+        }
+
+        StatusMessage = $"Rescan complete — {merged} game(s) merged.";
     }
 
     // ─── Update commands ──────────────────────────────────────────────────────

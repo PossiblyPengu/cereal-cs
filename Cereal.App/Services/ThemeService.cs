@@ -1,17 +1,15 @@
 using Avalonia;
-using Avalonia.Media;
 using Cereal.App.Models;
+using Cereal.App.Theme;
 
 namespace Cereal.App.Services;
 
+/// <summary>Applies the saved <see cref="Models.Settings.Theme"/> + <see cref="Models.Settings.AccentColor"/> to <see cref="Application"/> resources via <see cref="ThemePalette"/>.</summary>
 public class ThemeService
 {
     private readonly SettingsService _settings;
 
-    public ThemeService(SettingsService settings)
-    {
-        _settings = settings;
-    }
+    public ThemeService(SettingsService settings) => _settings = settings;
 
     public void ApplyCurrent()
     {
@@ -28,31 +26,6 @@ public class ThemeService
     public static void Apply(AppTheme theme, string? accentOverride = null)
     {
         if (Application.Current is null) return;
-        var res = Application.Current.Resources;
-
-        SetColor(res, "ThemeVoidColor",        theme.Void);
-        SetColor(res, "ThemeSurfaceColor",     theme.Surface);
-        SetColor(res, "ThemeCardColor",        theme.Card);
-        SetColor(res, "ThemeCardUpColor",      theme.CardUp);
-        SetColor(res, "ThemeTextColor",        theme.Text);
-        SetColor(res, "ThemeText2Color",       theme.Text2);
-        SetColor(res, "ThemeText3Color",       theme.Text3);
-        SetColor(res, "ThemeText4Color",       theme.Text4);
-        SetColor(res, "ThemeBodyBgColor",      theme.BodyBg);
-
-        // Custom accent overrides the theme accent when set
-        var accent = !string.IsNullOrWhiteSpace(accentOverride) ? accentOverride : theme.Accent;
-        SetColor(res, "ThemeAccentColor", accent);
-
-        // RGBA tokens stored as strings (used where alpha blending is needed)
-        res["ThemeGlass"]        = theme.Glass;
-        res["ThemeGlassBorder"]  = theme.GlassBorder;
-        res["ThemeGlow"]         = theme.Glow;
-    }
-
-    private static void SetColor(Avalonia.Controls.IResourceDictionary res, string key, string hex)
-    {
-        if (Color.TryParse(hex, out var c))
-            res[key] = c;
+        ThemePalette.Apply(Application.Current.Resources, theme, accentOverride);
     }
 }

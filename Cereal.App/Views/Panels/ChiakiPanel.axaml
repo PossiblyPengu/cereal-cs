@@ -13,8 +13,8 @@
       <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontWeight" Value="Medium"/>
-      <Setter Property="Padding" Value="12,6"/>
-      <Setter Property="MinHeight" Value="30"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinHeight" Value="34"/>
       <Setter Property="BorderThickness" Value="0,0,0,2"/>
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="CornerRadius" Value="0"/>
@@ -36,9 +36,9 @@
       <Setter Property="Background" Value="#14ffffff"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
       <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Padding" Value="10,5"/>
-      <Setter Property="MinHeight" Value="30"/>
-      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="MinHeight" Value="34"/>
+      <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="BorderBrush" Value="#10ffffff"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -59,9 +59,9 @@
       <Setter Property="Foreground" Value="#07070d"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Padding" Value="10,5"/>
-      <Setter Property="MinHeight" Value="30"/>
-      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="MinHeight" Value="34"/>
+      <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
@@ -79,9 +79,9 @@
       <Setter Property="Background" Value="#33ff4444"/>
       <Setter Property="Foreground" Value="#ff7070"/>
       <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Padding" Value="6,5"/>
-      <Setter Property="MinHeight" Value="30"/>
-      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="8,8"/>
+      <Setter Property="MinHeight" Value="34"/>
+      <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
@@ -100,9 +100,9 @@
       <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
       <Setter Property="BorderBrush" Value="#14ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="10,7"/>
-      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="MinHeight" Value="34"/>
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="CaretBrush" Value="#d4a853"/>
     </Style>
@@ -115,10 +115,37 @@
   <Border Background="{DynamicResource ThemeSurface}"
           BorderBrush="#14ffffff"
           BorderThickness="1,0,0,0">
-  <Grid RowDefinitions="Auto,Auto,*">
+  <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+    <!-- Header -->
+    <Border Grid.Row="0" Margin="18,12,18,0" CornerRadius="12" Padding="14,12"
+            Background="#10ffffff" BorderBrush="#20ffffff" BorderThickness="1">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <StackPanel Grid.Column="0" Spacing="2">
+          <TextBlock Text="PLAYSTATION REMOTE PLAY" FontSize="10" FontWeight="Bold"
+                     LetterSpacing="1.5" Foreground="#50b0aaa0"/>
+          <TextBlock Text="Manage consoles, discover on network, and launch streams."
+                     FontSize="12" Foreground="{DynamicResource ThemeText2}"/>
+          <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+            <Border Background="#14ffffff" CornerRadius="4" Padding="6,2">
+              <TextBlock Text="{Binding Consoles.Count, StringFormat='Consoles: {0}'}"
+                         FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
+            </Border>
+            <Border Background="#14ffffff" CornerRadius="4" Padding="6,2">
+              <TextBlock Text="{Binding DiscoveredConsoles.Count, StringFormat='Discovered: {0}'}"
+                         FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+          <Button Classes="ch-sm" Content="Open chiaki-ng" Click="OpenGui_Click"/>
+          <Button Classes="ch-primary" Content="Scan" Click="Discover_Click"/>
+        </StackPanel>
+      </Grid>
+    </Border>
 
     <!-- Status bar -->
-    <Border Grid.Row="0" Margin="14,10,14,0" CornerRadius="8" Padding="10,6"
+    <Border Grid.Row="1" Margin="18,10,18,0" CornerRadius="8" Padding="10,8"
             Background="{Binding StatusBg}">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <Ellipse Width="6" Height="6" Fill="{Binding StatusDot}" VerticalAlignment="Center"/>
@@ -131,22 +158,22 @@
     </Border>
 
     <!-- Tabs -->
-    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="14,8,14,0">
-      <Button Classes="chiaki-tab" Content="Consoles"
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="18,8,18,0">
+      <Button Classes="chiaki-tab" Content="My Consoles"
               Classes.active="{Binding IsTabConsoles}"
               Click="TabConsoles_Click"/>
       <Button Classes="chiaki-tab" Content="Discover"
               Classes.active="{Binding IsTabDiscover}"
               Click="TabDiscover_Click"/>
-      <Button Classes="chiaki-tab" Content="Register"
+      <Button Classes="chiaki-tab" Content="Pair Console"
               Classes.active="{Binding IsTabRegister}"
               Click="TabRegister_Click"/>
     </StackPanel>
 
     <!-- Tab content -->
-    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="14,10,14,14" Spacing="10">
+      <StackPanel Margin="18,12,18,16" Spacing="12">
 
         <!-- ── Consoles tab ── -->
         <StackPanel IsVisible="{Binding IsTabConsoles}" Spacing="10">
@@ -189,11 +216,17 @@
           <!-- Empty state -->
           <Border IsVisible="{Binding HasNoConsoles}"
                   Background="#0dffffff" BorderBrush="#14ffffff" BorderThickness="1" CornerRadius="10" Padding="16">
-            <TextBlock FontSize="12" Foreground="#50b0aaa0" TextWrapping="Wrap"
-                       TextAlignment="Center">
-              No consoles registered. Use the Discover tab to find consoles on your network,
-              or click + Add to add one manually.
-            </TextBlock>
+            <StackPanel Spacing="8">
+              <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText2}" TextAlignment="Center"
+                         Text="No consoles added yet"/>
+              <TextBlock FontSize="12" Foreground="#50b0aaa0" TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         Text="Start with Discover to auto-find consoles, or use + Add if you know the host IP."/>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                <Button Classes="ch-primary" Content="Discover now" Click="Discover_Click"/>
+                <Button Classes="ch-sm" Content="Add manually" Click="ShowAddConsole_Click"/>
+              </StackPanel>
+            </StackPanel>
           </Border>
 
           <!-- Console cards -->
@@ -328,7 +361,7 @@
           <Border IsVisible="{Binding ShowDiscoverEmpty}"
                   Background="#0dffffff" BorderBrush="#14ffffff" BorderThickness="1" CornerRadius="10" Padding="16">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-              <TextBlock Text="Click Scan Network to find PlayStation consoles."
+              <TextBlock Text="No consoles found yet."
                          FontSize="12" Foreground="#50b0aaa0" TextAlignment="Center"/>
               <TextBlock Text="Make sure your console is on and on the same network."
                          FontSize="10" Foreground="#30b0aaa0" TextAlignment="Center"/>
@@ -340,7 +373,7 @@
         <!-- ── Register tab ── -->
         <StackPanel IsVisible="{Binding IsTabRegister}" Spacing="12">
 
-          <TextBlock Text="Register your PlayStation for Remote Play. One-time setup per console."
+          <TextBlock Text="Pair a console once, then launch streams from My Consoles."
                      FontSize="12" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
 
           <Border Background="#12ffffff" BorderBrush="#18ffffff" BorderThickness="1" CornerRadius="10" Padding="12">

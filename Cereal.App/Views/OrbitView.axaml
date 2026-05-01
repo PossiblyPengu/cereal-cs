@@ -6,24 +6,59 @@
              x:Name="Root"
              x:DataType="vm:MainViewModel">
 
+  <UserControl.Styles>
+    <Style Selector="Button.zoom-btn">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.zoom-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#1affffff"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    </Style>
+    <Style Selector="Button.zoom-btn:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#26ffffff"/>
+    </Style>
+    <Style Selector="Button.zoom-btn:focus-visible /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
+    </Style>
+  </UserControl.Styles>
+
   <Grid>
     <!-- Deep-space backdrop: layered gradients add depth behind stars. -->
+    <!-- Radial: soft blue-purple nebula bloom at the center -->
     <Border IsHitTestVisible="False">
       <Border.Background>
-        <RadialGradientBrush Center="50%,42%" GradientOrigin="50%,42%" RadiusX="78%" RadiusY="78%">
-          <GradientStop Color="#1a2a2f46" Offset="0"/>
-          <GradientStop Color="#10111f36" Offset="0.45"/>
-          <GradientStop Color="#07080f22" Offset="1"/>
+        <RadialGradientBrush Center="50%,42%" GradientOrigin="50%,42%" RadiusX="80%" RadiusY="80%">
+          <GradientStop Color="#28182846" Offset="0"/>
+          <GradientStop Color="#1a101830" Offset="0.40"/>
+          <GradientStop Color="#0a080e20" Offset="0.75"/>
+          <GradientStop Color="#04040a10" Offset="1"/>
         </RadialGradientBrush>
       </Border.Background>
     </Border>
+    <!-- Diagonal tint: subtle warm-to-cool sweep for variety -->
     <Border IsHitTestVisible="False">
       <Border.Background>
         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-          <GradientStop Color="#10080a14" Offset="0"/>
-          <GradientStop Color="#0a05070d" Offset="0.55"/>
-          <GradientStop Color="#04030408" Offset="1"/>
+          <GradientStop Color="#0c0a0818" Offset="0"/>
+          <GradientStop Color="#06050714" Offset="0.5"/>
+          <GradientStop Color="#080a1018" Offset="1"/>
         </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+    <!-- Top-right accent: faint purple nebula shoulder -->
+    <Border IsHitTestVisible="False">
+      <Border.Background>
+        <RadialGradientBrush Center="80%,15%" GradientOrigin="80%,15%" RadiusX="40%" RadiusY="35%">
+          <GradientStop Color="#12140830" Offset="0"/>
+          <GradientStop Color="#00000000" Offset="1"/>
+        </RadialGradientBrush>
       </Border.Background>
     </Border>
 
@@ -34,20 +69,48 @@
     <orbit:OrbitWorld x:Name="World" Opacity="1"/>
 
     <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
-            Margin="0,0,18,18" CornerRadius="22"
-            Background="#cc0d0d16" BorderBrush="#22ffffff" BorderThickness="1"
-            Padding="8,4"
+            Margin="0,0,18,18" CornerRadius="20"
+            Background="#d40b0b13" BorderBrush="#1fffffff" BorderThickness="1"
+            Padding="6,4"
+            BoxShadow="0 8 24 0 #80000000, inset 0 1 0 0 #14ffffff"
             RenderTransformOrigin="0.5,0.5">
       <Border.RenderTransform>
         <ScaleTransform ScaleX="{Binding ToolbarScale}" ScaleY="{Binding ToolbarScale}"/>
       </Border.RenderTransform>
-      <StackPanel Orientation="Horizontal" Spacing="2">
-        <Button Content="Fit all" Click="FitAll_Click" Padding="10,0" Height="30" FontSize="11"/>
-        <Button Content="-" Click="ZoomOut_Click" Width="30" Height="30"/>
+      <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <Button Classes="zoom-btn" Click="FitAll_Click" ToolTip.Tip="Fit all (double-click)"
+                Width="30" Height="30">
+          <Viewbox Width="14" Height="14">
+            <Canvas Width="24" Height="24">
+              <!-- Four-corners fit symbol -->
+              <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    StrokeThickness="1.8"
+                    StrokeLineCap="Round"
+                    Fill="Transparent"
+                    Data="M4,10 V4 H10 M14,4 H20 V10 M20,14 V20 H14 M10,20 H4 V14"/>
+            </Canvas>
+          </Viewbox>
+        </Button>
+
+        <Border Width="1" Margin="4,6" Background="#1affffff"/>
+
+        <Button Classes="zoom-btn" Click="ZoomOut_Click" ToolTip.Tip="Zoom out"
+                Width="30" Height="30">
+          <TextBlock Text="&#x2212;" FontSize="15" FontWeight="Light"
+                     VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Button>
+
         <TextBlock Text="{Binding ElementName=Root, Path=ZoomPercentLabel}"
-                   MinWidth="30" TextAlignment="Center"
-                   VerticalAlignment="Center" Foreground="#e6ffffff" FontSize="10"/>
-        <Button Content="+" Click="ZoomIn_Click" Width="30" Height="30"/>
+                   MinWidth="42" TextAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="{DynamicResource ThemeText}"
+                   FontSize="11" FontWeight="Medium" LetterSpacing="0.3"/>
+
+        <Button Classes="zoom-btn" Click="ZoomIn_Click" ToolTip.Tip="Zoom in"
+                Width="30" Height="30">
+          <TextBlock Text="+" FontSize="15" FontWeight="Light"
+                     VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Button>
       </StackPanel>
     </Border>
 

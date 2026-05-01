@@ -18,12 +18,22 @@
     <Description>Universal game launcher aggregating Steam, Epic, GOG, Battle.net, EA, Ubisoft, itch.io, Xbox, PlayStation</Description>
     <Version>1.0.0</Version>
     <ApplicationIcon Condition="!$(RuntimeIdentifier.StartsWith('linux'))">Assets/icon.ico</ApplicationIcon>
+    <!-- WebView2 pulls both net8 WindowsBase (v4) and WPF WindowsBase (v5); keep build output clean. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>true</TieredPGO>
+    <ReadyToRun>true</ReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="Assets\icon.ico" CopyToOutputDirectory="PreserveNewest"/>
     <AvaloniaResource Include="Assets\icon.png"/>
     <AvaloniaResource Include="Assets\icon.svg"/>
+    <AvaloniaResource Include="Theme\*.axaml"/>
   </ItemGroup>
 
   <!--
@@ -58,7 +68,13 @@
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Velopack" Version="0.0.1298" />
-    <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
-    <PackageReference Include="WebView.Avalonia.Desktop" Version="11.0.0.1" />
+    <!--
+      Microsoft.Web.WebView2 — driven directly via a custom NativeControlHost
+      (Cereal.App/Controls/WebView2Host.cs). Replaces WebView.Avalonia 11.0.0.1
+      whose native HWND sizing was buggy (left black strips on the right/bottom).
+      Windows-only at runtime; the native loader DLL is harmless on Linux as
+      long as the code never instantiates WebView2Host there.
+    -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3912.50" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,15 @@
-2026/04/22-20:35:23.363 3c40 Reusing MANIFEST E:\CODE\cereal-cs\out\win-x64\Cereal.App.exe.WebView2\EBWebView\Default\Session Storage/MANIFEST-000001
-2026/04/22-20:35:23.364 3c40 Recovering log #3
-2026/04/22-20:35:23.366 3c40 Reusing old log E:\CODE\cereal-cs\out\win-x64\Cereal.App.exe.WebView2\EBWebView\Default\Session Storage/000003.log 
+2026/04/28-08:01:19.486 6958 Reusing MANIFEST D:\CODE\FUN\cereal-cs\out\win-x64\Cereal.App.exe.WebView2\EBWebView\Default\Session Storage/MANIFEST-000001
+2026/04/28-08:01:19.519 6958 Recovering log #28
+2026/04/28-08:01:19.546 6958 Reusing old log D:\CODE\FUN\cereal-cs\out\win-x64\Cereal.App.exe.WebView2\EBWebView\Default\Session Storage/000028.log 
+2026/04/28-08:01:28.590 3f28 Level-0 table #32: started
+2026/04/28-08:01:28.601 3f28 Level-0 table #32: 24412 bytes OK
+2026/04/28-08:01:28.611 3f28 Delete type=0 #28
+2026/04/28-08:01:28.614 6958 Compacting 4@0 + 1@1 files
+2026/04/28-08:01:28.641 6958 Generated table #33@0: 189 keys, 15145 bytes
+2026/04/28-08:01:28.641 6958 Compacted 4@0 + 1@1 files => 15145 bytes
+2026/04/28-08:01:28.650 6958 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/28-08:01:28.662 6958 Delete type=2 #21
+2026/04/28-08:01:28.662 6958 Delete type=2 #24
+2026/04/28-08:01:28.663 6958 Delete type=2 #26
+2026/04/28-08:01:28.663 6958 Delete type=2 #29
+2026/04/28-08:01:28.663 6958 Delete type=2 #32

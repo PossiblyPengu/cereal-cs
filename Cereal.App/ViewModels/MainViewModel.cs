@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,6 +11,7 @@ using Cereal.App.Services.Metadata;
 using Cereal.App.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Avalonia.Threading;
+using System.Text.RegularExpressions;
 
 namespace Cereal.App.ViewModels;
 
@@ -21,6 +23,11 @@ public partial class MainViewModel : ObservableObject
     private readonly ChiakiService _chiaki;
     private readonly XcloudService _xcloud;
     private bool _refreshQueued;
+    private DispatcherTimer? _processStatsTimer;
+    private TimeSpan _lastCpuSample = TimeSpan.Zero;
+    private DateTime _lastCpuSampleAtUtc = DateTime.UtcNow;
+    private readonly Dictionary<string, Game> _gamesById = new(StringComparer.Ordinal);
+    private List<GameCardViewModel> _searchLibraryCards = [];
 
     public MediaViewModel Media { get; }
 
@@ -29,12 +36,14 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private GameCardViewModel? _selectedGame;
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _statusMessage;
+    [ObservableProperty] private string _appUsageLabel = "CPU --  RAM --  Threads --";
 
     [ObservableProperty] private ObservableCollection<string> _activePlatformFilters = [];
     [ObservableProperty] private ObservableCollection<string> _activeCategoryFilters = [];
     [ObservableProperty] private bool _showHidden;
     [ObservableProperty] private bool _showInstalledOnly;
     [ObservableProperty] private bool _hideSteamSoftware = true;
+    [ObservableProperty] private bool _uiAnimationsEnabled = true;
     [ObservableProperty] private string _sortOrder = "name";
     [ObservableProperty] private string _quickFilter = "all";
     // "top" | "bottom" | "left" | "right" — drives nav pill placement.
@@ -87,8 +96,23 @@ public partial class MainViewModel : ObservableObject
             ? new Avalonia.Thickness(6, 10, 6, 10)
             : new Avalonia.Thickness(10, 4, 10, 4);
 
+    // Keep cross-axis thickness consistent across orientations:
+    // side width ~= top/bottom height.
+    private const double NavPillThicknessPx = 46;
+
     public double NavPillMinWidth =>
-        ToolbarPosition is "left" or "right" ? 68 : 0;
+        ToolbarPosition is "left" or "right" ? NavPillThicknessPx : 0;
+
+    public double NavPillMinHeight =>
+        ToolbarPosition is "left" or "right" ? 0 : NavPillThicknessPx;
+
+    /// <summary>Left/right rail: lock cross-axis size to match top/bottom height (<see cref="NavPillThicknessPx"/>).</summary>
+    public bool IsSideNav =>
+        ToolbarPosition is "left" or "right";
+
+    /// <summary>Top/bottom: auto width. Side rails: fixed thickness (same as horizontal bar height).</summary>
+    public double NavPillWidth =>
+        IsSideNav ? NavPillThicknessPx : double.NaN;
 
     // Put the now-playing widget on the opposite edge from the toolbar so they
     // never overlap (toolbar at bottom → media at top, and vice versa).
@@ -125,6 +149,9 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(NavPillCornerRadius));
         OnPropertyChanged(nameof(NavPillPadding));
         OnPropertyChanged(nameof(NavPillMinWidth));
+        OnPropertyChanged(nameof(NavPillMinHeight));
+        OnPropertyChanged(nameof(IsSideNav));
+        OnPropertyChanged(nameof(NavPillWidth));
         OnPropertyChanged(nameof(MediaVerticalAlignment));
         OnPropertyChanged(nameof(StreamBarBorderThickness));
         OnPropertyChanged(nameof(MediaWidgetMargin));
@@ -147,6 +174,7 @@ public partial class MainViewModel : ObservableObject
         + (SortOrder != "name" && !string.IsNullOrEmpty(SortOrder) ? 1 : 0);
 
     public bool HasActiveFilters => ActiveFilterCount > 0;
+    public bool UiAnimationsDisabled => !UiAnimationsEnabled;
 
     public ObservableCollection<GameCardViewModel> VisibleGames { get; } = [];
     public ObservableCollection<CardLayoutEntry> CardLayoutRows { get; } = [];
@@ -214,12 +242,13 @@ public partial class MainViewModel : ObservableObject
 
     private void NotifyStreamEmbeddingProps() => OnPropertyChanged(nameof(ShowChiakiEmbedHost));
 
-    [ObservableProperty] private bool _showSettings;
-    [ObservableProperty] private bool _showDetect;
-    [ObservableProperty] private bool _showChiaki;
-    [ObservableProperty] private bool _showXcloud;
-    [ObservableProperty] private bool _showPlatforms;
-    [ObservableProperty] private bool _showPlatformAuth;
+    private readonly HashSet<string> _openPanels = [];
+    public bool ShowSettings     => _openPanels.Contains("settings");
+    public bool ShowDetect       => _openPanels.Contains("detect");
+    public bool ShowChiaki       => _openPanels.Contains("chiaki");
+    public bool ShowXcloud       => _openPanels.Contains("xcloud");
+    public bool ShowPlatforms    => _openPanels.Contains("platforms");
+    public bool ShowPlatformAuth => _openPanels.Contains("platformauth");
     /// <summary>OAuth URL for the in-app WebView (Steam, GOG, Epic, Xbox).</summary>
     [ObservableProperty] private string? _platformAuthUrl;
     [ObservableProperty] private string _platformAuthTabTitle = "Sign in";
@@ -229,49 +258,88 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isRefreshingGameInfo;
     [ObservableProperty] private string _searchQuery = "";
     [ObservableProperty] private string? _searchPlatformFilter;
-    public bool AnyPanelOpen => ShowSettings || ShowDetect || ShowChiaki || ShowXcloud || ShowPlatforms || ShowPlatformAuth;
-    public bool IsLibraryTabActive => !AnyPanelOpen;
-    public string? ActivePanelTabId
+    // Stores which panel tab is currently displayed. Show* flags track which tabs
+    // are open/in the tab bar; _activePanelTabId tracks which one shows its content.
+    private string? _activePanelTabId;
+
+    // Ordered tab definitions — single source of truth for id/title pairs.
+    private static readonly (string Id, string Title)[] TabDefs =
+    [
+        ("settings",     "Settings"),
+        ("detect",       "Detect"),
+        ("platforms",    "Platforms"),
+        ("platformauth", ""),           // title comes from PlatformAuthTabTitle at runtime
+        ("chiaki",       "Remote Play"),
+        ("xcloud",       "Cloud Gaming"),
+    ];
+
+    private void SetPanelTab(string id, bool open)
     {
-        get
+        bool changed = open ? _openPanels.Add(id) : _openPanels.Remove(id);
+        if (!changed) return;
+        OnPropertyChanged(id switch
         {
-            if (ShowSettings) return "settings";
-            if (ShowDetect) return "detect";
-            if (ShowPlatforms) return "platforms";
-            if (ShowPlatformAuth) return "platformauth";
-            if (ShowChiaki) return "chiaki";
-            if (ShowXcloud) return "xcloud";
-            return null;
-        }
+            "settings"     => nameof(ShowSettings),
+            "detect"       => nameof(ShowDetect),
+            "chiaki"       => nameof(ShowChiaki),
+            "xcloud"       => nameof(ShowXcloud),
+            "platforms"    => nameof(ShowPlatforms),
+            "platformauth" => nameof(ShowPlatformAuth),
+            _              => id,
+        });
     }
-    public bool ShowTabGroupSeparator => HasOpenPanelStripTabs && StreamTabs.Count > 0;
-    private bool HasOpenPanelStripTabs => ShowSettings || ShowDetect || ShowPlatforms || ShowPlatformAuth || ShowChiaki || ShowXcloud;
+
+    private void OpenTab(string id)  { SetPanelTab(id, true);  _activePanelTabId = id;                              NotifyTabsChanged(); }
+    private void CloseTab(string id) { SetPanelTab(id, false); if (_activePanelTabId == id) _activePanelTabId = null; NotifyTabsChanged(); }
+
+    public bool AnyPanelOpen => _activePanelTabId is not null;
+    public bool IsLibraryTabActive => !AnyPanelOpen;
+
+    public string? ActivePanelTabId =>
+        _activePanelTabId is not null && _openPanels.Contains(_activePanelTabId) ? _activePanelTabId : null;
+
+    // Per-panel visibility: only the active tab renders its content.
+    public bool IsSettingsPanelVisible     => ActivePanelTabId == "settings";
+    public bool IsDetectPanelVisible       => ActivePanelTabId == "detect";
+    public bool IsChiakiPanelVisible       => ActivePanelTabId == "chiaki";
+    public bool IsXcloudPanelVisible       => ActivePanelTabId == "xcloud";
+    public bool IsPlatformsPanelVisible    => ActivePanelTabId == "platforms";
+    public bool IsPlatformAuthPanelVisible => ActivePanelTabId == "platformauth";
+
+    public bool ShowTabGroupSeparator => _openPanels.Count > 0 && StreamTabs.Count > 0;
+
     public IEnumerable<PanelTabViewModel> PanelTabs
     {
         get
         {
-            var a = ActivePanelTabId;
-            if (ShowSettings) yield return new PanelTabViewModel("settings", "Settings", a == "settings");
-            if (ShowDetect) yield return new PanelTabViewModel("detect", "Detect", a == "detect");
-            if (ShowPlatforms) yield return new PanelTabViewModel("platforms", "Platforms", a == "platforms");
-            if (ShowPlatformAuth) yield return new PanelTabViewModel("platformauth", PlatformAuthTabTitle, a == "platformauth");
-            if (ShowChiaki) yield return new PanelTabViewModel("chiaki", "Remote Play", a == "chiaki");
-            if (ShowXcloud) yield return new PanelTabViewModel("xcloud", "Cloud Gaming", a == "xcloud");
+            var a = _activePanelTabId;
+            foreach (var (id, title) in TabDefs)
+            {
+                if (!_openPanels.Contains(id)) continue;
+                yield return new PanelTabViewModel(id, id == "platformauth" ? PlatformAuthTabTitle : title, a == id);
+            }
         }
     }
+
     public string RefreshInfoButtonLabel => IsRefreshingGameInfo ? "Fetching..." : "Refresh Info";
     partial void OnIsRefreshingGameInfoChanged(bool value) => OnPropertyChanged(nameof(RefreshInfoButtonLabel));
-    partial void OnShowSettingsChanged(bool value) => NotifyTabsChanged();
-    partial void OnShowDetectChanged(bool value) => NotifyTabsChanged();
-    partial void OnShowChiakiChanged(bool value) => NotifyTabsChanged();
-    partial void OnShowXcloudChanged(bool value) => NotifyTabsChanged();
-    partial void OnShowPlatformsChanged(bool value) => NotifyTabsChanged();
-    partial void OnShowPlatformAuthChanged(bool value) => NotifyTabsChanged();
     partial void OnPlatformAuthTabTitleChanged(string value) => NotifyTabsChanged();
+    partial void OnShowFocusChanged(bool value) => OnPropertyChanged(nameof(ShowContinueBanner));
 
-    // Continue banner
-    [ObservableProperty] private bool _showContinueBanner;
+    // Continue banner — visibility is computed (not raw) so it follows focus/panel state
+    // and respects a session-scoped dismissal, mirroring App.tsx (`!continueBannerDismissed
+    // && !focusGame && !anyPanelOpen`).
+    private bool _continueBannerDismissed;
     [ObservableProperty] private GameCardViewModel? _continueGame;
+
+    public bool ShowContinueBanner =>
+        ContinueGame is not null
+        && !_continueBannerDismissed
+        && !ShowFocus
+        && !AnyPanelOpen;
+
+    partial void OnContinueGameChanged(GameCardViewModel? value)
+        => OnPropertyChanged(nameof(ShowContinueBanner));
 
     // Toasts
     public ObservableCollection<ToastViewModel> Toasts { get; } = [];
@@ -331,19 +399,22 @@ public partial class MainViewModel : ObservableObject
 
     // Search overlay uses full library scope (not the currently filtered view),
     // excluding streaming-only PlayStation session entries.
-    private IEnumerable<GameCardViewModel> SearchLibrary =>
-        _games.GetAll()
-            .Where(g => g.Platform is not "psn" and not "psremote")
-            .Select(g => new GameCardViewModel(g, _games));
+    private IEnumerable<GameCardViewModel> SearchLibrary => _searchLibraryCards;
 
     // Search results
+    private IEnumerable<GameCardViewModel> SearchResultsCore()
+    {
+        if (string.IsNullOrEmpty(SearchQuery))
+            return [];
+
+        return SearchLibrary
+            .Where(g => g.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+            .Where(g => SearchPlatformFilter == null || g.Platform == SearchPlatformFilter)
+            .Take(12);
+    }
+
     public IEnumerable<GameCardViewModel> SearchResults =>
-        string.IsNullOrEmpty(SearchQuery)
-            ? []
-            : SearchLibrary
-                .Where(g => g.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
-                .Where(g => SearchPlatformFilter == null || g.Platform == SearchPlatformFilter)
-                .Take(12);
+        SearchResultsCore();
 
     public IEnumerable<string> SearchActivePlatforms =>
         string.IsNullOrEmpty(SearchQuery)
@@ -354,7 +425,7 @@ public partial class MainViewModel : ObservableObject
                 .Distinct();
 
     public bool HasNoSearchResults =>
-        !string.IsNullOrEmpty(SearchQuery) && !SearchResults.Any();
+        !string.IsNullOrEmpty(SearchQuery) && !SearchResultsCore().Any();
 
     public ObservableCollection<StreamTabViewModel> StreamTabs { get; } = [];
 
@@ -368,6 +439,10 @@ public partial class MainViewModel : ObservableObject
     public bool IsStreaming => ActiveStreamTab is not null;
     public bool IsStreamConnecting =>
         ActiveStreamTab?.State is "connecting" or "launching";
+
+    // Hide the floating stream bar when the XCloud panel is open and active —
+    // the WebView is the stream; the bar would just float over it redundantly.
+    public bool ShowStreamBar => IsStreaming;
 
     /// <summary>Windows-only: show native host for embedded Chiaki video (parity with Electron stream bounds).</summary>
     public bool ShowChiakiEmbedHost =>
@@ -399,6 +474,10 @@ public partial class MainViewModel : ObservableObject
         ViewMode = NormalizeViewMode(s.DefaultView);
         ToolbarPosition = string.IsNullOrWhiteSpace(s.ToolbarPosition) ? s.NavPosition : s.ToolbarPosition;
         HideSteamSoftware = s.FilterHideSteamSoftware;
+        UiAnimationsEnabled = s.ShowAnimations;
+
+        _settings.SettingsSaved += (_, updated) =>
+            Dispatcher.UIThread.Post(() => UiAnimationsEnabled = updated.ShowAnimations);
 
         // Restore user-saved filter state (port parity with settings.js DEFAULT_SETTINGS).
         if (s.FilterPlatforms is { Count: > 0 })
@@ -421,6 +500,7 @@ public partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(IsStreamConnecting));
             OnPropertyChanged(nameof(ShowChiakiEmbedHost));
             OnPropertyChanged(nameof(ShowTabGroupSeparator));
+            OnPropertyChanged(nameof(ShowStreamBar));
         };
 
         // Controller input from GamepadService is delivered on the UI thread.
@@ -465,6 +545,45 @@ public partial class MainViewModel : ObservableObject
 
         Refresh();
         UpdateContinueBanner();
+        StartProcessStatsSampling();
+    }
+
+    private void StartProcessStatsSampling()
+    {
+        _processStatsTimer?.Stop();
+        _processStatsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _processStatsTimer.Tick += (_, _) => UpdateProcessStats();
+        UpdateProcessStats();
+        _processStatsTimer.Start();
+    }
+
+    private void UpdateProcessStats()
+    {
+        try
+        {
+            using var proc = Process.GetCurrentProcess();
+            var nowUtc = DateTime.UtcNow;
+            var cpuTotal = proc.TotalProcessorTime;
+            var elapsedMs = (nowUtc - _lastCpuSampleAtUtc).TotalMilliseconds;
+
+            var cpuLabel = "--";
+            if (_lastCpuSample != TimeSpan.Zero && elapsedMs > 0)
+            {
+                var cpuMs = (cpuTotal - _lastCpuSample).TotalMilliseconds;
+                var cpuPct = cpuMs / (elapsedMs * Environment.ProcessorCount) * 100.0;
+                cpuLabel = $"{Math.Clamp(cpuPct, 0, 999):F1}%";
+            }
+
+            _lastCpuSample = cpuTotal;
+            _lastCpuSampleAtUtc = nowUtc;
+
+            var ramMb = proc.WorkingSet64 / (1024.0 * 1024.0);
+            AppUsageLabel = $"CPU {cpuLabel}  RAM {ramMb:F0} MB  Threads {proc.Threads.Count}";
+        }
+        catch
+        {
+            AppUsageLabel = "CPU --  RAM --  Threads --";
+        }
     }
 
     private void QueueRefresh()
@@ -496,18 +615,18 @@ public partial class MainViewModel : ObservableObject
         // Global actions (work regardless of which panel is open):
         if (act == "back")
         {
-            if (ShowFocus)       { ShowFocus = false; return; }
-            if (ShowSearch)      { CloseSearch(); return; }
-            if (ShowSettings)    { ShowSettings = false; return; }
-            if (ShowDetect)      { ShowDetect = false; return; }
-            if (ShowChiaki)      { ShowChiaki = false; return; }
-            if (ShowXcloud)      { ShowXcloud = false; return; }
+            if (ShowFocus)        { ShowFocus = false; return; }
+            if (ShowSearch)       { CloseSearch(); return; }
+            if (ShowSettings)     { CloseTab("settings"); return; }
+            if (ShowDetect)       { CloseTab("detect"); return; }
+            if (ShowChiaki)       { CloseTab("chiaki"); return; }
+            if (ShowXcloud)       { CloseTab("xcloud"); return; }
             if (ShowPlatformAuth) { DismissInAppAuthPanel(); return; }
-            if (ShowPlatforms)   { ShowPlatforms = false; return; }
+            if (ShowPlatforms)    { CloseTab("platforms"); return; }
             if (!string.IsNullOrEmpty(ZoomScreenshotUrl)) { ZoomScreenshotUrl = null; return; }
             return;
         }
-        if (act == "start")   { ShowSettings = !ShowSettings; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        if (act == "start") { if (ShowSettings) CloseTab("settings"); else OpenTab("settings"); return; }
         if (act == "select")  { if (ShowSearch) CloseSearch(); else OpenSearch(); return; }
 
         if (AnyPanelOpen) return; // Nothing else to do while a panel is open.
@@ -640,27 +759,25 @@ public partial class MainViewModel : ObservableObject
 
     private void UpdateContinueBanner()
     {
+        // Skip streaming platforms — those are sessions, not "things you continue"
+        // (parity with STREAMING_PLATFORMS in src/constants.tsx).
         var latest = _games.GetAll()
-            .Where(g => g.LastPlayed != null && g.Hidden != true)
+            .Where(g => g.LastPlayed != null
+                        && g.Hidden != true
+                        && g.Platform is not "psn" and not "psremote" and not "xbox")
             .OrderByDescending(g => g.LastPlayed)
             .FirstOrDefault();
-        if (latest is not null)
-        {
-            ContinueGame = new GameCardViewModel(latest, _games);
-            ShowContinueBanner = true;
-        }
-        else
-        {
-            ContinueGame = null;
-            ShowContinueBanner = false;
-        }
+        ContinueGame = latest is not null ? new GameCardViewModel(latest, _games) : null;
     }
 
     public void Refresh()
     {
+        var allGames = _games.GetAll();
+        RebuildGameIndexes(allGames);
+
         // Streaming-only PlayStation entries should not appear as tracked library
         // games; they are represented by stream sessions instead.
-        var visibleAll = _games.GetAll()
+        var visibleAll = allGames
             .Where(g => g.Platform is not "psn" and not "psremote")
             .Where(g => !HideSteamSoftware || !IsSteamSoftwareGame(g))
             .ToList();
@@ -771,9 +888,34 @@ public partial class MainViewModel : ObservableObject
             }
         }
         var n = (g.Name ?? string.Empty).ToLowerInvariant();
-        return System.Text.RegularExpressions.Regex.IsMatch(n,
-            @"redistributable|redistrib|steamworks|sdk|runtime|\bruntime\b|dedicated server|devkit|vr runtime|mod tools|soundtrack",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return SteamSoftwareNameRegex().IsMatch(n);
+    }
+
+    [GeneratedRegex(@"redistributable|redistrib|steamworks|sdk|runtime|\bruntime\b|dedicated server|devkit|vr runtime|mod tools|soundtrack", RegexOptions.IgnoreCase)]
+    private static partial Regex SteamSoftwareNameRegex();
+
+    private void RebuildGameIndexes(IReadOnlyCollection<Game>? source = null)
+    {
+        _gamesById.Clear();
+        var all = source ?? _games.GetAll();
+        foreach (var game in all)
+            _gamesById[game.Id] = game;
+
+        _searchLibraryCards = all
+            .Where(g => g.Platform is not "psn" and not "psremote")
+            .Select(g => new GameCardViewModel(g, _games))
+            .ToList();
+    }
+
+    private Game? FindGameById(string id)
+    {
+        if (_gamesById.TryGetValue(id, out var game))
+            return game;
+
+        game = _games.GetAll().FirstOrDefault(g => g.Id == id);
+        if (game is not null)
+            _gamesById[id] = game;
+        return game;
     }
 
     private int _searchSelectedIndex = -1;
@@ -794,6 +936,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     partial void OnSearchTextChanged(string value) { QueueRefresh(); NotifyFilterCount(); }
+    partial void OnUiAnimationsEnabledChanged(bool value) => OnPropertyChanged(nameof(UiAnimationsDisabled));
     partial void OnActivePlatformFiltersChanged(ObservableCollection<string> value) { PersistFilters(); QueueRefresh(); NotifyFilterCount(); }
     partial void OnActiveCategoryFiltersChanged(ObservableCollection<string> value) { PersistFilters(); QueueRefresh(); NotifyFilterCount(); }
     partial void OnShowHiddenChanged(bool value) => QueueRefresh();
@@ -873,9 +1016,8 @@ public partial class MainViewModel : ObservableObject
         {
             var s = _settings.Get();
             s.Theme = themeId;
-            s.AccentColor = string.Empty; // reset custom accent to follow the theme
             _settings.Save(s);
-            App.Services.GetRequiredService<Services.ThemeService>().ApplyCurrent();
+            App.Services.GetRequiredService<Services.ThemeService>().Apply(themeId, s.AccentColor);
             OnPropertyChanged(nameof(ThemeSwatches));
         }
         catch (Exception ex) { Serilog.Log.Debug(ex, "[main] SetTheme failed"); }
@@ -954,7 +1096,7 @@ public partial class MainViewModel : ObservableObject
 
     public void SearchMoveSelection(int delta)
     {
-        var results = SearchResults.ToList();
+        var results = SearchResultsCore().ToList();
         if (results.Count == 0) return;
         if (_searchSelectedIndex >= 0 && _searchSelectedIndex < results.Count)
             results[_searchSelectedIndex].IsSearchHighlighted = false;
@@ -964,25 +1106,23 @@ public partial class MainViewModel : ObservableObject
 
     public void SearchConfirm(bool launch)
     {
-        var results = SearchResults.ToList();
+        var results = SearchResultsCore().ToList();
         var card = _searchSelectedIndex >= 0 && _searchSelectedIndex < results.Count
             ? results[_searchSelectedIndex]
             : results.FirstOrDefault();
         if (card is null) return;
-        if (launch) _ = SearchLaunchAsync(card);
+        if (launch) _ = SearchLaunch(card);
         else SearchSelect(card);
-    }
-
-    private async Task SearchLaunchAsync(GameCardViewModel card)
-    {
-        CloseSearch();
-        await LaunchGame(card);
     }
 
     // ── Continue banner ───────────────────────────────────────────────────────
 
     [RelayCommand]
-    private void DismissContinueBanner() => ShowContinueBanner = false;
+    private void DismissContinueBanner()
+    {
+        _continueBannerDismissed = true;
+        OnPropertyChanged(nameof(ShowContinueBanner));
+    }
 
     [RelayCommand]
     private void DismissAppUpdate() => ShowAppUpdate = false;
@@ -1059,7 +1199,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void SelectGameById(string id)
     {
-        var game = _games.GetAll().FirstOrDefault(g => g.Id == id);
+        var game = FindGameById(id);
         if (game is null) return;
         var card = VisibleGames.FirstOrDefault(c => c.Id == id)
                    ?? new GameCardViewModel(game, _games);
@@ -1069,7 +1209,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task LaunchGameById(string id)
     {
-        var game = _games.GetAll().FirstOrDefault(g => g.Id == id);
+        var game = FindGameById(id);
         if (game is null) return;
         var card = VisibleGames.FirstOrDefault(c => c.Id == id)
                    ?? new GameCardViewModel(game, _games);
@@ -1149,6 +1289,9 @@ public partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void SetSort(string sort) => SortOrder = sort;
+
+    [RelayCommand]
+    private void ClearSearchText() => SearchText = string.Empty;
 
     [RelayCommand]
     private void SetQuickFilter(string filter) => QuickFilter = filter;
@@ -1261,25 +1404,24 @@ public partial class MainViewModel : ObservableObject
         if (n != ViewMode) ViewMode = n;
     }
 
-    [RelayCommand] private void OpenSettings()  { ShowSettings = true;  OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void CloseSettings() { ShowSettings = false; OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void OpenDetect()    { ShowDetect  = true;   OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void CloseDetect()   { ShowDetect  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void OpenChiaki()    { ShowChiaki  = true;   OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void CloseChiaki()   { ShowChiaki  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void OpenXcloud()    { ShowXcloud  = true;   OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void CloseXcloud()   { ShowXcloud  = false;  OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void OpenPlatforms() { ShowPlatforms = true;  OnPropertyChanged(nameof(AnyPanelOpen)); }
-    [RelayCommand] private void ClosePlatforms(){ ShowPlatforms = false; OnPropertyChanged(nameof(AnyPanelOpen)); }
+    [RelayCommand] private void OpenSettings()  => OpenTab("settings");
+    [RelayCommand] private void CloseSettings() => CloseTab("settings");
+    [RelayCommand] private void OpenDetect()    => OpenTab("detect");
+    [RelayCommand] private void CloseDetect()   => CloseTab("detect");
+    [RelayCommand] private void OpenChiaki()    => OpenTab("chiaki");
+    [RelayCommand] private void CloseChiaki()   => CloseTab("chiaki");
+    [RelayCommand] private void OpenXcloud()    => OpenTab("xcloud");
+    [RelayCommand] private void CloseXcloud()   => CloseTab("xcloud");
+    [RelayCommand] private void OpenPlatforms() => OpenTab("platforms");
+    [RelayCommand] private void ClosePlatforms()=> CloseTab("platforms");
 
     /// <summary>Embeds the OAuth page in a side panel and a title-bar tab (replaces the default browser for platform sign-in).</summary>
     public void OpenPlatformSignInWeb(string url, string? tabTitle = null)
     {
         PlatformAuthUrl = url;
         PlatformAuthTabTitle = tabTitle ?? "Sign in";
-        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = false;
-        ShowPlatformAuth = true;
-        OnPropertyChanged(nameof(AnyPanelOpen));
+        foreach (var (id, _) in TabDefs) SetPanelTab(id, id == "platformauth");
+        _activePanelTabId = "platformauth";
         NotifyTabsChanged();
     }
 
@@ -1287,11 +1429,16 @@ public partial class MainViewModel : ObservableObject
     public void DismissInAppAuthPanel()
     {
         if (!ShowPlatformAuth) return;
-        ShowPlatformAuth = false;
+        SetPanelTab("platformauth", false);
         PlatformAuthUrl = null;
-        if (!ShowSettings && !ShowDetect && !ShowChiaki && !ShowXcloud)
-            ShowPlatforms = true;
-        OnPropertyChanged(nameof(AnyPanelOpen));
+        var wasActive = _activePanelTabId == "platformauth";
+        if (_openPanels.Count == 0)
+        {
+            SetPanelTab("platforms", true);
+            if (wasActive) _activePanelTabId = "platforms";
+        }
+        else if (wasActive)
+            _activePanelTabId = null;
         NotifyTabsChanged();
     }
 
@@ -1301,46 +1448,40 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void OpenLauncherTab()
     {
-        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = ShowPlatformAuth = false;
+        _activePanelTabId = null;
         ShowFocus = false;
-        OnPropertyChanged(nameof(AnyPanelOpen));
+        NotifyTabsChanged();
     }
 
     [RelayCommand]
     private void SwitchToPanelTab(string? tabId)
     {
         if (string.IsNullOrWhiteSpace(tabId)) return;
-        ShowSettings = tabId == "settings";
-        ShowDetect = tabId == "detect";
-        ShowPlatforms = tabId == "platforms";
-        ShowPlatformAuth = tabId == "platformauth";
-        ShowChiaki = tabId == "chiaki";
-        ShowXcloud = tabId == "xcloud";
-        OnPropertyChanged(nameof(AnyPanelOpen));
+        SetPanelTab(tabId, true);
+        _activePanelTabId = tabId;
+        NotifyTabsChanged();
     }
 
     [RelayCommand]
     private void ClosePanelTab(string? tabId)
     {
         if (string.IsNullOrWhiteSpace(tabId)) return;
-        switch (tabId)
-        {
-            case "settings": ShowSettings = false; break;
-            case "detect": ShowDetect = false; break;
-            case "platforms": ShowPlatforms = false; break;
-            case "platformauth": ShowPlatformAuth = false; PlatformAuthUrl = null; if (!ShowSettings && !ShowDetect && !ShowChiaki && !ShowXcloud) ShowPlatforms = true; break;
-            case "chiaki": ShowChiaki = false; break;
-            case "xcloud": ShowXcloud = false; break;
-        }
-        OnPropertyChanged(nameof(AnyPanelOpen));
+        if (tabId == "platformauth") { DismissInAppAuthPanel(); return; }
+        CloseTab(tabId);
     }
 
     [RelayCommand]
     private void CloseAllPanels()
     {
-        ShowSettings = ShowDetect = ShowChiaki = ShowXcloud = ShowPlatforms = ShowPlatformAuth = false;
+        _openPanels.Clear();
         PlatformAuthUrl = null;
-        OnPropertyChanged(nameof(AnyPanelOpen));
+        _activePanelTabId = null;
+        OnPropertyChanged(nameof(ShowSettings));
+        OnPropertyChanged(nameof(ShowDetect));
+        OnPropertyChanged(nameof(ShowChiaki));
+        OnPropertyChanged(nameof(ShowXcloud));
+        OnPropertyChanged(nameof(ShowPlatforms));
+        OnPropertyChanged(nameof(ShowPlatformAuth));
         NotifyTabsChanged();
     }
 
@@ -1349,12 +1490,8 @@ public partial class MainViewModel : ObservableObject
         if (ZoomScreenshotUrl is not null) { CloseZoom(); return; }
         if (ShowSearch)   { CloseSearch(); return; }
         if (ShowFocus)    { ShowFocus = false; SelectedGame = null; return; }
-        if (ShowSettings) { ShowSettings = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
-        if (ShowDetect)   { ShowDetect  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
-        if (ShowChiaki)   { ShowChiaki  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
-        if (ShowXcloud)   { ShowXcloud  = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
-        if (ShowPlatformAuth) { DismissInAppAuthPanel(); return; }
-        if (ShowPlatforms){ ShowPlatforms = false; OnPropertyChanged(nameof(AnyPanelOpen)); return; }
+        var active = ActivePanelTabId;
+        if (active is not null) { ClosePanelTab(active); return; }
     }
 
     [RelayCommand]
@@ -1371,20 +1508,24 @@ public partial class MainViewModel : ObservableObject
     private void SwitchToStreamTab(StreamTabViewModel? tab)
     {
         if (tab is null) return;
-        // Close any other open overlay panels so only the stream re-opens.
-        ShowSettings = ShowDetect = ShowPlatforms = ShowPlatformAuth = false;
+        SetPanelTab("settings", false);
+        SetPanelTab("detect", false);
+        SetPanelTab("platforms", false);
+        SetPanelTab("platformauth", false);
         PlatformAuthUrl = null;
         if (tab.Platform is "psn" or "psremote")
         {
-            ShowXcloud = false;
-            ShowChiaki = true;
+            SetPanelTab("xcloud", false);
+            SetPanelTab("chiaki", true);
+            _activePanelTabId = "chiaki";
         }
         else if (tab.Platform == "xbox")
         {
-            ShowChiaki = false;
-            ShowXcloud = true;
+            SetPanelTab("chiaki", false);
+            SetPanelTab("xcloud", true);
+            _activePanelTabId = "xcloud";
         }
-        OnPropertyChanged(nameof(AnyPanelOpen));
+        NotifyTabsChanged();
     }
 
     [RelayCommand]
@@ -1430,9 +1571,9 @@ public partial class MainViewModel : ObservableObject
         {
             var discord = App.Services.GetRequiredService<DiscordService>();
             if (!discord.IsConnected || !discord.IsReady) return;
-            var g = _games.GetAll().FirstOrDefault(x => x.Id == gameId);
+            var g = FindGameById(gameId);
             if (g is null) return;
-            discord.SetPresence(g.Name, g.Platform ?? "custom", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            discord.SetPresence(g.Name, g.Platform ?? "custom", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         }
         catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed setting Discord presence for stream"); }
     }
@@ -1448,7 +1589,7 @@ public partial class MainViewModel : ObservableObject
             {
                 if (tab is null)
                 {
-                    var game = _games.GetAll().Find(g => g.Id == e.GameId);
+                    var game = FindGameById(e.GameId);
                     tab = new StreamTabViewModel(e.GameId, game?.Name ?? e.GameId, "psn") { State = stateStr };
                     StreamTabs.Add(tab);
                 }
@@ -1511,14 +1652,14 @@ public partial class MainViewModel : ObservableObject
             // And make sure Discord presence shows the new title for non-URI launches.
             if (!string.IsNullOrEmpty(newGameId))
             {
-                var g = _games.GetAll().FirstOrDefault(x => x.Id == newGameId);
+                var g = FindGameById(newGameId);
                 if (g is not null)
                 {
                     try
                     {
                         var discord = App.Services.GetRequiredService<Services.Integrations.DiscordService>();
                         discord.SetPresence(g.Name, g.Platform ?? "psn",
-                            DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                     }
                     catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed updating Discord presence on title change"); }
                 }
@@ -1527,7 +1668,7 @@ public partial class MainViewModel : ObservableObject
             var toastTitle = !string.IsNullOrWhiteSpace(detected)
                 ? detected
                 : (!string.IsNullOrEmpty(newGameId)
-                    ? _games.GetAll().FirstOrDefault(x => x.Id == newGameId)?.Name
+                    ? FindGameById(newGameId)?.Name
                     : null);
             if (!string.IsNullOrWhiteSpace(toastTitle))
                 ShowToast($"Now playing: {toastTitle}");
@@ -1538,41 +1679,17 @@ public partial class MainViewModel : ObservableObject
 
     private void OnXcloudEvent(object? sender, XcloudEventArgs e)
     {
-        var tab = StreamTabs.FirstOrDefault(t => t.GameId == e.GameId);
         if (e.Type == "state")
         {
             e.Data.TryGetValue("state", out var stateObj);
-            var stateStr = stateObj?.ToString() ?? "connecting";
-
-            if (tab is null)
-            {
-                var game = _games.GetAll().FirstOrDefault(g => g.Id == e.GameId);
-                var title = game?.Name ?? e.GameId;
-                tab = new StreamTabViewModel(e.GameId, title, "xbox") { State = stateStr };
-                StreamTabs.Add(tab);
-            }
-            else
-            {
-                tab.State = stateStr;
-            }
-
-            if (stateStr == "streaming")
+            if (stateObj?.ToString() == "streaming")
                 TrySetDiscordPresenceForStream(e.GameId);
-
-            OnPropertyChanged(nameof(ActiveStreamTab));
-            OnPropertyChanged(nameof(GuiStreamTab));
-            OnPropertyChanged(nameof(ShowGuiStreamFloat));
-            OnPropertyChanged(nameof(IsStreaming));
-            OnPropertyChanged(nameof(IsStreamConnecting));
         }
-        else if (e.Type == "disconnected" && tab is not null)
+        else if (e.Type == "disconnected")
         {
-            StreamTabs.Remove(tab);
             try { App.Services.GetRequiredService<Services.Integrations.DiscordService>().ClearPresence(); }
             catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed clearing Discord presence on xCloud disconnect"); }
         }
-
-        NotifyStreamEmbeddingProps();
     }
 
     private void NotifyTabsChanged()
@@ -1582,6 +1699,14 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(ActivePanelTabId));
         OnPropertyChanged(nameof(ShowTabGroupSeparator));
         OnPropertyChanged(nameof(PanelTabs));
+        OnPropertyChanged(nameof(IsSettingsPanelVisible));
+        OnPropertyChanged(nameof(IsDetectPanelVisible));
+        OnPropertyChanged(nameof(IsChiakiPanelVisible));
+        OnPropertyChanged(nameof(IsXcloudPanelVisible));
+        OnPropertyChanged(nameof(IsPlatformsPanelVisible));
+        OnPropertyChanged(nameof(IsPlatformAuthPanelVisible));
+        OnPropertyChanged(nameof(ShowStreamBar));
+        OnPropertyChanged(nameof(ShowContinueBanner));
     }
 }
 

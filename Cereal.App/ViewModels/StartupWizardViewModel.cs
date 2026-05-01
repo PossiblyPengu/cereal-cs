@@ -19,6 +19,37 @@ public partial class StartupWizardViewModel : ObservableObject
 
     [ObservableProperty] private int _step = 0;
 
+    /// <summary>Header title for the current wizard step.</summary>
+    public string StepTitle => Step switch
+    {
+        0 => "Welcome",
+        1 => "Appearance",
+        2 => "Performance & layout",
+        3 => "Connect accounts",
+        4 => "Behavior",
+        5 => "PlayStation Remote Play",
+        6 => "All set",
+        _ => "Cereal",
+    };
+
+    /// <summary>One-line context under the step title.</summary>
+    public string StepSubtitle => Step switch
+    {
+        0 => "Your games in one place — with art, streaming, and privacy in mind.",
+        1 => "Theme, accent color, and the default way you browse your library.",
+        2 => "Orbit starfield, UI scale, toolbar, and motion — tune for your machine.",
+        3 => "Sign in to the platforms you use. Skip anything you do not need.",
+        4 => "How Cereal runs in the background and when you are in-game.",
+        5 => "Optional: install chiaki-ng and link a console for PS Remote Play.",
+        6 => "Review your setup, add art keys if you like, then launch the app.",
+        _ => string.Empty,
+    };
+
+    public string StepIndicator => $"Step {Step + 1} of {TotalSteps}";
+
+    /// <summary>0–100 for the top progress bar.</summary>
+    public double ProgressPercent => (Step + 1) * 100.0 / TotalSteps;
+
     // Appearance
     [ObservableProperty] private string _defaultView = "orbit";
     [ObservableProperty] private string _theme = "midnight";
@@ -59,6 +90,10 @@ public partial class StartupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(CanGoBack));
         OnPropertyChanged(nameof(CanSkip));
         OnPropertyChanged(nameof(NextLabel));
+        OnPropertyChanged(nameof(StepTitle));
+        OnPropertyChanged(nameof(StepSubtitle));
+        OnPropertyChanged(nameof(StepIndicator));
+        OnPropertyChanged(nameof(ProgressPercent));
         for (int i = 0; i < TotalSteps; i++)
             OnPropertyChanged($"DotBrush{i}");
     }
@@ -67,10 +102,16 @@ public partial class StartupWizardViewModel : ObservableObject
         ThemeOptions.Select(t => new ThemeSwatchViewModel(t, Theme));
 
     // Dot brushes — one per step. Accessed dynamically via indexer.
-    private IBrush DotFor(int i) =>
-        i == Step
-            ? new SolidColorBrush(Color.Parse("#d4a853"))
-            : new SolidColorBrush(Colors.White, 0.15);
+    private IBrush DotFor(int i)
+    {
+        if (i == Step)
+        {
+            if (Color.TryParse(AccentColor, out var c))
+                return new SolidColorBrush(c);
+            return new SolidColorBrush(Color.Parse(DefaultAccent));
+        }
+        return new SolidColorBrush(Color.Parse("#28ffffff"));
+    }
 
     public IBrush DotBrush0 => DotFor(0);
     public IBrush DotBrush1 => DotFor(1);
@@ -132,13 +173,19 @@ public partial class StartupWizardViewModel : ObservableObject
         }
     }
 
+    partial void OnAccentColorChanged(string value)
+    {
+        OnPropertyChanged(nameof(AppearanceSummary));
+        for (int i = 0; i < TotalSteps; i++)
+            OnPropertyChanged($"DotBrush{i}");
+    }
+
     partial void OnThemeChanged(string value)
     {
         OnPropertyChanged(nameof(ThemeSwatches));
         OnPropertyChanged(nameof(AppearanceSummary));
     }
     partial void OnDefaultViewChanged(string value) => OnPropertyChanged(nameof(AppearanceSummary));
-    partial void OnAccentColorChanged(string value) => OnPropertyChanged(nameof(AppearanceSummary));
     partial void OnStarDensityChanged(string value) => OnPropertyChanged(nameof(PerformanceSummary));
     partial void OnUiScaleChanged(string value) => OnPropertyChanged(nameof(PerformanceSummary));
     partial void OnShowAnimationsChanged(bool value) => OnPropertyChanged(nameof(PerformanceSummary));

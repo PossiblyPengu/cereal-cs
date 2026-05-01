@@ -40,7 +40,7 @@ public sealed class MetadataProgressArgs : EventArgs
     public string? CurrentGame { get; init; }
 }
 
-public sealed class MetadataService
+public sealed partial class MetadataService
 {
     private readonly DatabaseService _db;
     private readonly SettingsService _settings;
@@ -70,12 +70,15 @@ public sealed class MetadataService
     private string? SteamGridDbKey =>
         _creds.GetPassword("cereal", "steamgriddb_key");
 
-    /// <summary>Valid values: <c>steam</c> (Steam Store search first) and <c>wikipedia</c>.
-    /// Legacy or invalid values (e.g. <c>steamgriddb</c>) are treated as <c>steam</c>.</summary>
-    private string MetadataSource =>
-        string.Equals(_settings.Get().MetadataSource, "wikipedia", StringComparison.OrdinalIgnoreCase)
-            ? "wikipedia"
-            : "steam";
+    /// <summary>Valid values: <c>steam</c>, <c>wikipedia</c>, <c>igdb</c> (requires Twitch/IGDB API keys).
+    /// Legacy or invalid values are treated as <c>steam</c>.</summary>
+    private string MetadataMode =>
+        _settings.Get().MetadataSource?.ToLowerInvariant() switch
+        {
+            "wikipedia" => "wikipedia",
+            "igdb"      => "igdb",
+            _           => "steam",
+        };
 
     // ─── Core entry points ────────────────────────────────────────────────────
 
@@ -92,9 +95,19 @@ public sealed class MetadataService
             return cached.Data;
 
         FetchedMetadata? meta = null;
+        var mode   = MetadataMode;
+        var hasIgdb = HasIgdbCredentials;
+        if (mode == "igdb" && !hasIgdb)
+            mode = "steam"; // IGDB selected but not configured — behave like Steam
+
+        // IGDB-first (Twitch API) when user chose it and keys are set
+        if (mode == "igdb" && hasIgdb)
+        {
+            meta = await FetchIgdbForGameAsync(game, ct);
+        }
 
         // Steam games: try Steam appId first, then search fallback
-        if (game.Platform == "steam")
+        if (meta is null && game.Platform == "steam")
         {
             if (!string.IsNullOrEmpty(game.PlatformId))
                 meta = await FetchSteamAsync(game.PlatformId!, ct);
@@ -104,7 +117,7 @@ public sealed class MetadataService
         // Fallback for all platforms
         if (meta is null)
         {
-            if (MetadataSource == "wikipedia")
+            if (mode == "wikipedia")
             {
                 meta = await FetchWikipediaAsync(game.Name, ct)
                        ?? await FetchSteamSearchAsync(game.Name, ct);

@@ -5,6 +5,7 @@
              xmlns:views="using:Cereal.App.Views"
              x:Class="Cereal.App.Views.MainView"
              x:DataType="vm:MainViewModel"
+             Classes.no-motion="{Binding UiAnimationsDisabled}"
              Background="{DynamicResource ThemeVoid}">
 
   <UserControl.Resources>
@@ -136,13 +137,31 @@
       <Setter Property="Opacity" Value="0.45"/>
     </Style>
     <Style Selector="Button.chip:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
     <!-- index.css .chip.active — rgba(212,168,83,0.12) accent-soft -->
     <Style Selector="Button.chip.active">
       <Setter Property="Background" Value="#1FD4A853"/>
       <Setter Property="BorderBrush" Value="#4dd4a853"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
+    </Style>
+    <!-- Side rail: same thickness as top/bottom bar; chips must stay within the fixed width. -->
+    <Style Selector="Border.rail > StackPanel > Button.chip">
+      <Setter Property="Width" Value="30"/>
+      <Setter Property="Padding" Value="2,3"/>
+      <Setter Property="FontSize" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Border.rail > StackPanel > Panel">
+      <Setter Property="Margin" Value="0"/>
+    </Style>
+    <Style Selector="Border.rail > StackPanel > Button.theme-picker-btn">
+      <Setter Property="Width" Value="30"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="Padding" Value="3,3"/>
+    </Style>
+    <Style Selector="Border.rail > StackPanel">
+      <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
     <!-- ── Nav pill icon button ── -->
@@ -397,6 +416,55 @@
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
 
+    <!-- Remove default flyout presenter plate behind custom dropdown content -->
+    <Style Selector="FlyoutPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+    </Style>
+
+    <!-- Respect the global Show animations setting for the library surface. -->
+    <Style Selector="UserControl.no-motion Border.game-card">
+      <Setter Property="Transitions">
+        <Transitions/>
+      </Setter>
+    </Style>
+    <Style Selector="UserControl.no-motion Border.game-card:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1) translateY(0px)"/>
+      <Setter Property="BoxShadow" Value="{x:Null}"/>
+      <Setter Property="BorderBrush" Value="#0fffffff"/>
+    </Style>
+    <Style Selector="UserControl.no-motion Border.game-card Image">
+      <Setter Property="Transitions">
+        <Transitions/>
+      </Setter>
+    </Style>
+    <Style Selector="UserControl.no-motion Border.game-card:pointerover Image">
+      <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <Style Selector="UserControl.no-motion Border.game-card Panel Border.hover-actions">
+      <Setter Property="Transitions">
+        <Transitions/>
+      </Setter>
+    </Style>
+
+    <!-- ── Cards view fade-in on enter (#10) ── -->
+    <Style Selector="Panel.cards-view">
+      <Setter Property="Opacity" Value="0"/>
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Panel.cards-view.active">
+      <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="UserControl.no-motion Panel.cards-view">
+      <Setter Property="Transitions"><Transitions/></Setter>
+    </Style>
+
   </UserControl.Styles>
 
   <!-- Root panel — content + floating nav pill -->
@@ -405,7 +473,9 @@
     <!-- ── Card grid (scroll area) ── -->
     <!-- Outer Panel: empty-state overlay; scroll has one virtualized list of
          section headers + short horizontal card rows. -->
-    <Panel IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
+    <Panel Classes="cards-view"
+           Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
+           IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
 
       <!-- Empty state overlay — centered, only shown when library is empty -->
       <StackPanel IsVisible="{Binding !VisibleGames.Count}"
@@ -424,7 +494,7 @@
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center"
                     Margin="0,6,0,0">
           <Button Content="Add Game"
-                  Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeVoid}"
+                  Background="{DynamicResource ThemeAccent}" Foreground="{DynamicResource ThemeOnAccent}"
                   CornerRadius="10" Padding="20,9" FontSize="13" FontWeight="Bold"
                   BorderThickness="0" Cursor="Hand"
                   Command="{Binding ShowAddGameCommand}"/>
@@ -464,12 +534,16 @@
          bottom-right `.stream-pill`.
     ───────────────────────────────────────────────────────── -->
     <!-- index.css .nav-pill — rgba(13,13,22,0.82), border rgba(255,255,255,0.09) -->
-    <Border VerticalAlignment="{Binding ToolbarVerticalAlignment}"
+    <Border Classes.rail="{Binding IsSideNav}"
+            VerticalAlignment="{Binding ToolbarVerticalAlignment}"
             HorizontalAlignment="{Binding ToolbarHorizontalAlignment}"
             Margin="{Binding ToolbarMargin}"
+            Width="{Binding NavPillWidth}"
             MinWidth="{Binding NavPillMinWidth}"
+            MinHeight="{Binding NavPillMinHeight}"
             CornerRadius="{Binding NavPillCornerRadius}"
-            Background="#d20d0d16"
+            ClipToBounds="{Binding IsSideNav}"
+            Background="{DynamicResource ThemeSurface}"
             BorderBrush="#17ffffff"
             BorderThickness="1"
             BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
@@ -480,19 +554,58 @@
       </Border.RenderTransform>
       <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="2" VerticalAlignment="Center">
 
-        <!-- Brand — index.css .nav-brand (uppercase) -->
-        <TextBlock Text="CEREAL" FontSize="11" FontWeight="Light"
-                   LetterSpacing="4"
-                   VerticalAlignment="Center" Margin="6,0,10,0">
-          <TextBlock.Foreground>
-            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-              <GradientStop Color="#d4a853" Offset="0"/>
-              <GradientStop Color="#b0aaa0" Offset="1"/>
-            </LinearGradientBrush>
-          </TextBlock.Foreground>
-        </TextBlock>
+        <!-- Brand — horizontal on top/bottom, vertical on left/right -->
+        <Panel Margin="6,0,10,0" VerticalAlignment="Center">
+          <TextBlock Text="CEREAL" FontSize="11" FontWeight="Light"
+                     LetterSpacing="4" VerticalAlignment="Center"
+                     IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=top}">
+            <TextBlock.Foreground>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="#b0aaa0" Offset="1"/>
+              </LinearGradientBrush>
+            </TextBlock.Foreground>
+          </TextBlock>
+          <TextBlock Text="CEREAL" FontSize="11" FontWeight="Light"
+                     LetterSpacing="4" VerticalAlignment="Center"
+                     IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=bottom}">
+            <TextBlock.Foreground>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="#b0aaa0" Offset="1"/>
+              </LinearGradientBrush>
+            </TextBlock.Foreground>
+          </TextBlock>
+          <TextBlock Text="C&#10;E&#10;R&#10;E&#10;A&#10;L" FontSize="11" FontWeight="Light"
+                     LetterSpacing="1.5" VerticalAlignment="Center"
+                     IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=left}">
+            <TextBlock.Foreground>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="#b0aaa0" Offset="1"/>
+              </LinearGradientBrush>
+            </TextBlock.Foreground>
+          </TextBlock>
+          <TextBlock Text="C&#10;E&#10;R&#10;E&#10;A&#10;L" FontSize="11" FontWeight="Light"
+                     LetterSpacing="1.5" VerticalAlignment="Center"
+                     IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}">
+            <TextBlock.Foreground>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="#b0aaa0" Offset="1"/>
+              </LinearGradientBrush>
+            </TextBlock.Foreground>
+          </TextBlock>
+        </Panel>
 
-        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=top}"/>
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=bottom}"/>
+        <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=left}"/>
+        <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}"/>
 
         <!-- Quick-filter chips: All / Fav / Recent (App.tsx 947-949) -->
         <Button Classes="chip" Content="All"
@@ -509,8 +622,8 @@
                 CommandParameter="recent"/>
 
         <!-- Filter flyout — trigger icon matches Vite I.search (constants.tsx) -->
-        <Button Classes="nav-btn" ToolTip.Tip="Filter games">
-          <Panel>
+        <Button Classes="nav-btn" ToolTip.Tip="Filter games" ClipToBounds="False">
+          <Panel ClipToBounds="False">
             <Viewbox Width="14" Height="14">
               <Canvas Width="24" Height="24">
                 <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -529,7 +642,7 @@
                     IsVisible="{Binding HasActiveFilters}">
               <TextBlock Text="{Binding ActiveFilterCount}"
                          FontSize="8" FontWeight="Bold"
-                         Foreground="{DynamicResource ThemeVoid}"
+                         Foreground="{DynamicResource ThemeOnAccent}"
                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
           </Panel>
@@ -571,10 +684,18 @@
                   <StackPanel Spacing="4">
                     <TextBlock Text="SEARCH" FontSize="9" FontWeight="Bold"
                                LetterSpacing="1.5" Foreground="#60b0aaa0"/>
-                    <TextBox Text="{Binding SearchText}" Watermark="Filter games..."
-                             Background="#0affffff" BorderBrush="#18ffffff"
-                             Foreground="{DynamicResource ThemeText}"
-                             CornerRadius="6" Padding="8,5" FontSize="11"/>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                      <TextBox Grid.Column="0"
+                               Text="{Binding SearchText}" Watermark="Filter games..."
+                               Background="#0affffff" BorderBrush="#18ffffff"
+                               Foreground="{DynamicResource ThemeText}"
+                               CornerRadius="6" Padding="8,5" FontSize="11"/>
+                      <Button Grid.Column="1"
+                              Classes="filter-btn"
+                              Content="Clear"
+                              Command="{Binding ClearSearchTextCommand}"
+                              IsVisible="{Binding SearchText, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}"/>
+                    </Grid>
                   </StackPanel>
 
                   <!-- Show hidden toggle -->
@@ -679,49 +800,170 @@
           </Button.Flyout>
         </Button>
 
-        <!-- View toggle (App.tsx 1029-1032): orbit first, cards second -->
-        <Border Padding="2" CornerRadius="8" Background="#0bffffff"
-                BorderBrush="#0fffffff" BorderThickness="1"
-                Margin="4,0">
-          <StackPanel Orientation="Horizontal" Spacing="1">
-            <Button Classes="view-btn"
-                    Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
-                    Command="{Binding SetViewModeCommand}"
-                    CommandParameter="orbit"
-                    ToolTip.Tip="Orbit view">
-              <Viewbox Width="12" Height="12">
-                <Canvas Width="24" Height="24">
-                  <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                        StrokeThickness="2"
-                        StrokeLineCap="Round"
-                        Fill="Transparent"
-                        Data="M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12 M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12"/>
-                </Canvas>
-              </Viewbox>
-            </Button>
-            <Button Classes="view-btn"
-                    Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
-                    Command="{Binding SetViewModeCommand}"
-                    CommandParameter="cards"
-                    ToolTip.Tip="Card view">
-              <Viewbox Width="12" Height="12">
-                <Canvas Width="24" Height="24">
-                  <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                        StrokeThickness="2"
-                        StrokeLineCap="Round"
-                        Fill="Transparent"
-                        Data="M4,3 H9 A1,1 0 0 1 10,4 V9 A1,1 0 0 1 9,10 H4 A1,1 0 0 1 3,9 V4 A1,1 0 0 1 4,3 Z M15,3 H20 A1,1 0 0 1 21,4 V9 A1,1 0 0 1 20,10 H15 A1,1 0 0 1 14,9 V4 A1,1 0 0 1 15,3 Z M4,14 H9 A1,1 0 0 1 10,15 V20 A1,1 0 0 1 9,21 H4 A1,1 0 0 1 3,20 V15 A1,1 0 0 1 4,14 Z M15,14 H20 A1,1 0 0 1 21,15 V20 A1,1 0 0 1 20,21 H15 A1,1 0 0 1 14,20 V15 A1,1 0 0 1 15,14 Z"/>
-                </Canvas>
-              </Viewbox>
-            </Button>
-          </StackPanel>
-        </Border>
+        <!-- View toggle (App.tsx 1029-1032): compact variant for side rails -->
+        <Panel>
+          <Border Padding="2" CornerRadius="8" Background="#0bffffff"
+                  BorderBrush="#0fffffff" BorderThickness="1"
+                  Margin="4,0"
+                  IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=top}">
+            <StackPanel Orientation="Horizontal" Spacing="1">
+              <Button Classes="view-btn"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="orbit"
+                      ToolTip.Tip="Orbit view">
+                <Viewbox Width="12" Height="12">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12 M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+              <Button Classes="view-btn"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="cards"
+                      ToolTip.Tip="Card view">
+                <Viewbox Width="12" Height="12">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M4,3 H9 A1,1 0 0 1 10,4 V9 A1,1 0 0 1 9,10 H4 A1,1 0 0 1 3,9 V4 A1,1 0 0 1 4,3 Z M15,3 H20 A1,1 0 0 1 21,4 V9 A1,1 0 0 1 20,10 H15 A1,1 0 0 1 14,9 V4 A1,1 0 0 1 15,3 Z M4,14 H9 A1,1 0 0 1 10,15 V20 A1,1 0 0 1 9,21 H4 A1,1 0 0 1 3,20 V15 A1,1 0 0 1 4,14 Z M15,14 H20 A1,1 0 0 1 21,15 V20 A1,1 0 0 1 20,21 H15 A1,1 0 0 1 14,20 V15 A1,1 0 0 1 15,14 Z"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+            </StackPanel>
+          </Border>
+          <Border Padding="2" CornerRadius="8" Background="#0bffffff"
+                  BorderBrush="#0fffffff" BorderThickness="1"
+                  Margin="4,0"
+                  IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=bottom}">
+            <StackPanel Orientation="Horizontal" Spacing="1">
+              <Button Classes="view-btn"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="orbit"
+                      ToolTip.Tip="Orbit view">
+                <Viewbox Width="12" Height="12">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12 M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+              <Button Classes="view-btn"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="cards"
+                      ToolTip.Tip="Card view">
+                <Viewbox Width="12" Height="12">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M4,3 H9 A1,1 0 0 1 10,4 V9 A1,1 0 0 1 9,10 H4 A1,1 0 0 1 3,9 V4 A1,1 0 0 1 4,3 Z M15,3 H20 A1,1 0 0 1 21,4 V9 A1,1 0 0 1 20,10 H15 A1,1 0 0 1 14,9 V4 A1,1 0 0 1 15,3 Z M4,14 H9 A1,1 0 0 1 10,15 V20 A1,1 0 0 1 9,21 H4 A1,1 0 0 1 3,20 V15 A1,1 0 0 1 4,14 Z M15,14 H20 A1,1 0 0 1 21,15 V20 A1,1 0 0 1 20,21 H15 A1,1 0 0 1 14,20 V15 A1,1 0 0 1 15,14 Z"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+            </StackPanel>
+          </Border>
+          <Border Padding="1" CornerRadius="8" Background="#0bffffff"
+                  BorderBrush="#0fffffff" BorderThickness="1"
+                  Margin="2,0"
+                  IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=left}">
+            <StackPanel Orientation="Vertical" Spacing="1">
+              <Button Classes="view-btn" Width="22" Height="22"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="orbit"
+                      ToolTip.Tip="Orbit view">
+                <Viewbox Width="10" Height="10">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12 M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+              <Button Classes="view-btn" Width="22" Height="22"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="cards"
+                      ToolTip.Tip="Card view">
+                <Viewbox Width="10" Height="10">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M4,3 H9 A1,1 0 0 1 10,4 V9 A1,1 0 0 1 9,10 H4 A1,1 0 0 1 3,9 V4 A1,1 0 0 1 4,3 Z M15,3 H20 A1,1 0 0 1 21,4 V9 A1,1 0 0 1 20,10 H15 A1,1 0 0 1 14,9 V4 A1,1 0 0 1 15,3 Z M4,14 H9 A1,1 0 0 1 10,15 V20 A1,1 0 0 1 9,21 H4 A1,1 0 0 1 3,20 V15 A1,1 0 0 1 4,14 Z M15,14 H20 A1,1 0 0 1 21,15 V20 A1,1 0 0 1 20,21 H15 A1,1 0 0 1 14,20 V15 A1,1 0 0 1 15,14 Z"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+            </StackPanel>
+          </Border>
+          <Border Padding="1" CornerRadius="8" Background="#0bffffff"
+                  BorderBrush="#0fffffff" BorderThickness="1"
+                  Margin="2,0"
+                  IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}">
+            <StackPanel Orientation="Vertical" Spacing="1">
+              <Button Classes="view-btn" Width="22" Height="22"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="orbit"
+                      ToolTip.Tip="Orbit view">
+                <Viewbox Width="10" Height="10">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M15,12 A3,3 0 1 1 9,12 A3,3 0 1 1 15,12 M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+              <Button Classes="view-btn" Width="22" Height="22"
+                      Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
+                      Command="{Binding SetViewModeCommand}"
+                      CommandParameter="cards"
+                      ToolTip.Tip="Card view">
+                <Viewbox Width="10" Height="10">
+                  <Canvas Width="24" Height="24">
+                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeLineCap="Round"
+                          Fill="Transparent"
+                          Data="M4,3 H9 A1,1 0 0 1 10,4 V9 A1,1 0 0 1 9,10 H4 A1,1 0 0 1 3,9 V4 A1,1 0 0 1 4,3 Z M15,3 H20 A1,1 0 0 1 21,4 V9 A1,1 0 0 1 20,10 H15 A1,1 0 0 1 14,9 V4 A1,1 0 0 1 15,3 Z M4,14 H9 A1,1 0 0 1 10,15 V20 A1,1 0 0 1 9,21 H4 A1,1 0 0 1 3,20 V15 A1,1 0 0 1 4,14 Z M15,14 H20 A1,1 0 0 1 21,15 V20 A1,1 0 0 1 20,21 H15 A1,1 0 0 1 14,20 V15 A1,1 0 0 1 15,14 Z"/>
+                  </Canvas>
+                </Viewbox>
+              </Button>
+            </StackPanel>
+          </Border>
+        </Panel>
 
-        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=top}"/>
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=bottom}"/>
+        <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=left}"/>
+        <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}"/>
 
         <!-- Theme picker (App.tsx 1034-1091) — dots + custom accent input -->
         <Button Classes="theme-picker-btn" ToolTip.Tip="Theme">
-          <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+          <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="5" VerticalAlignment="Center">
             <Ellipse Width="14" Height="14" Fill="{DynamicResource ThemeAccent}"/>
             <Path Width="8" Height="8" VerticalAlignment="Center" Stretch="Uniform"
                   Stroke="{DynamicResource ThemeText3}"
@@ -774,7 +1016,7 @@
 
         <!-- Toolbar position — current glyph matches Vite layoutOptions (App.tsx 1094–1101) -->
         <Button Classes="theme-picker-btn" ToolTip.Tip="Toolbar position">
-          <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+          <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="5" VerticalAlignment="Center">
             <Panel Width="14" Height="14">
               <!-- top -->
               <Viewbox Width="14" Height="14"
@@ -829,7 +1071,7 @@
               <Border Background="{DynamicResource ThemeSurface}"
                       BorderBrush="#0fffffff" BorderThickness="1"
                       CornerRadius="10" Padding="6">
-                <StackPanel Orientation="Horizontal" Spacing="4">
+                <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="4">
                   <Button Classes="nav-btn" ToolTip.Tip="Top"
                           Command="{Binding SetToolbarPositionCommand}" CommandParameter="top">
                     <Viewbox Width="12" Height="12">
@@ -884,10 +1126,17 @@
           </Button.Flyout>
         </Button>
 
-        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"/>
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=top}"/>
+        <Border Width="1" Height="16" Background="#0fffffff" Margin="4,0"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=bottom}"/>
+        <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=left}"/>
+        <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
+                IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}"/>
 
         <!-- Trailing nav-actions — index.css .nav-actions margin-left 6px, gap 1px -->
-        <StackPanel Orientation="Horizontal" Spacing="1" Margin="6,0,0,0" VerticalAlignment="Center">
+        <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="1" Margin="0" VerticalAlignment="Center">
           <Button Classes="nav-btn" ToolTip.Tip="Add game"
                   Command="{Binding ShowAddGameCommand}">
             <Viewbox Width="14" Height="14">
@@ -922,7 +1171,7 @@
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
             Margin="0,0,16,16"
             CornerRadius="22" Padding="6,4"
-            Background="#d20d0d16"
+            Background="{DynamicResource ThemeSurface}"
             BorderBrush="#17ffffff" BorderThickness="1"
             BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
             ZIndex="50"
@@ -967,7 +1216,7 @@
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Center"
             Margin="0,0,0,20"
             CornerRadius="20" Padding="14,6"
-            Background="#d20d0d16"
+            Background="{DynamicResource ThemeSurface}"
             IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
       <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
     </Border>
@@ -986,7 +1235,7 @@
                   Background="{DynamicResource ThemeAccent}"
                   IsVisible="{Binding ProgressPillDone}">
             <TextBlock Text="✓" FontSize="10" FontWeight="Bold"
-                       Foreground="{DynamicResource ThemeVoid}"
+                       Foreground="{DynamicResource ThemeOnAccent}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <Canvas Width="14" Height="14"

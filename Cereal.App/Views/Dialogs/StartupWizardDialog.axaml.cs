@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
 using Cereal.App.Services.Providers;
+using Cereal.App.Utilities;
 using Cereal.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -597,15 +598,9 @@ public partial class StartupWizardDialog : Window
     {
         try
         {
-            var cores = Environment.ProcessorCount;
-            var memBytes = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-            var memGb = memBytes > 0 ? memBytes / 1024d / 1024d / 1024d : 0;
-
-            if (cores >= 12 && memGb >= 16)
-                return ("High", "High-end system detected: high star density and animations recommended.");
-            if (cores <= 4 || (memGb > 0 && memGb < 8))
-                return ("Low", "Lower-spec system detected: low star density and reduced effects recommended.");
-            return ("Balanced", "Balanced system detected: normal star density and standard effects recommended.");
+            var snapshot = PerformanceAdvisor.Detect();
+            var recommendation = PerformanceAdvisor.Recommend(snapshot);
+            return (recommendation.Tier, recommendation.Summary);
         }
         catch
         {

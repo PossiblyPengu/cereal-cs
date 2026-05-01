@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Cereal.App.Utilities;
 
 namespace Cereal.App.Controls.Orbit;
 
@@ -27,9 +28,8 @@ public sealed class SpaceStation : Panel
     private readonly TextBlock _labelText;
     private readonly DispatcherTimer _floatTimer;
     private readonly DateTime _floatStart;
-    private bool _hovering;
 
-    public SpaceStation(OrbitWorld world, Color color, string label, string letter, int gameCount)
+    public SpaceStation(OrbitWorld world, string platform, Color color, string label, int gameCount)
     {
         _world = world;
         Width = 160;
@@ -101,6 +101,46 @@ public sealed class SpaceStation : Panel
         Children.Add(innerRing);
 
         // ─── Central hub ─────────────────────────────────────────────────────
+        Control hubContent;
+        if (PlatformLogos.TryGet(platform) is { } logo)
+        {
+            var iconPath = new Avalonia.Controls.Shapes.Path
+            {
+                Data = Avalonia.Media.Geometry.Parse(logo.PathData),
+                Stretch = Stretch.Uniform,
+                Width = 22,
+                Height = 22,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                IsHitTestVisible = false,
+            };
+            if (logo.IsStroke)
+            {
+                iconPath.Stroke = new ImmutableSolidColorBrush(Color.FromArgb(0xee, 255, 255, 255));
+                iconPath.StrokeThickness = logo.StrokeWidth;
+                iconPath.StrokeLineCap = Avalonia.Media.PenLineCap.Round;
+                iconPath.Fill = Brushes.Transparent;
+            }
+            else
+            {
+                iconPath.Fill = new ImmutableSolidColorBrush(Color.FromArgb(0xee, 255, 255, 255));
+            }
+            hubContent = iconPath;
+        }
+        else
+        {
+            var letter = label.Length > 0 ? char.ToUpperInvariant(label[0]).ToString() : "?";
+            hubContent = new TextBlock
+            {
+                Text = letter,
+                FontSize = 18,
+                FontWeight = FontWeight.Bold,
+                Foreground = new ImmutableSolidColorBrush(color),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
+
         _hub = new Border
         {
             Width = 44,
@@ -130,15 +170,7 @@ public sealed class SpaceStation : Panel
                 OffsetX = 0,
                 OffsetY = 0,
             },
-            Child = new TextBlock
-            {
-                Text = letter,
-                FontSize = 18,
-                FontWeight = FontWeight.Bold,
-                Foreground = new ImmutableSolidColorBrush(color),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            },
+            Child = hubContent,
             RenderTransform = new ScaleTransform(1, 1),
             RenderTransformOrigin = RelativePoint.Center,
             Transitions = new Transitions
@@ -289,7 +321,6 @@ public sealed class SpaceStation : Panel
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         base.OnPointerEntered(e);
-        _hovering = true;
         if (_hub.RenderTransform is ScaleTransform s) { s.ScaleX = 1.1; s.ScaleY = 1.1; }
         _labelText.Opacity = 0.9;
     }
@@ -297,7 +328,6 @@ public sealed class SpaceStation : Panel
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
-        _hovering = false;
         if (_hub.RenderTransform is ScaleTransform s) { s.ScaleX = 1; s.ScaleY = 1; }
         _labelText.Opacity = 0.5;
     }
@@ -306,7 +336,6 @@ public sealed class SpaceStation : Panel
     {
         base.OnPointerReleased(e);
         if (_world.DragMoved) return;
-        if (!_hovering) return;
         if (e.InitialPressMouseButton != MouseButton.Left) return;
         Clicked?.Invoke(this);
         e.Handled = true;

@@ -1,0 +1,277 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style Selector="TextBlock.lbl">
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Margin" Value="0,14,0,6"/>
+  </Style>
+  <Style Selector="TextBox.field">
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+    <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="10,7"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+  <Style Selector="ToggleSwitch">
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="Margin" Value="0,0,0,10"/>
+  </Style>
+
+  <Style Selector="Button.nav">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText4}"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="Padding" Value="10,8,12,8"/>
+    <Setter Property="CornerRadius" Value="0,8,8,0"/>
+    <Setter Property="BorderThickness" Value="2,0,0,0"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#0affffff"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
+  </Style>
+  <Style Selector="Button.nav:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#14ffffff"/>
+  </Style>
+  <Style Selector="Button.nav:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.nav:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+  <Style Selector="Button.nav:pointerover">
+    <Setter Property="BorderBrush" Value="#1affffff"/>
+  </Style>
+
+  <Style Selector="Button.nav.active">
+    <Setter Property="Background" Value="#0fffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccent}"/>
+  </Style>
+
+  <Style Selector="TextBlock.sec-hdr">
+    <Setter Property="FontSize" Value="9"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="LetterSpacing" Value="0.8"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+    <Setter Property="Margin" Value="0,16,0,8"/>
+  </Style>
+
+  <Style Selector="Border.sgdb-st.ok">
+    <Setter Property="Background" Value="#1F34D399"/>
+    <Setter Property="BorderBrush" Value="#3334D399"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="20"/>
+    <Setter Property="Padding" Value="7,2"/>
+  </Style>
+  <Style Selector="TextBlock.sgdb-st.ok">
+    <Setter Property="Foreground" Value="#34D399"/>
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="Border.sgdb-st.err">
+    <Setter Property="Background" Value="#1FF87171"/>
+    <Setter Property="BorderBrush" Value="#33F87171"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="20"/>
+    <Setter Property="Padding" Value="7,2"/>
+  </Style>
+  <Style Selector="TextBlock.sgdb-st.err">
+    <Setter Property="Foreground" Value="#F87171"/>
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="Border.sgdb-st.busy">
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="20"/>
+    <Setter Property="Padding" Value="7,2"/>
+  </Style>
+  <Style Selector="TextBlock.sgdb-st.busy">
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="Border.sgdb-st.miss">
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="20"/>
+    <Setter Property="Padding" Value="7,2"/>
+  </Style>
+  <Style Selector="TextBlock.sgdb-st.miss">
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <Style Selector="Border.lib-key-card">
+    <Setter Property="Background" Value="{DynamicResource ThemeSurface}"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Padding" Value="12,14"/>
+  </Style>
+
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="#14ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Padding" Value="12,7"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="#10ffffff"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#22ffffff"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+    <Setter Property="BorderBrush" Value="#1affffff"/>
+  </Style>
+  <Style Selector="Button.ghost:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#2affffff"/>
+  </Style>
+  <Style Selector="Button.ghost:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.ghost:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeOnAccent}"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Padding" Value="12,7"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ThemeAccentHover}"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeOnAccent}"/>
+  </Style>
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ThemeAccentPressed}"/>
+  </Style>
+  <Style Selector="Button.primary:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.primary:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <Style Selector="Border.danger-card">
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Background" Value="#05ff4444"/>
+    <Setter Property="BorderBrush" Value="#0fff4444"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="14,12"/>
+    <Setter Property="Margin" Value="0,0,0,8"/>
+  </Style>
+
+  <Style Selector="Button.action-card">
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="BorderBrush" Value="#0fffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Padding" Value="16,14"/>
+    <Setter Property="MinHeight" Value="74"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.action-card:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#0fffffff"/>
+    <Setter Property="BorderBrush" Value="#1affffff"/>
+  </Style>
+  <Style Selector="Button.action-card:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#14ffffff"/>
+  </Style>
+  <Style Selector="Button.action-card:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.action-card:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <Style Selector="Border.stat-box">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="BorderBrush" Value="#0fffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="12,10"/>
+  </Style>
+
+  <Style Selector="Border.header-stat">
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Background" Value="#0affffff"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="12,8"/>
+  </Style>
+
+  <Style Selector="TextBlock.nav-group">
+    <Setter Property="FontSize" Value="9"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="LetterSpacing" Value="1.1"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+    <Setter Property="Margin" Value="10,10,6,4"/>
+  </Style>
+  <Style Selector="TextBlock.section-lead">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+    <Setter Property="Margin" Value="0,0,0,10"/>
+  </Style>
+  <Style Selector="Border.setting-card">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="#0cffffff"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="16,14"/>
+    <Setter Property="Margin" Value="0,0,0,14"/>
+  </Style>
+  <Style Selector="Border.save-bar">
+    <Setter Property="Background" Value="{DynamicResource ThemeCard}"/>
+    <Setter Property="BorderBrush" Value="#1effffff"/>
+    <Setter Property="BorderThickness" Value="1,1,0,0"/>
+    <Setter Property="Padding" Value="16,12"/>
+  </Style>
+  <Style Selector="TextBlock.validation-error">
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="Foreground" Value="#ff7d7d"/>
+    <Setter Property="Margin" Value="0,4,0,0"/>
+  </Style>
+
+  <!-- Sticky page header in Settings (optional class on root) -->
+  <Style Selector="Border.settings-page-hdr">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    <Setter Property="Padding" Value="24,18,24,16"/>
+  </Style>
+  <Style Selector="Border.settings-page-hdr.danger-hdr">
+    <Setter Property="Background" Value="#18ff2a2a"/>
+    <Setter Property="BorderBrush" Value="#44ff5c5c"/>
+  </Style>
+
+</Styles>

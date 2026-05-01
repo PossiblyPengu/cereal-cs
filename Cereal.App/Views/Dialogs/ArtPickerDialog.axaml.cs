@@ -59,7 +59,18 @@ public partial class ArtPickerDialog : Window
     private void SearchBox_KeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key == Key.Return || e.Key == Key.Enter)
+        {
             _ = RunSearchAsync(this.FindControl<TextBox>("SearchBox")!.Text ?? "");
+            e.Handled = true;
+        }
+    }
+
+    private void SearchBox_AttachedToVisualTree(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        if (sender is not TextBox tb) return;
+        tb.Focus();
+        tb.SelectionStart = 0;
+        tb.SelectionEnd = tb.Text?.Length ?? 0;
     }
 
     private void Search_Click(object? sender, RoutedEventArgs e)
@@ -250,6 +261,14 @@ public partial class ArtPickerDialog : Window
             else
                 child.Classes.Remove("selected");
         }
+    }
+
+    private void Thumb_DoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not Border b || b.DataContext is not ArtResult result) return;
+        _selected = result;
+        Close(result.FullUrl);
+        e.Handled = true;
     }
 
     private static IEnumerable<Border> GetAllBordersInPanel(Control root)

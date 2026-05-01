@@ -85,6 +85,9 @@ public partial class PlatformsPanelViewModel : ObservableObject
 
     partial void OnFilterChanged(string value) => OnPropertyChanged(nameof(FilteredPlatforms));
 
+    [RelayCommand]
+    private void ClearFilter() => Filter = string.Empty;
+
     public async Task RefreshAllAsync()
     {
         foreach (var row in Platforms)

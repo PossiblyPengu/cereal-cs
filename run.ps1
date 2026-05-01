@@ -27,14 +27,69 @@ param(
     [switch]$DevPlaceholders,
     [int]$DevPlaceholderCount = 80,
     [switch]$DevPlaceholdersForce,
-    [switch]$ClearDevPlaceholders
+    [switch]$ClearDevPlaceholders,
+    [string]$DotnetDir = 'D:\CODE\important files'
 )
 
 $config = if ($Release) { 'Release' } else { 'Debug' }
 $proj   = Join-Path $PSScriptRoot 'Cereal.App\Cereal.App.csproj'
 $out    = Join-Path $PSScriptRoot 'out\win-x64'
-$dotnetLocal = 'D:\CODE\important files\dotnet-sdk-9.0.306-win-x64\dotnet.exe'
-$dotnet = if (Test-Path $dotnetLocal) { $dotnetLocal } else { 'dotnet' }
+
+function Resolve-DotnetExe {
+    param(
+        [string]$BaseDir,
+        [string]$RepoRoot
+    )
+
+    if ([string]::IsNullOrWhiteSpace($BaseDir) -or -not (Test-Path $BaseDir)) {
+        return $null
+    }
+
+    $directExe = Join-Path $BaseDir 'dotnet.exe'
+    if (Test-Path $directExe) {
+        return $directExe
+    }
+
+    $requestedVersion = $null
+    $globalJsonPath = Join-Path $RepoRoot 'global.json'
+    if (Test-Path $globalJsonPath) {
+        try {
+            $requestedVersion = (Get-Content -Path $globalJsonPath -Raw | ConvertFrom-Json).sdk.version
+        }
+        catch {
+            # Fall back to best available SDK folder if parsing fails.
+        }
+    }
+
+    $sdkCandidates = Get-ChildItem -Path $BaseDir -Directory -Filter 'dotnet-sdk-*' -ErrorAction SilentlyContinue |
+        Sort-Object -Property Name -Descending
+
+    if ($requestedVersion) {
+        $majorMinor = ($requestedVersion -split '\.')[0..1] -join '.'
+        $matching = $sdkCandidates | Where-Object { $_.Name -match "^dotnet-sdk-$([regex]::Escape($majorMinor))\." }
+        foreach ($candidate in $matching) {
+            $candidateExe = Join-Path $candidate.FullName 'dotnet.exe'
+            if (Test-Path $candidateExe) {
+                return $candidateExe
+            }
+        }
+    }
+
+    foreach ($candidate in $sdkCandidates) {
+        $candidateExe = Join-Path $candidate.FullName 'dotnet.exe'
+        if (Test-Path $candidateExe) {
+            return $candidateExe
+        }
+    }
+
+    return $null
+}
+
+$dotnetLocal = Resolve-DotnetExe -BaseDir $DotnetDir -RepoRoot $PSScriptRoot
+$dotnet = if ($dotnetLocal) { $dotnetLocal } else { 'dotnet' }
+if ($dotnetLocal) {
+    Write-Host "Using local dotnet: $dotnetLocal" -ForegroundColor DarkCyan
+}
 
 if (-not $SkipPublish) {
     Write-Host "Publishing self-contained ($config)..." -ForegroundColor Cyan

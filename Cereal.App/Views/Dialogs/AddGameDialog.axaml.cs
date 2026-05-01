@@ -24,6 +24,14 @@ public partial class AddGameDialog : Window
         InitializeComponent();
     }
 
+    private void NameBox_AttachedToVisualTree(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        if (sender is not TextBox tb) return;
+        tb.Focus();
+        tb.SelectionStart = 0;
+        tb.SelectionEnd = tb.Text?.Length ?? 0;
+    }
+
     public void LoadGame(Game g)
     {
         _editGame = g;
@@ -259,6 +267,7 @@ public partial class AddGameDialog : Window
 
     private void Save_Click(object? sender, RoutedEventArgs e)
     {
+        this.FindControl<TextBlock>("ErrorText")!.IsVisible = false;
         var name = this.FindControl<TextBox>("NameBox")!.Text?.Trim() ?? "";
         if (string.IsNullOrEmpty(name))
         {

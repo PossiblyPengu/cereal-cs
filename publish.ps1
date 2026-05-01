@@ -31,20 +31,20 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$root    = $PSScriptRoot
-$proj    = Join-Path $root 'Cereal.App\Cereal.App.csproj'
-$tag     = "v$Version"
-$tagMsg  = if ($Message) { $Message } else { "Release $tag" }
+$root = $PSScriptRoot
+$proj = Join-Path $root 'Cereal.App\Cereal.App.csproj'
+$tag = "v$Version"
+$tagMsg = if ($Message) { $Message } else { "Release $tag" }
 
-function Say  { param($t, $c = 'Cyan')   Write-Host $t -ForegroundColor $c }
+function Say { param($t, $c = 'Cyan')   Write-Host $t -ForegroundColor $c }
 function Step { param($t)                Say "`n==> $t" 'Yellow' }
 function Bail { param($t)                Write-Error $t; exit 1 }
-function Run  {
-    param([string]$cmd, [string[]]$args)
-    Say "  > $cmd $($args -join ' ')" 'DarkGray'
+function Run {
+    param([string]$cmd, [string[]]$cmdArgs)
+    Say "  > $cmd $($cmdArgs -join ' ')" 'DarkGray'
     if ($DryRun) { return }
-    & $cmd @args
-    if ($LASTEXITCODE -ne 0) { Bail "'$cmd $($args -join ' ')' failed (exit $LASTEXITCODE)." }
+    & $cmd @cmdArgs
+    if ($LASTEXITCODE -ne 0) { Bail "'$cmd $($cmdArgs -join ' ')' failed (exit $LASTEXITCODE)." }
 }
 
 if ($DryRun) { Say '[DRY RUN — no changes will be made]' 'Magenta' }
@@ -80,7 +80,8 @@ try {
 
     if ($csprojContent -eq $newContent) {
         Say '  Version unchanged (already set or tag not found in csproj).' 'DarkGray'
-    } else {
+    }
+    else {
         if (-not $DryRun) {
             Set-Content $proj $newContent -NoNewline
         }
@@ -113,6 +114,7 @@ try {
             Say "  Release (once built): $repoUrl/releases/tag/$tag" 'White'
         }
     }
-} finally {
+}
+finally {
     Pop-Location
 }

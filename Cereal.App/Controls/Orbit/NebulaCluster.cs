@@ -42,21 +42,21 @@ internal static class NebulaCluster
         };
     }
 
-    // Hard-coded cluster positions — copied verbatim from the original JS
-    // (CLUSTER_CENTERS in the old OrbitHtml template).
+    // Hard-coded cluster positions expanded toward world edges so orbit mode
+    // feels less center-packed at wider zoom-out levels.
     public static readonly IReadOnlyDictionary<string, ClusterCenter> Centers =
         new Dictionary<string, ClusterCenter>
         {
-            ["steam"] = new(480, 580),
-            ["epic"] = new(1450, 400),
-            ["gog"] = new(2400, 560),
-            ["psn"] = new(560, 1400),
-            ["xbox"] = new(1600, 1350),
-            ["custom"] = new(2500, 1350),
-            ["battlenet"] = new(950, 900),
-            ["ea"] = new(1450, 950),
-            ["ubisoft"] = new(2000, 900),
-            ["itchio"] = new(2000, 1550),
+            ["steam"] = new(360, 460),
+            ["epic"] = new(1460, 300),
+            ["gog"] = new(2660, 460),
+            ["psn"] = new(420, 1560),
+            ["xbox"] = new(1700, 1560),
+            ["custom"] = new(2700, 1520),
+            ["battlenet"] = new(900, 940),
+            ["ea"] = new(1500, 940),
+            ["ubisoft"] = new(2200, 920),
+            ["itchio"] = new(2280, 1760),
         };
 
     public static readonly IReadOnlyDictionary<string, Color> Colors =
@@ -89,14 +89,14 @@ internal static class NebulaCluster
             ["itchio"] = "itch.io",
         };
 
-    public static void Build(Canvas world, string platform, bool animations)
+    public static void Build(Canvas world, string platform, bool animations, bool buildCore = true)
     {
         var key = NormalizeOrbitPlatform(platform);
         if (!Centers.TryGetValue(key, out var c)) return;
-        Build(world, key, c.X, c.Y, animations);
+        Build(world, key, c.X, c.Y, animations, buildCore);
     }
 
-    public static void Build(Canvas world, string platform, double cx, double cy, bool animations)
+    public static void Build(Canvas world, string platform, double cx, double cy, bool animations, bool buildCore = true)
     {
         var color = Colors.TryGetValue(platform, out var col) ? col : Color.Parse("#aaaaff");
         var label = Labels.TryGetValue(platform, out var lbl) ? lbl : platform;
@@ -105,22 +105,29 @@ internal static class NebulaCluster
         AddRings(world, cx, cy);
         AddFlare(world, cx, cy, color);
         AddCorona(world, cx, cy, color, animations);
-        AddCore(world, platform, cx, cy, color, label);
+        if (buildCore) AddCore(world, platform, cx, cy, color, label);
         AddWatermark(world, cx, cy, label);
     }
 
     // Ambient background nebulae that float across the world, unrelated to
-    // any specific platform cluster. Mirrors the five absolute-positioned
-    // divs in App.tsx lines ~809-813.
+    // any specific platform cluster. Spread across the full 3000×2000 world
+    // (top/bottom edges + side margins) so the panned view doesn't fall
+    // through into empty space outside the platform-dense centre.
     public static void BuildAmbient(Canvas world)
     {
         ReadOnlySpan<(double X, double Y, double W, double H, Color Col, double Op)> specs = stackalloc (double, double, double, double, Color, double)[]
         {
-            ( 950,  500, 400, 160, Color.FromRgb(100, 192, 244), 0.02),
-            (1850,  480, 350, 140, Color.FromRgb(180,  74, 255), 0.015),
-            (1050,  950, 500, 200, Color.FromRgb(212, 168,  83), 0.015),
-            (2050,  950, 400, 160, Color.FromRgb( 16, 124,  16), 0.015),
-            ( 600, 1000, 350, 300, Color.FromRgb(  0, 112, 209), 0.01),
+            // Top edge
+            ( 350,  280, 420, 180, Color.FromRgb(180,  74, 255), 0.014),
+            (1500,  200, 520, 200, Color.FromRgb(100, 192, 244), 0.018),
+            (2650,  320, 400, 170, Color.FromRgb(212, 168,  83), 0.014),
+            // Side margins, avoiding the platform-dense centre band
+            ( 220,  900, 380, 260, Color.FromRgb(  0, 112, 209), 0.013),
+            (2800,  950, 380, 240, Color.FromRgb( 16, 124,  16), 0.013),
+            // Bottom edge
+            ( 380, 1720, 420, 180, Color.FromRgb(212, 168,  83), 0.013),
+            (1500, 1800, 520, 180, Color.FromRgb(180,  74, 255), 0.016),
+            (2620, 1720, 400, 180, Color.FromRgb(100, 192, 244), 0.013),
         };
 
         foreach (var s in specs)

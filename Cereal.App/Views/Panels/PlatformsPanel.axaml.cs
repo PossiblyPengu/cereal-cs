@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
 using Cereal.App.ViewModels;
@@ -21,31 +23,49 @@ public partial class PlatformsPanel : UserControl
             // Forward platform row events to the main shell.
             vm.ChiakiRequested += (_, _) =>
             {
-                if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel m)
-                {
-                    m.ClosePlatformsCommand.Execute(null);
-                    m.OpenChiakiCommand.Execute(null);
-                }
+                var m = ResolveMainViewModel();
+                if (m is null) return;
+                m.ClosePlatformsCommand.Execute(null);
+                m.OpenChiakiCommand.Execute(null);
             };
             vm.XcloudRequested += (_, _) =>
             {
-                if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel m)
-                {
-                    m.ClosePlatformsCommand.Execute(null);
-                    m.OpenXcloudCommand.Execute(null);
-                }
+                var m = ResolveMainViewModel();
+                if (m is null) return;
+                m.ClosePlatformsCommand.Execute(null);
+                m.OpenXcloudCommand.Execute(null);
             };
             vm.InAppAuthNavigate += (url, title) =>
             {
-                if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel m)
-                    m.OpenPlatformSignInWeb(url, title);
+                var m = ResolveMainViewModel();
+                if (m is null) return;
+                m.OpenPlatformSignInWeb(url, title);
             };
             vm.InAppAuthFlowEnded += () =>
             {
-                if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel m)
-                    m.DismissInAppAuthPanel();
+                var m = ResolveMainViewModel();
+                if (m is null) return;
+                m.DismissInAppAuthPanel();
             };
         }
+    }
+
+    private MainViewModel? ResolveMainViewModel()
+    {
+        // Prefer the current top-level hosting this control.
+        if (TopLevel.GetTopLevel(this) is Window { DataContext: MainViewModel vmFromTopLevel })
+            return vmFromTopLevel;
+
+        // Fallback for embedded/templated visual trees.
+        if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel vmFromAncestor)
+            return vmFromAncestor;
+
+        // Last resort: desktop main window.
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow?.DataContext is MainViewModel vmFromDesktop)
+            return vmFromDesktop;
+
+        return null;
     }
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);

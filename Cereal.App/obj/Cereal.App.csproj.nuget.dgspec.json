@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj": {}
+    "E:\\CODE\\FUN\\cereal-cs\\Cereal.App\\Cereal.App.csproj": {}
   },
   "projects": {
-    "D:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj": {
+    "E:\\CODE\\FUN\\cereal-cs\\Cereal.App\\Cereal.App.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
+        "projectUniqueName": "E:\\CODE\\FUN\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
         "projectName": "Cereal.App",
-        "projectPath": "D:\\CODE\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
-        "packagesPath": "C:\\Users\\acalabrese\\.nuget\\packages\\",
-        "outputPath": "D:\\CODE\\cereal-cs\\Cereal.App\\obj\\",
+        "projectPath": "E:\\CODE\\FUN\\cereal-cs\\Cereal.App\\Cereal.App.csproj",
+        "packagesPath": "C:\\Users\\andre\\.nuget\\packages\\",
+        "outputPath": "E:\\CODE\\FUN\\cereal-cs\\Cereal.App\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\acalabrese\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\andre\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -37,8 +37,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -80,6 +79,10 @@
               "target": "Package",
               "version": "[8.0.1, )"
             },
+            "Microsoft.Web.WebView2": {
+              "target": "Package",
+              "version": "[1.0.3912.50, )"
+            },
             "Microsoft.Win32.Registry": {
               "target": "Package",
               "version": "[5.0.0, )"
@@ -107,14 +110,6 @@
             "Velopack": {
               "target": "Package",
               "version": "[0.0.1298, )"
-            },
-            "WebView.Avalonia": {
-              "target": "Package",
-              "version": "[11.0.0.1, )"
-            },
-            "WebView.Avalonia.Desktop": {
-              "target": "Package",
-              "version": "[11.0.0.1, )"
             }
           },
           "imports": [
@@ -130,44 +125,28 @@
           "warn": true,
           "downloadDependencies": [
             {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.21, 8.0.21]"
-            },
-            {
               "name": "Microsoft.AspNetCore.App.Runtime.linux-x64",
-              "version": "[8.0.21, 8.0.21]"
+              "version": "[8.0.19, 8.0.19]"
             },
             {
               "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
-              "version": "[8.0.21, 8.0.21]"
+              "version": "[8.0.19, 8.0.19]"
             },
             {
               "name": "Microsoft.NETCore.App.Host.linux-x64",
-              "version": "[8.0.21, 8.0.21]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[8.0.21, 8.0.21]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.21, 8.0.21]"
+              "version": "[8.0.19, 8.0.19]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.linux-x64",
-              "version": "[8.0.21, 8.0.21]"
+              "version": "[8.0.19, 8.0.19]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.win-x64",
-              "version": "[8.0.21, 8.0.21]"
-            },
-            {
-              "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.21, 8.0.21]"
+              "version": "[8.0.19, 8.0.19]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
-              "version": "[8.0.21, 8.0.21]"
+              "version": "[8.0.19, 8.0.19]"
             }
           ],
           "frameworkReferences": {
@@ -175,7 +154,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "D:\\CODE\\important files\\dotnet-sdk-9.0.306-win-x64\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.413/PortableRuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {

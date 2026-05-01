@@ -67,7 +67,32 @@
       "Bash(\"D:\\\\CODE\\\\important files\\\\dotnet-sdk-9.0.306-win-x64\\\\dotnet.exe\" build \"d:\\\\CODE\\\\cereal-cs\\\\Cereal.App\\\\Cereal.App.csproj\" -c Debug --nologo)",
       "PowerShell(Get-Command dotnet -ErrorAction SilentlyContinue; $env:PATH -split ';' | Where-Object { $_ -match 'dotnet' })",
       "WebFetch(domain:www.nuget.org)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Read(//c/Users/andre/AppData/Roaming/Cereal/logs/**)",
+      "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && head -60 \"{}\"')",
+      "PowerShell(dotnet build Cereal.App/Cereal.App.csproj -c Debug -nologo 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build Cereal.App/Cereal.App.csproj -c Debug -nologo 2>&1)",
+      "PowerShell($env:DOTNET_ROOT = \"C:\\\\Program Files\\\\dotnet\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" --list-sdks 2>&1)",
+      "Bash(node -e \"const p=require\\('d:/CODE/FUN/cereal-launcher-vite/package.json'\\);console.log\\('runtime:',Object.keys\\(p.dependencies||{}\\).length\\);console.log\\('dev:',Object.keys\\(p.devDependencies||{}\\).length\\);\")",
+      "Bash(node -e \"const p=require\\('d:/CODE/FUN/cereal-launcher-vite/package.json'\\);console.log\\(JSON.stringify\\(p.dependencies,null,2\\)\\);\")",
+      "Bash(node -e \"const p=require\\('d:/CODE/FUN/cereal-launcher-vite/package.json'\\);console.log\\(JSON.stringify\\(p.devDependencies,null,2\\)\\);\")",
+      "Bash(xargs -n1 basename)",
+      "Bash(sed 's/\\\\.tsx$//')",
+      "Bash(sed 's/\\\\.axaml$//')",
+      "Bash(sed 's/\\\\.cs$//')",
+      "Bash(grep -nB1 -A3 \"LaunchGameCommand\\\\|private.*LaunchGame\\\\\\(\" d:/CODE/FUN/cereal-cs/Cereal.App/ViewModels/MainViewModel.cs)",
+      "Bash(grep -nB1 -A3 \"_showFocus\\\\|public bool ShowFocus\\\\|public bool AnyPanelOpen\" d:/CODE/FUN/cereal-cs/Cereal.App/ViewModels/MainViewModel.cs)",
+      "Bash(grep -nB3 -A3 \"_showContinueBanner\\\\|_continueGame\" d:/CODE/FUN/cereal-cs/Cereal.App/ViewModels/MainViewModel.cs)",
+      "Bash(sed -n '1,50p' d:/CODE/FUN/cereal-cs/Cereal.App/Views/MainView.axaml)",
+      "Bash(sed -n '466,500p' d:/CODE/FUN/cereal-cs/Cereal.App/Views/MainView.axaml)",
+      "Bash(awk -F: '{s+=$2}END{print s}')",
+      "Bash(dotnet restore *)",
+      "PowerShell(dotnet package search WebView.Avalonia --take 10 --exact-match $false 2>&1)",
+      "PowerShell(where.exe dotnet 2>&1 | Select-Object -First 5; \\(Get-Command dotnet -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell($r = Invoke-RestMethod 'https://api.nuget.org/v3-flatcontainer/webview.avalonia/index.json'; $r.versions | Select-Object -Last 20)",
+      "PowerShell($pkgs = @\\('Avalonia.WebView','Avalonia.WebView.Desktop','WebViewControl-Avalonia','CefNet.Avalonia'\\); foreach \\($p in $pkgs\\) { try { $r = Invoke-RestMethod \"https://api.nuget.org/v3-flatcontainer/$\\($p.ToLower\\(\\)\\)/index.json\"; \"${p}: latest=$\\($r.versions[-1]\\)  count=$\\($r.versions.Length\\)\" } catch { \"${p}: NOT FOUND\" } })",
+      "PowerShell($pkgs = @\\('Microsoft.Web.WebView2','AvaloniaWebView','Avalonia.Embedding.WebView2','WebView2.Avalonia'\\); foreach \\($p in $pkgs\\) { try { $r = Invoke-RestMethod \"https://api.nuget.org/v3-flatcontainer/$\\($p.ToLower\\(\\)\\)/index.json\"; \"${p}: latest=$\\($r.versions[-1]\\)  count=$\\($r.versions.Length\\)\" } catch { \"${p}: NOT FOUND\" } })",
+      "PowerShell($r = Invoke-RestMethod 'https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/index.json'; $r.versions | Where-Object { $_ -notmatch 'prerelease|preview|beta|rc' } | Select-Object -Last 8)"
     ]
   }
 }

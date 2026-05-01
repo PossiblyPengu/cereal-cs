@@ -9,13 +9,14 @@
   <UserControl.Styles>
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+      <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Border.detect-card">
-      <Setter Property="Background" Value="#0affffff"/>
-      <Setter Property="BorderBrush" Value="#14ffffff"/>
+      <Setter Property="Background" Value="#10ffffff"/>
+      <Setter Property="BorderBrush" Value="#20ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="CornerRadius" Value="12"/>
+      <Setter Property="Padding" Value="14,12"/>
     </Style>
     <Style Selector="Button.detect-primary">
       <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
@@ -23,7 +24,7 @@
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="14,8"/>
-      <Setter Property="MinHeight" Value="30"/>
+      <Setter Property="MinHeight" Value="34"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
@@ -42,8 +43,8 @@
       <Setter Property="BorderBrush" Value="#10ffffff"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="12,7"/>
-      <Setter Property="MinHeight" Value="30"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinHeight" Value="34"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.detect-ghost:pointerover /template/ ContentPresenter">
@@ -61,13 +62,13 @@
   <Border Background="{DynamicResource ThemeSurface}"
           BorderBrush="#14ffffff"
           BorderThickness="1,0,0,0">
-  <Grid RowDefinitions="Auto,*,Auto" Margin="16,14">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="20,16">
 
     <!-- Header -->
     <StackPanel Grid.Row="0" Margin="0,0,0,16">
       <TextBlock Text="PLATFORMS" FontSize="9" FontWeight="Bold"
                  LetterSpacing="1.5" Foreground="#40b0aaa0" Margin="0,0,0,6"/>
-      <TextBlock Text="Detect Games" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
+      <TextBlock Text="Detect Games" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
       <TextBlock Text="Scan your installed platforms and import games into your library."
                  FontSize="12" Foreground="#50b0aaa0" Margin="0,3,0,0" TextWrapping="Wrap"/>
       <Button Content="Manage platform accounts"
@@ -78,7 +79,7 @@
     </StackPanel>
 
     <!-- Main content: provider toggles + results -->
-      <Grid Grid.Row="1" ColumnDefinitions="190,*">
+      <Grid Grid.Row="1" ColumnDefinitions="220,*">
 
       <!-- Provider list -->
       <Border Grid.Column="0" Classes="detect-card">
@@ -141,7 +142,7 @@
     </Grid>
 
     <!-- Footer -->
-    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
+    <WrapPanel Grid.Row="2" Orientation="Horizontal" ItemHeight="34" Margin="0,14,0,0">
       <TextBlock VerticalAlignment="Center" Foreground="#50b0aaa0" FontSize="12">
         <TextBlock.Text>
           <MultiBinding StringFormat="{}{0} found  ·  {1} added">
@@ -152,14 +153,23 @@
       </TextBlock>
       <Button Content="Import selected"
               Command="{Binding ImportSelectedCommand}"
-              Classes="detect-primary"/>
+              Classes="detect-primary" Margin="0,0,8,8"/>
       <Button Content="Import all"
               Command="{Binding ImportAllCommand}"
-              Classes="detect-ghost"/>
+              Classes="detect-ghost" Margin="0,0,8,8"/>
+      <Button Content="Import new only"
+              Command="{Binding ImportNewOnlyCommand}"
+              Classes="detect-ghost" Margin="0,0,8,8"/>
+      <Button Content="Select none"
+              Command="{Binding SelectNoneCommand}"
+              Classes="detect-ghost" Margin="0,0,8,8"/>
+      <Button Content="Clear results"
+              Command="{Binding ClearResultsCommand}"
+              Classes="detect-ghost" Margin="0,0,8,8"/>
       <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"
              Foreground="#50b0aaa0" FontSize="12"
              IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
-    </StackPanel>
+    </WrapPanel>
 
   </Grid>
   </Border>

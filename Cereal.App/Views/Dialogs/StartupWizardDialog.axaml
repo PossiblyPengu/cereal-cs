@@ -4,96 +4,43 @@
         x:Class="Cereal.App.Views.Dialogs.StartupWizardDialog"
         x:DataType="vm:StartupWizardViewModel"
         Title="Welcome to Cereal"
-        Width="620" Height="560"
+        Width="640" Height="600"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
         ExtendClientAreaToDecorationsHint="False"
         Background="{DynamicResource ThemeVoid}">
 
   <Window.Styles>
-    <Style Selector="Button.primary">
-      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="20,10"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#e8b85e"/>
-    </Style>
-    <Style Selector="Button.primary:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#d29f45"/>
-    </Style>
-    <Style Selector="Button.primary:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.primary:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-    <Style Selector="Button.ghost">
-      <Setter Property="Background" Value="#14ffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="16,10"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="BorderBrush" Value="#10ffffff"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#22ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button.ghost:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#2affffff"/>
-    </Style>
-    <Style Selector="Button.ghost:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.ghost:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-    <Style Selector="Button.chip">
-      <Setter Property="Background" Value="#10ffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="12,6"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="BorderBrush" Value="#18ffffff"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.chip:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#1affffff"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button.chip:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#24ffffff"/>
-    </Style>
-    <Style Selector="Button.chip:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.chip:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-    <Style Selector="Button.chip.active">
-      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
-      <Setter Property="BorderBrush" Value="Transparent"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
+    <StyleInclude Source="avares://Cereal.App/Theme/StartupWizard.Styles.axaml"/>
     <Style Selector="ToggleSwitch.pp">
       <Setter Property="OnContent" Value=""/>
       <Setter Property="OffContent" Value=""/>
     </Style>
   </Window.Styles>
 
-  <Grid RowDefinitions="*,Auto" Margin="24,20">
+  <Grid RowDefinitions="Auto,*,Auto">
 
-    <!-- Step content area -->
-    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled"
-                  VerticalScrollBarVisibility="Auto">
+    <StackPanel Grid.Row="0">
+      <ProgressBar Classes="wizard-progress" Maximum="100" Value="{Binding ProgressPercent}"/>
+      <Border Classes="wizard-top">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+          <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Spacing="4">
+            <TextBlock Text="{Binding StepTitle}" FontSize="20" FontWeight="SemiBold"
+                       Foreground="{DynamicResource ThemeText}"/>
+            <TextBlock Text="{Binding StepSubtitle}" FontSize="12"
+                       Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap" MaxWidth="520"/>
+          </StackPanel>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding StepIndicator}"
+                     FontSize="11" Foreground="{DynamicResource ThemeText4}"
+                     VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+        </Grid>
+      </Border>
+    </StackPanel>
+
+    <!-- Step content -->
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto"
+                  Margin="24,10,24,4">
       <Panel>
 
         <!-- Step 0: Welcome -->
@@ -111,57 +58,45 @@
             <Ellipse Width="7" Height="7" Fill="{DynamicResource ThemeAccent}"
                      HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,12" Opacity="0.8"/>
           </Panel>
-          <TextBlock Text="Welcome to Cereal" FontSize="22" FontWeight="SemiBold"
-                     Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
-          <TextBlock Text="Your universal game launcher — Steam, Epic, GOG, PlayStation, Xbox and more in one place."
-                     FontSize="13" Foreground="{DynamicResource ThemeText2}"
-                     TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"
-                     MaxWidth="420"/>
-          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" Margin="0,8,0,0">
-            <Border Grid.Row="0" Grid.Column="0" CornerRadius="8" Padding="10,8" Margin="0,0,6,6"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" Margin="0,4,0,0">
+            <Border Grid.Row="0" Grid.Column="0" Classes="wizard-card-hi" Padding="10,8" Margin="0,0,6,6">
               <StackPanel Spacing="3">
                 <TextBlock Text="Unified Library" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                 <TextBlock Text="Steam, Epic, GOG and local titles in one place." FontSize="10" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="0" Grid.Column="1" CornerRadius="8" Padding="10,8" Margin="6,0,0,6"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="0" Grid.Column="1" Classes="wizard-card-hi" Padding="10,8" Margin="6,0,0,6">
               <StackPanel Spacing="3">
                 <TextBlock Text="Smart Metadata" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                 <TextBlock Text="Auto-cover art, details, and library cleanup." FontSize="10" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="1" Grid.Column="0" CornerRadius="8" Padding="10,8" Margin="0,6,6,0"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="1" Grid.Column="0" Classes="wizard-card-hi" Padding="10,8" Margin="0,6,6,0">
               <StackPanel Spacing="3">
                 <TextBlock Text="Remote Play" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                 <TextBlock Text="PlayStation streaming with in-app session tabs." FontSize="10" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="1" Grid.Column="1" CornerRadius="8" Padding="10,8" Margin="6,6,0,0"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="1" Grid.Column="1" Classes="wizard-card-hi" Padding="10,8" Margin="6,6,0,0">
               <StackPanel Spacing="3">
                 <TextBlock Text="Controller Ready" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                 <TextBlock Text="Navigate cards, focus views, and tabs with gamepad." FontSize="10" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="2" Grid.Column="0" CornerRadius="8" Padding="10,8" Margin="0,6,6,0"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="2" Grid.Column="0" Classes="wizard-card-hi" Padding="10,8" Margin="0,6,6,0">
               <StackPanel Spacing="3">
                 <TextBlock Text="Discord + Media" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                 <TextBlock Text="Rich Presence and now-playing widget support." FontSize="10" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="2" Grid.Column="1" CornerRadius="8" Padding="10,8" Margin="6,6,0,0"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="2" Grid.Column="1" Classes="wizard-card-hi" Padding="10,8" Margin="6,6,0,0">
               <StackPanel Spacing="3">
                 <TextBlock Text="Fast + Private" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                 <TextBlock Text="Local-first data, secure tokens, and fast virtualized library." FontSize="10" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
           </Grid>
-          <Border CornerRadius="8" Padding="10,8" Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1" MaxWidth="420">
+          <Border Classes="wizard-card-hi" Padding="10,8" MaxWidth="420">
             <StackPanel Spacing="2">
               <TextBlock Text="Performance profile" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
               <TextBlock Text="{Binding PerformanceRecommendation}" FontSize="10" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
@@ -172,14 +107,8 @@
         <!-- Step 1: Appearance -->
         <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=1}"
                     VerticalAlignment="Center" Spacing="16">
-          <TextBlock Text="Appearance" FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource ThemeText}"/>
-          <TextBlock Text="Pick your starting look and default library view."
-                     FontSize="13" Foreground="{DynamicResource ThemeText2}"/>
-
           <StackPanel Spacing="6">
-            <TextBlock Text="THEME" FontSize="10" FontWeight="Bold" LetterSpacing="1"
-                       Foreground="#40b0aaa0"/>
+            <TextBlock Classes="wizard-caps" Text="THEME"/>
             <ItemsControl ItemsSource="{Binding ThemeSwatches}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -199,8 +128,7 @@
           </StackPanel>
 
           <StackPanel Spacing="6">
-            <TextBlock Text="ACCENT COLOR" FontSize="10" FontWeight="Bold" LetterSpacing="1"
-                       Foreground="#40b0aaa0"/>
+            <TextBlock Classes="wizard-caps" Text="ACCENT COLOR"/>
             <Grid ColumnDefinitions="*,Auto">
               <TextBox Grid.Column="0" Text="{Binding AccentColor}" Watermark="#d4a853"
                        Background="#10ffffff" BorderBrush="#18ffffff"
@@ -210,12 +138,10 @@
             </Grid>
           </StackPanel>
 
-          <TextBlock Text="DEFAULT VIEW" FontSize="10" FontWeight="Bold" LetterSpacing="1"
-                     Foreground="#40b0aaa0"/>
+          <TextBlock Classes="wizard-caps" Text="DEFAULT VIEW"/>
           <StackPanel Spacing="10">
-            <Border CornerRadius="10" Padding="16,14"
+            <Border Classes="wizard-view-pick"
                     Background="{Binding DefaultView, Converter={x:Static vm:WizardStepConverter.ViewCard}, ConverterParameter=orbit}"
-                    BorderBrush="#18ffffff" BorderThickness="1" Cursor="Hand"
                     PointerPressed="SelectOrbit_Click">
               <StackPanel Spacing="4">
                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -228,9 +154,8 @@
                            FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
               </StackPanel>
             </Border>
-            <Border CornerRadius="10" Padding="16,14"
+            <Border Classes="wizard-view-pick"
                     Background="{Binding DefaultView, Converter={x:Static vm:WizardStepConverter.ViewCard}, ConverterParameter=cards}"
-                    BorderBrush="#18ffffff" BorderThickness="1" Cursor="Hand"
                     PointerPressed="SelectCards_Click">
               <StackPanel Spacing="4">
                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -249,11 +174,7 @@
         <!-- Step 2: Performance & Layout -->
         <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=2}"
                     VerticalAlignment="Top" Spacing="16">
-          <TextBlock Text="Performance &amp; layout" FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource ThemeText}"/>
-          <TextBlock Text="Tune rendering quality and UI layout. You can change these later in Settings."
-                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
-          <Border CornerRadius="8" Padding="10,8" Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+          <Border Classes="wizard-card-hi" Padding="10,8">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
               <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Text="{Binding PerformanceRecommendation}" FontSize="11" Foreground="{DynamicResource ThemeText}" TextWrapping="Wrap"/>
@@ -265,8 +186,7 @@
           </Border>
 
           <StackPanel Spacing="6">
-            <TextBlock Text="STAR DENSITY" FontSize="10" FontWeight="Bold" LetterSpacing="1"
-                       Foreground="#40b0aaa0"/>
+            <TextBlock Classes="wizard-caps" Text="STAR DENSITY"/>
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Button Classes="chip" Content="Low"    Click="Density_Low"
                       Classes.active="{Binding StarDensity, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=low}"/>
@@ -278,8 +198,7 @@
           </StackPanel>
 
           <StackPanel Spacing="6">
-            <TextBlock Text="UI SCALE" FontSize="10" FontWeight="Bold" LetterSpacing="1"
-                       Foreground="#40b0aaa0"/>
+            <TextBlock Classes="wizard-caps" Text="UI SCALE"/>
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Button Classes="chip" Content="90%"  Click="Scale_90"
                       Classes.active="{Binding UiScale, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=90%}"/>
@@ -293,8 +212,7 @@
           </StackPanel>
 
           <StackPanel Spacing="6">
-            <TextBlock Text="TOOLBAR POSITION" FontSize="10" FontWeight="Bold" LetterSpacing="1"
-                       Foreground="#40b0aaa0"/>
+            <TextBlock Classes="wizard-caps" Text="TOOLBAR POSITION"/>
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Button Classes="chip" Content="Top"    Click="Toolbar_Top"
                       Classes.active="{Binding ToolbarPosition, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=top}"/>
@@ -313,90 +231,81 @@
               <TextBlock Text="Orbit drift and UI transitions."
                          FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
             </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowAnimations}"/>
+            <ToggleSwitch Grid.Column="1" Classes="pp" IsChecked="{Binding ShowAnimations}"/>
           </Grid>
         </StackPanel>
 
         <!-- Step 3: Connect Accounts -->
         <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=3}"
                     VerticalAlignment="Top" Spacing="12">
-          <TextBlock Text="Connect accounts" FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource ThemeText}"/>
-          <TextBlock Text="Sign in to import your game libraries. Skip any you don't use."
-                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
-
           <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" >
-            <Border Grid.Row="0" Grid.Column="0" CornerRadius="10" Padding="12,10" Margin="0,0,6,6"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="0" Grid.Column="0" Classes="wizard-card-hi" Padding="12,10" Margin="0,0,6,6">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0">
                   <TextBlock Text="Steam" FontSize="13" FontWeight="SemiBold"
                              Foreground="{DynamicResource ThemeText}"/>
-                  <TextBlock Text="Import via OpenID + Web API" FontSize="11" Foreground="#50b0aaa0"/>
+                  <TextBlock Text="Import via OpenID + Web API" FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
                   <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
                     <Border Name="SteamAvatarWrap" Width="18" Height="18" CornerRadius="9" Background="#18ffffff" IsVisible="False">
                       <Image Name="SteamAvatar" Stretch="UniformToFill"/>
                     </Border>
                     <TextBlock Name="SteamStatus" Text="Not connected" FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
                   </StackPanel>
-                  <TextBlock Name="SteamMeta" FontSize="10" Foreground="#50b0aaa0"/>
+                  <TextBlock Name="SteamMeta" FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
                 </StackPanel>
                 <Button Grid.Column="1" Name="SteamAuthBtn" Classes="ghost" Content="Sign in"
                         Click="AuthSteam_Click" Padding="12,6"/>
               </Grid>
             </Border>
-            <Border Grid.Row="0" Grid.Column="1" CornerRadius="10" Padding="12,10" Margin="6,0,0,6"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="0" Grid.Column="1" Classes="wizard-card-hi" Padding="12,10" Margin="6,0,0,6">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0">
                   <TextBlock Text="GOG" FontSize="13" FontWeight="SemiBold"
                              Foreground="{DynamicResource ThemeText}"/>
-                  <TextBlock Text="OAuth2 sign-in" FontSize="11" Foreground="#50b0aaa0"/>
+                  <TextBlock Text="OAuth2 sign-in" FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
                   <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
                     <Border Name="GogAvatarWrap" Width="18" Height="18" CornerRadius="9" Background="#18ffffff" IsVisible="False">
                       <Image Name="GogAvatar" Stretch="UniformToFill"/>
                     </Border>
                     <TextBlock Name="GogStatus" Text="Not connected" FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
                   </StackPanel>
-                  <TextBlock Name="GogMeta" FontSize="10" Foreground="#50b0aaa0"/>
+                  <TextBlock Name="GogMeta" FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
                 </StackPanel>
                 <Button Grid.Column="1" Name="GogAuthBtn" Classes="ghost" Content="Sign in"
                         Click="AuthGog_Click" Padding="12,6"/>
               </Grid>
             </Border>
-            <Border Grid.Row="1" Grid.Column="0" CornerRadius="10" Padding="12,10" Margin="0,6,6,0"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="1" Grid.Column="0" Classes="wizard-card-hi" Padding="12,10" Margin="0,6,6,0">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0">
                   <TextBlock Text="Epic Games" FontSize="13" FontWeight="SemiBold"
                              Foreground="{DynamicResource ThemeText}"/>
-                  <TextBlock Text="OAuth2 sign-in" FontSize="11" Foreground="#50b0aaa0"/>
+                  <TextBlock Text="OAuth2 sign-in" FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
                   <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
                     <Border Name="EpicAvatarWrap" Width="18" Height="18" CornerRadius="9" Background="#18ffffff" IsVisible="False">
                       <Image Name="EpicAvatar" Stretch="UniformToFill"/>
                     </Border>
                     <TextBlock Name="EpicStatus" Text="Not connected" FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
                   </StackPanel>
-                  <TextBlock Name="EpicMeta" FontSize="10" Foreground="#50b0aaa0"/>
+                  <TextBlock Name="EpicMeta" FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
                 </StackPanel>
                 <Button Grid.Column="1" Name="EpicAuthBtn" Classes="ghost" Content="Sign in"
                         Click="AuthEpic_Click" Padding="12,6"/>
               </Grid>
             </Border>
-            <Border Grid.Row="1" Grid.Column="1" CornerRadius="10" Padding="12,10" Margin="6,6,0,0"
-                    Background="#0affffff" BorderBrush="#14ffffff" BorderThickness="1">
+            <Border Grid.Row="1" Grid.Column="1" Classes="wizard-card-hi" Padding="12,10" Margin="6,6,0,0">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0">
                   <TextBlock Text="Xbox" FontSize="13" FontWeight="SemiBold"
                              Foreground="{DynamicResource ThemeText}"/>
-                  <TextBlock Text="Microsoft account sign-in" FontSize="11" Foreground="#50b0aaa0"/>
+                  <TextBlock Text="Microsoft account sign-in" FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
                   <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
                     <Border Name="XboxAvatarWrap" Width="18" Height="18" CornerRadius="9" Background="#18ffffff" IsVisible="False">
                       <Image Name="XboxAvatar" Stretch="UniformToFill"/>
                     </Border>
                     <TextBlock Name="XboxStatus" Text="Not connected" FontSize="11" Foreground="{DynamicResource ThemeText2}"/>
                   </StackPanel>
-                  <TextBlock Name="XboxMeta" FontSize="10" Foreground="#50b0aaa0"/>
+                  <TextBlock Name="XboxMeta" FontSize="10" Foreground="{DynamicResource ThemeText3}"/>
                 </StackPanel>
                 <Button Grid.Column="1" Name="XboxAuthBtn" Classes="ghost" Content="Sign in"
                         Click="AuthXbox_Click" Padding="12,6"/>
@@ -419,87 +328,77 @@
           </StackPanel>
 
           <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
-            <PathIcon Width="12" Height="12" Foreground="#40b0aaa0"
+            <PathIcon Width="12" Height="12" Foreground="{DynamicResource ThemeText3}"
                       Data="M6,10 V7 A4,4 0 0 1 14,7 V10 M7,10 H13 A2,2 0 0 1 15,12 V17 A2,2 0 0 1 13,19 H7 A2,2 0 0 1 5,17 V12 A2,2 0 0 1 7,10 Z"/>
             <TextBlock Text="Your library stays local — Cereal never uploads your account info."
-                       FontSize="11" Foreground="#40b0aaa0"/>
+                       FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
           </StackPanel>
         </StackPanel>
 
         <!-- Step 4: Behavior -->
         <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=4}"
                     VerticalAlignment="Top" Spacing="14">
-          <TextBlock Text="Behavior" FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource ThemeText}"/>
-          <TextBlock Text="How Cereal behaves in the background and while gaming."
-                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
-
           <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
             <StackPanel Grid.Column="0">
               <TextBlock Text="Minimize on game launch" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
               <TextBlock Text="Hide Cereal's window when you start a game."
-                         FontSize="11" Foreground="#50b0aaa0"/>
+                         FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
             </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding MinimizeOnLaunch}"/>
+            <ToggleSwitch Grid.Column="1" Classes="pp" IsChecked="{Binding MinimizeOnLaunch}"/>
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Grid.Column="0">
               <TextBlock Text="Close to system tray" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
               <TextBlock Text="Keep running in the background when you close the window."
-                         FontSize="11" Foreground="#50b0aaa0"/>
+                         FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
             </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}"/>
+            <ToggleSwitch Grid.Column="1" Classes="pp" IsChecked="{Binding CloseToTray}"/>
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Grid.Column="0">
               <TextBlock Text="Discord rich presence" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
               <TextBlock Text="Show what you're playing on your Discord profile."
-                         FontSize="11" Foreground="#50b0aaa0"/>
+                         FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
             </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordPresence}"/>
+            <ToggleSwitch Grid.Column="1" Classes="pp" IsChecked="{Binding DiscordPresence}"/>
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Grid.Column="0">
               <TextBlock Text="Auto-sync playtime" FontSize="13" Foreground="{DynamicResource ThemeText}"/>
               <TextBlock Text="Sync Steam playtime data when Cereal starts."
-                         FontSize="11" Foreground="#50b0aaa0"/>
+                         FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
             </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoSyncPlaytime}"/>
+            <ToggleSwitch Grid.Column="1" Classes="pp" IsChecked="{Binding AutoSyncPlaytime}"/>
           </Grid>
 
-          <Border CornerRadius="8" Padding="12" Background="#08ffffff"
-                  BorderBrush="#12ffffff" BorderThickness="1" Margin="0,4,0,0">
+          <Border Classes="wizard-card" Padding="12" Margin="0,4,0,0">
             <StackPanel Spacing="8">
               <TextBlock Text="Quick Reference" FontSize="11" FontWeight="SemiBold"
                          Foreground="{DynamicResource ThemeText2}"/>
               <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto"
                     ColumnSpacing="10" RowSpacing="5">
-                <Border Grid.Row="0" Grid.Column="0" CornerRadius="4" Padding="5,2"
-                        Background="#14ffffff">
+                <Border Grid.Row="0" Grid.Column="0" Classes="wizard-kbd">
                   <TextBlock Text="Ctrl+K" FontSize="11" FontFamily="Consolas,Courier New,monospace"
                              Foreground="{DynamicResource ThemeText}"/>
                 </Border>
                 <TextBlock Grid.Row="0" Grid.Column="1" Text="Open search"
                            FontSize="11" Foreground="{DynamicResource ThemeText2}" VerticalAlignment="Center"/>
-                <Border Grid.Row="1" Grid.Column="0" CornerRadius="4" Padding="5,2"
-                        Background="#14ffffff">
+                <Border Grid.Row="1" Grid.Column="0" Classes="wizard-kbd">
                   <TextBlock Text="Ctrl+," FontSize="11" FontFamily="Consolas,Courier New,monospace"
                              Foreground="{DynamicResource ThemeText}"/>
                 </Border>
                 <TextBlock Grid.Row="1" Grid.Column="1" Text="Open settings"
                            FontSize="11" Foreground="{DynamicResource ThemeText2}" VerticalAlignment="Center"/>
-                <Border Grid.Row="2" Grid.Column="0" CornerRadius="4" Padding="5,2"
-                        Background="#14ffffff">
+                <Border Grid.Row="2" Grid.Column="0" Classes="wizard-kbd">
                   <TextBlock Text="Esc" FontSize="11" FontFamily="Consolas,Courier New,monospace"
                              Foreground="{DynamicResource ThemeText}"/>
                 </Border>
                 <TextBlock Grid.Row="2" Grid.Column="1" Text="Close panels / exit focus"
                            FontSize="11" Foreground="{DynamicResource ThemeText2}" VerticalAlignment="Center"/>
-                <Border Grid.Row="3" Grid.Column="0" CornerRadius="4" Padding="5,2"
-                        Background="#14ffffff">
+                <Border Grid.Row="3" Grid.Column="0" Classes="wizard-kbd">
                   <TextBlock Text="Scroll" FontSize="11" FontFamily="Consolas,Courier New,monospace"
                              Foreground="{DynamicResource ThemeText}"/>
                 </Border>
@@ -513,13 +412,7 @@
         <!-- Step 5: PlayStation Remote Play -->
         <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=5}"
                     VerticalAlignment="Top" Spacing="12">
-          <TextBlock Text="PlayStation Remote Play" FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource ThemeText}"/>
-          <TextBlock Text="Optional — stream PS4/PS5 games to your PC via chiaki-ng."
-                     FontSize="12" Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
-
-          <Border CornerRadius="10" Padding="12" Background="#0affffff"
-                  BorderBrush="#14ffffff" BorderThickness="1">
+          <Border Classes="wizard-card-hi" Padding="12">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0">
                 <TextBlock Text="chiaki-ng" FontSize="13" FontWeight="SemiBold"
@@ -527,7 +420,7 @@
                 <TextBlock Name="ChiakiStatus" FontSize="11" Foreground="{DynamicResource ThemeText2}"
                            Text="Checking…"/>
               </StackPanel>
-              <Button Grid.Column="1" Name="ChiakiDownloadBtn" Classes="primary"
+              <Button Grid.Column="1" Name="ChiakiDownloadBtn" Classes="action"
                       Content="Download" Click="ChiakiDownload_Click"
                       Padding="14,6"/>
             </Grid>
@@ -535,17 +428,16 @@
 
           <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
             <TextBlock Grid.Column="0" Text="Registered consoles" FontSize="12"
-                       Foreground="#50b0aaa0" VerticalAlignment="Center"/>
+                       Foreground="{DynamicResource ThemeText3}" VerticalAlignment="Center"/>
             <Button Grid.Column="1" Classes="ghost" Content="Open configurator"
                     Click="OpenChiaki_Click" Padding="12,6"/>
           </Grid>
 
-          <Border CornerRadius="10" Padding="12" Background="#0affffff"
-                  BorderBrush="#14ffffff" BorderThickness="1">
+          <Border Classes="wizard-card-hi" Padding="12">
             <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" Text="DISCOVER CONSOLES" FontSize="10" FontWeight="Bold"
-                           LetterSpacing="1" Foreground="#40b0aaa0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="0" Text="DISCOVER CONSOLES" Classes="wizard-caps"
+                           VerticalAlignment="Center"/>
                 <Button Grid.Column="1" Classes="ghost" Content="Discover"
                         Click="DiscoverConsoles_Click" Padding="10,5"/>
               </Grid>
@@ -554,7 +446,7 @@
               <TextBox x:Name="PsnAccountIdBox" Watermark="PSN Account ID (optional)"/>
               <TextBox x:Name="PsnPinBox" Watermark="PIN from console (optional)"/>
               <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
-                <Button Grid.Column="0" Classes="primary" Content="Register"
+                <Button Grid.Column="0" Classes="action" Content="Register"
                         Click="RegisterConsole_Click" Padding="12,6"/>
                 <Button Grid.Column="1" Classes="ghost" Content="Wake"
                         Click="WakeConsole_Click" Padding="12,6"/>
@@ -565,26 +457,23 @@
           </Border>
 
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <PathIcon Width="12" Height="12" Foreground="#60b0aaa0"
+            <PathIcon Width="12" Height="12" Foreground="{DynamicResource ThemeText3}"
                       Data="M9,18 H15 M10,22 H14 M12,2 A7,7 0 0 1 16.95,13.95 C16.35,14.56 15.53,15.69 15,17 H9 C8.47,15.69 7.65,14.56 7.05,13.95 A7,7 0 0 1 12,2 Z"/>
             <TextBlock Text="Your PC and PlayStation must be on the same local network. Find the pairing PIN on your console under Settings → System → Remote Play → Link Device."
-                       FontSize="11" Foreground="#60b0aaa0" TextWrapping="Wrap"/>
+                       FontSize="11" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
           </StackPanel>
         </StackPanel>
 
         <!-- Step 6: Done -->
         <StackPanel IsVisible="{Binding Step, Converter={x:Static vm:WizardStepConverter.IsStep}, ConverterParameter=6}"
-                    VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" MaxWidth="520">
-          <PathIcon Width="48" Height="48" Foreground="#22c55e"
+                    VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14" MaxWidth="520">
+          <PathIcon Width="44" Height="44" Foreground="#22c55e"
                     HorizontalAlignment="Center"
                     Data="M20,6 A14,14 0 1 0 20,34 A14,14 0 1 0 20,6 M13,20 L18,25 L28,15"/>
-          <TextBlock Text="You're all set!" FontSize="26" FontWeight="Bold"
-                     Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
-          <TextBlock Text="Review your setup, then launch Cereal."
+          <TextBlock Text="Review the summary below, then launch when you are ready."
                      FontSize="13" Foreground="{DynamicResource ThemeText2}"
                      TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
-          <Border CornerRadius="10" Padding="12" Background="#0affffff"
-                  BorderBrush="#14ffffff" BorderThickness="1">
+          <Border Classes="wizard-card-hi" Padding="12">
             <StackPanel Spacing="10">
               <Grid ColumnDefinitions="20,*" ColumnSpacing="8">
                 <TextBlock Grid.Column="0" Text="🎨" FontSize="13" VerticalAlignment="Top" Margin="0,1,0,0"/>
@@ -631,10 +520,9 @@
             </StackPanel>
           </Border>
           <TextBlock Text="Tip: Press Ctrl+K to search your library after launch"
-                     FontSize="11" Foreground="#40b0aaa0"
+                     FontSize="11" Foreground="{DynamicResource ThemeText3}"
                      HorizontalAlignment="Center" TextAlignment="Center"/>
-          <Border CornerRadius="10" Padding="12" Background="#0affffff"
-                  BorderBrush="#14ffffff" BorderThickness="1">
+          <Border Classes="wizard-card-hi" Padding="12">
             <StackPanel Spacing="8">
               <TextBlock Text="Artwork (optional)" FontSize="12" FontWeight="SemiBold"
                          Foreground="{DynamicResource ThemeText}"/>
@@ -646,8 +534,7 @@
                          Background="#10ffffff" BorderBrush="#18ffffff" Foreground="{DynamicResource ThemeText}"
                          CornerRadius="8" Padding="12,10" FontSize="13"/>
                 <Button Grid.Column="1" Content="Paste" Margin="8,0,0,0"
-                        Background="#10ffffff" Foreground="{DynamicResource ThemeText2}"
-                        BorderBrush="#18ffffff" CornerRadius="8" Padding="14,10" FontSize="12"
+                        Classes="ghost" Padding="14,10" FontSize="12"
                         Click="PasteSgdbKey_Click"/>
               </Grid>
             </StackPanel>
@@ -658,7 +545,7 @@
     </ScrollViewer>
 
     <!-- Bottom nav -->
-    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,16,0,0">
+    <Grid Grid.Row="2" Classes="wizard-foot" ColumnDefinitions="Auto,*,Auto,Auto,Auto">
 
       <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
         <Ellipse Width="6" Height="6" Fill="{Binding DotBrush0}"/>
@@ -682,9 +569,10 @@
               IsVisible="{Binding CanSkip}"
               Command="{Binding SkipCommand}"/>
 
-      <Button Grid.Column="4" Classes="primary"
+      <Button Grid.Column="4" Classes="action"
               Content="{Binding NextLabel}"
-              Command="{Binding NextCommand}"/>
+              Command="{Binding NextCommand}"
+              IsDefault="True"/>
     </Grid>
 
   </Grid>

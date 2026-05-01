@@ -1,8 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Cereal.App.Controls.Orbit;
 using Cereal.App.Models;
 using Cereal.App.Services;
@@ -22,6 +25,9 @@ public partial class OrbitView : UserControl
     private readonly List<SpaceStation> _stations = [];
     private ShootingStarScheduler? _shootingStars;
     private DispatcherTimer? _galaxyIntroTimer;
+    private double _fitZoomBaseline = 1.0;
+    private ParallaxStarBackground? _parallax;
+    private string _lastZoomLabel = "100%";
 
     public string ZoomPercentLabel
     {
@@ -36,7 +42,6 @@ public partial class OrbitView : UserControl
     {
         InitializeComponent();
         Loaded += OnLoaded;
-        PointerMoved += OnViewPointerMoved;
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -56,19 +61,10 @@ public partial class OrbitView : UserControl
             if (!_world.UserAdjustedCamera)
             {
                 _world.FitAll();
+                _fitZoomBaseline = Math.Max(0.0001, _world.Camera.Zoom);
                 UpdateZoomLabel();
             }
         }, DispatcherPriority.Loaded);
-    }
-
-    private void OnViewPointerMoved(object? sender, PointerEventArgs e)
-    {
-        var p = e.GetPosition(this);
-        var w = Bounds.Width;
-        var h = Bounds.Height;
-        if (w <= 0 || h <= 0) return;
-        var parallax = this.FindControl<ParallaxStarBackground>("Parallax");
-        parallax?.UpdatePointer(p.X / w - 0.5, p.Y / h - 0.5);
     }
 
     private void OnLoaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -82,9 +78,12 @@ public partial class OrbitView : UserControl
                 ShowError("Orbit world control not found.");
                 return;
             }
+            _world.PointerMoved += OnWorldPointerMoved;
             _world.CameraChanged += OnWorldCameraChanged;
+            _parallax = this.FindControl<ParallaxStarBackground>("Parallax");
             BuildScene();
             _world.FitAll();
+            _fitZoomBaseline = Math.Max(0.0001, _world.Camera.Zoom);
             UpdateZoomLabel();
             if (IsVisible)
                 PlayEntranceAnimation();
@@ -94,6 +93,15 @@ public partial class OrbitView : UserControl
             Log.Error(ex, "[orbit] Failed to initialize world");
             ShowError(ex.Message);
         }
+    }
+
+    private void OnWorldPointerMoved(object? sender, PointerEventArgs e)
+    {
+        // During drag, reduce expensive parallax effects (halos/spikes) to keep
+        // pan/zoom responsive. Pointer tracking itself is handled inside parallax.
+        if (sender is not Control world) return;
+        if (_parallax is not null)
+            _parallax.InteractionActive = e.GetCurrentPoint(world).Properties.IsLeftButtonPressed;
     }
 
     /// <summary>Re-scatter orbs after the game library has changed.</summary>
@@ -130,6 +138,7 @@ public partial class OrbitView : UserControl
         _world.World.Children.Clear();
         BuildScene();
         _world.ResetAndFitAll();
+        _fitZoomBaseline = Math.Max(0.0001, _world.Camera.Zoom);
         UpdateZoomLabel();
     }
 
@@ -172,13 +181,19 @@ public partial class OrbitView : UserControl
     private void UpdateZoomLabel()
     {
         if (_world is null) return;
-        var pct = (int)Math.Round(_world.Camera.Zoom * 100);
-        ZoomPercentLabel = $"{pct}%";
+        var baseline = Math.Max(0.0001, _fitZoomBaseline);
+        var pct = (int)Math.Round((_world.Camera.Zoom / baseline) * 100);
+        var next = $"{pct}%";
+        if (next == _lastZoomLabel) return;
+        _lastZoomLabel = next;
+        ZoomPercentLabel = next;
     }
 
     private void FitAll_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         _world?.ResetAndFitAll();
+        if (_world is not null)
+            _fitZoomBaseline = Math.Max(0.0001, _world.Camera.Zoom);
         UpdateZoomLabel();
     }
 
@@ -209,11 +224,16 @@ public partial class OrbitView : UserControl
         // 1. Background stars (inside the world, pan/zoom with the camera).
         try
         {
-            _world.World.Children.Add(new StarField
+            var starField = new StarField
             {
                 StarCount = starCount,
                 AnimationsEnabled = settings.ShowAnimations,
-            });
+                Width = OrbitWorld.WorldWidth * 3,
+                Height = OrbitWorld.WorldHeight * 3,
+            };
+            Canvas.SetLeft(starField, -OrbitWorld.WorldWidth);
+            Canvas.SetTop(starField, -OrbitWorld.WorldHeight);
+            _world.World.Children.Add(starField);
         }
         catch (Exception ex)
         {
@@ -227,7 +247,7 @@ public partial class OrbitView : UserControl
         {
             try
             {
-                var bgCount = settings.StarDensity switch { "low" => 120, "high" => 500, _ => 280 };
+                var bgCount = settings.StarDensity switch { "low" => 420, "high" => 1800, _ => 980 };
                 parallax.AnimationsEnabled = settings.ShowAnimations;
                 parallax.StarCount = bgCount;
             }
@@ -336,10 +356,9 @@ public partial class OrbitView : UserControl
             // reads at a distance even without orbs.
             try
             {
-                NebulaCluster.Build(_world.World, plat, settings.ShowAnimations);
+                NebulaCluster.Build(_world.World, plat, settings.ShowAnimations, buildCore: false);
 
-                var letter = label.Length > 0 ? char.ToUpperInvariant(label[0]).ToString() : "?";
-                var station = new SpaceStation(_world, color, label, letter, gameCount);
+                var station = new SpaceStation(_world, plat, color, label, gameCount);
                 station.Tag = plat;
                 station.Clicked += OnStationClicked;
                 station.PlaceOn(_world.World, center.X, center.Y);
@@ -408,10 +427,13 @@ public partial class OrbitView : UserControl
 
     private void OnStationClicked(SpaceStation station)
     {
-        if (DataContext is not MainViewModel vm) return;
-        var platform = station.Tag as string;
-        if (platform == "psn") vm.OpenChiakiCommand.Execute(null);
-        else if (platform == "xbox") vm.OpenXcloudCommand.Execute(null);
+        var vm = ResolveMainViewModel();
+        if (vm is null) return;
+        var platform = (station.Tag as string)?.Trim().ToLowerInvariant();
+        if (platform is "psn" or "psremote" or "playstation")
+            vm.OpenChiakiCommand.Execute(null);
+        else if (platform == "xbox")
+            vm.OpenXcloudCommand.Execute(null);
     }
 
     private static List<Game> SortGamesForOrbit(List<Game> gms, string sortOrder) =>
@@ -451,7 +473,7 @@ public partial class OrbitView : UserControl
             var ai = i / nArms;
             var armOff = arm * (Math.PI * 2 / nArms);
             var theta = armOff + 0.65 * (ai + 1);
-            var r = 70 + 50 * (ai + 1) + sz * 0.3;
+            var r = 95 + 64 * (ai + 1) + sz * 0.3;
             var h = HashString(string.IsNullOrEmpty(game.Id) ? game.Name ?? "" : game.Id);
             var jitter = (((h >> ((i * 3) & 15)) & 0xff) / 255.0 - 0.5) * 16;
             var sx = jitter * Math.Cos(theta + Math.PI / 2);
@@ -511,14 +533,30 @@ public partial class OrbitView : UserControl
 
     private void OnSelectRequested(string gameId)
     {
-        if (DataContext is not MainViewModel vm) return;
+        var vm = ResolveMainViewModel();
+        if (vm is null) return;
         vm.SelectGameByIdCommand.Execute(gameId);
     }
 
     private void OnLaunchRequested(string gameId)
     {
-        if (DataContext is not MainViewModel vm) return;
+        var vm = ResolveMainViewModel();
+        if (vm is null) return;
         vm.LaunchGameByIdCommand.Execute(gameId);
+    }
+
+    private MainViewModel? ResolveMainViewModel()
+    {
+        if (DataContext is MainViewModel vmFromDataContext)
+            return vmFromDataContext;
+        if (TopLevel.GetTopLevel(this) is Window { DataContext: MainViewModel vmFromTopLevel })
+            return vmFromTopLevel;
+        if (this.FindAncestorOfType<MainWindow>()?.DataContext is MainViewModel vmFromAncestor)
+            return vmFromAncestor;
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow?.DataContext is MainViewModel vmFromDesktop)
+            return vmFromDesktop;
+        return null;
     }
 
     private void ShowError(string message)

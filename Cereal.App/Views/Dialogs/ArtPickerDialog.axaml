@@ -50,6 +50,7 @@
     <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
       <TextBox Grid.Column="0" x:Name="SearchBox"
                Watermark="Search SteamGridDB…"
+               AttachedToVisualTree="SearchBox_AttachedToVisualTree"
                KeyDown="SearchBox_KeyDown"/>
       <Button Grid.Column="1" Classes="action" Content="Search"
               Margin="10,0,0,0" Click="Search_Click"/>
@@ -67,7 +68,7 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="local:ArtResult">
               <Border Classes="thumb" Width="120" Height="160" Margin="6"
-                      Tag="{Binding}" Tapped="Thumb_Tapped">
+                      Tag="{Binding}" Tapped="Thumb_Tapped" DoubleTapped="Thumb_DoubleTapped">
                 <Image Source="{Binding Thumb}" Stretch="UniformToFill"/>
               </Border>
             </DataTemplate>
@@ -93,9 +94,9 @@
       <Button Content="Cancel" Click="Cancel_Click"
               Background="Transparent" Foreground="#88ccccff"
               BorderBrush="#33aaaaff" BorderThickness="1"
-              CornerRadius="6" Padding="14,8" Cursor="Hand"/>
+              CornerRadius="6" Padding="14,8" Cursor="Hand" IsCancel="True"/>
       <Button Classes="action" Content="Use selected" Click="Use_Click"
-              x:Name="UseButton" IsEnabled="False"/>
+              x:Name="UseButton" IsEnabled="False" IsDefault="True"/>
     </StackPanel>
 
   </Grid>

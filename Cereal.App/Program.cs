@@ -1,5 +1,4 @@
 using Avalonia;
-using Avalonia.WebView.Desktop;
 using Cereal.App.Services;
 using Serilog;
 using Velopack;
@@ -77,6 +76,5 @@ class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToTrace()
-            .UseDesktopWebView();
+            .LogToTrace();
 }

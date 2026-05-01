@@ -85,11 +85,16 @@ public partial class DetectViewModel : ObservableObject
     {
         ScanCommand.NotifyCanExecuteChanged();
         ImportFromApiCommand.NotifyCanExecuteChanged();
+        ImportAllCommand.NotifyCanExecuteChanged();
+        ImportNewOnlyCommand.NotifyCanExecuteChanged();
+        ImportSelectedCommand.NotifyCanExecuteChanged();
+        SelectNoneCommand.NotifyCanExecuteChanged();
+        ClearResultsCommand.NotifyCanExecuteChanged();
     }
 
     // ─── Import selected ─────────────────────────────────────────────────────
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanImportAny))]
     private void ImportSelected()
     {
         var selected = Results.Where(r => r.IsSelected && r.Game is not null).ToList();
@@ -106,13 +111,47 @@ public partial class DetectViewModel : ObservableObject
         }
         else
             StatusMessage = "Nothing new to import.";
+        ImportSelectedCommand.NotifyCanExecuteChanged();
+        ImportAllCommand.NotifyCanExecuteChanged();
+        ImportNewOnlyCommand.NotifyCanExecuteChanged();
+        SelectNoneCommand.NotifyCanExecuteChanged();
+        ClearResultsCommand.NotifyCanExecuteChanged();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanImportAny))]
     private void ImportAll()
     {
         foreach (var r in Results.Where(r => r.Game is not null)) r.IsSelected = true;
         ImportSelected();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanImportAny))]
+    private void ImportNewOnly()
+    {
+        foreach (var r in Results.Where(r => r.Game is not null))
+            r.IsSelected = !r.IsImported;
+        ImportSelected();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanImportAny))]
+    private void SelectNone()
+    {
+        foreach (var r in Results)
+            r.IsSelected = false;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanImportAny))]
+    private void ClearResults()
+    {
+        Results.Clear();
+        FoundCount = 0;
+        AddedCount = 0;
+        StatusMessage = "Cleared scan results.";
+        ImportSelectedCommand.NotifyCanExecuteChanged();
+        ImportAllCommand.NotifyCanExecuteChanged();
+        ImportNewOnlyCommand.NotifyCanExecuteChanged();
+        SelectNoneCommand.NotifyCanExecuteChanged();
+        ClearResultsCommand.NotifyCanExecuteChanged();
     }
 
     // ─── Full API import ──────────────────────────────────────────────────────
@@ -153,6 +192,8 @@ public partial class DetectViewModel : ObservableObject
             IsScanning = false;
         }
     }
+
+    private bool CanImportAny() => !IsScanning && Results.Any(r => r.Game is not null);
 }
 
 // ─── Supporting types ──────────────────────────────────────────────────────────

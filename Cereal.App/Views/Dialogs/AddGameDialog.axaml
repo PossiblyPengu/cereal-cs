@@ -39,74 +39,6 @@
       <Setter Property="MinHeight" Value="32"/>
       <Setter Property="HorizontalAlignment" Value="Stretch"/>
     </Style>
-    <Style Selector="Button.action">
-      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="20,9"/>
-      <Setter Property="MinHeight" Value="32"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.action:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#e8b85e"/>
-    </Style>
-    <Style Selector="Button.action:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#d29f45"/>
-    </Style>
-    <Style Selector="Button.action:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.action:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-    <Style Selector="Button.secondary">
-      <Setter Property="Background" Value="#10ffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="BorderBrush" Value="#18ffffff"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="14,8"/>
-      <Setter Property="MinHeight" Value="32"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#18ffffff"/>
-    </Style>
-    <Style Selector="Button.secondary:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#24ffffff"/>
-    </Style>
-    <Style Selector="Button.secondary:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.secondary:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-    <Style Selector="Button.sm">
-      <Setter Property="Background" Value="#10ffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="BorderBrush" Value="#18ffffff"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="10,5"/>
-      <Setter Property="MinHeight" Value="30"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.sm:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#18ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button.sm:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#24ffffff"/>
-    </Style>
-    <Style Selector="Button.sm:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.sm:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
     <Style Selector="TextBox.multiline">
       <Setter Property="MinHeight" Value="60"/>
       <Setter Property="AcceptsReturn" Value="True"/>
@@ -132,7 +64,8 @@
 
         <!-- Name -->
         <TextBlock Classes="label" Text="GAME NAME"/>
-        <TextBox x:Name="NameBox" Watermark="Game title"/>
+        <TextBox x:Name="NameBox" Watermark="Game title"
+                 AttachedToVisualTree="NameBox_AttachedToVisualTree"/>
 
         <!-- Platform -->
         <TextBlock Classes="label" Text="PLATFORM"/>
@@ -261,8 +194,8 @@
     <!-- Action buttons -->
     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="10" Margin="0,14,0,0">
-      <Button Classes="secondary" Content="Cancel" Click="Cancel_Click"/>
-      <Button x:Name="SaveBtn" Classes="action" Content="Add Game" Click="Save_Click"/>
+      <Button Classes="secondary" Content="Cancel" Click="Cancel_Click" IsCancel="True"/>
+      <Button x:Name="SaveBtn" Classes="action" Content="Add Game" Click="Save_Click" IsDefault="True"/>
     </StackPanel>
 
   </Grid>

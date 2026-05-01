@@ -36,13 +36,23 @@ public class GameService
     /// <summary>Add or merge many games with a single disk flush (debounced save still applies once).</summary>
     public (int Processed, int NewRows) AddRange(IEnumerable<Game> games)
     {
+        var (processed, newRows, _) = AddRangeWithSurvivors(games);
+        return (processed, newRows);
+    }
+
+    /// <summary>
+    /// Add/merge many games in one flush and return the final persisted rows ("survivors").
+    /// </summary>
+    public (int Processed, int NewRows, List<Game> Survivors) AddRangeWithSurvivors(IEnumerable<Game> games)
+    {
         var list = games as IList<Game> ?? games.ToList();
         var before = _db.Db.Games.Count;
+        var survivors = new List<Game>(list.Count);
         foreach (var g in list)
-            Upsert(g);
+            survivors.Add(Upsert(g));
         _db.Save();
         NotifyLibraryChanged();
-        return (list.Count, _db.Db.Games.Count - before);
+        return (list.Count, _db.Db.Games.Count - before, survivors);
     }
 
     /// <returns>The row that holds the merged data (existing or the newly added <paramref name="game"/>).</returns>

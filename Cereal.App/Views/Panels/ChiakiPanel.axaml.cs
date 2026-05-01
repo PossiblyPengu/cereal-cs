@@ -194,6 +194,7 @@ public partial class ChiakiPanel : UserControl
     private void TabConsoles_Click(object? sender, RoutedEventArgs e) => VM.SetTab("consoles");
     private void TabDiscover_Click(object? sender, RoutedEventArgs e) => VM.SetTab("discover");
     private void TabRegister_Click(object? sender, RoutedEventArgs e) => VM.SetTab("register");
+    private void OpenGui_Click(object? sender, RoutedEventArgs e) => _chiaki.OpenGui();
 
     // ── Consoles tab ─────────────────────────────────────────────────────────
 

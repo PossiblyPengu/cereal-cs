@@ -4,7 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Threading;
-using AvaloniaWebView;
+using Cereal.App.Controls;
 using Cereal.App.ViewModels;
 using Serilog;
 
@@ -12,7 +12,7 @@ namespace Cereal.App.Views.Panels;
 
 public partial class PlatformAuthPanel : UserControl
 {
-    private WebView? _web;
+    private WebView2Host? _web;
     private MainViewModel? _vm;
 
     public PlatformAuthPanel()
@@ -83,9 +83,9 @@ public partial class PlatformAuthPanel : UserControl
 
         if (_web is null)
         {
-            _web = new WebView
+            _web = new WebView2Host
             {
-                Url = uri,
+                Source = uri,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
             };
@@ -93,7 +93,7 @@ public partial class PlatformAuthPanel : UserControl
         }
         else
         {
-            _web.Url = uri;
+            _web.Source = uri;
         }
     }
 

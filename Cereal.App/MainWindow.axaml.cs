@@ -95,6 +95,8 @@ public partial class MainWindow : Window
     {
         if (_mainVm?.ShowChiakiEmbedHost == true)
             Dispatcher.UIThread.Post(TryEmbedChiakiStream, DispatcherPriority.Background);
+        if (_mainVm?.IsXcloudPanelVisible == true)
+            Dispatcher.UIThread.Post(TryRelayoutXcloudHost, DispatcherPriority.Background);
     }
 
     private void ChiakiStreamHost_SizeChanged(object? sender, SizeChangedEventArgs e)
@@ -104,6 +106,17 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName is nameof(MainViewModel.ShowChiakiEmbedHost))
             Dispatcher.UIThread.Post(TryEmbedChiakiStream, DispatcherPriority.Background);
+        if (e.PropertyName is nameof(MainViewModel.IsXcloudPanelVisible))
+            Dispatcher.UIThread.Post(TryRelayoutXcloudHost, DispatcherPriority.Background);
+        if (e.PropertyName is nameof(MainViewModel.AnyPanelOpen) or nameof(MainViewModel.ShowSearch))
+            UpdateMainViewBlur();
+    }
+
+    private void UpdateMainViewBlur()
+    {
+        if (MainViewContent is null || _mainVm is null) return;
+        var blur = _mainVm.AnyPanelOpen || _mainVm.ShowSearch;
+        MainViewContent.Effect = blur ? new BlurEffect { Radius = 8 } : null;
     }
 
     private void OnChiakiSessionEventForEmbed(object? sender, ChiakiEventArgs e)
@@ -126,6 +139,12 @@ public partial class MainWindow : Window
         var w = (int)Math.Max(1, Math.Round(ChiakiStreamHost.Bounds.Width * scale));
         var h = (int)Math.Max(1, Math.Round(ChiakiStreamHost.Bounds.Height * scale));
         _chiakiEmbed.EmbedAnyStreamingSessionToHost(handle, x, y, w, h);
+    }
+
+    private void TryRelayoutXcloudHost()
+    {
+        if (_mainVm?.IsXcloudPanelVisible != true) return;
+        XcloudPanelHost?.ForceHostRelayout();
     }
 
     // Parses either legacy decimal ("0.9"/"1"/"1.1") or percent
@@ -503,8 +522,9 @@ public partial class MainWindow : Window
         if (hasCmdOrCtrl && e.Key == Key.F)
         {
             e.Handled = true;
-            var search = FindSearchBox(this);
-            search?.Focus();
+            if (!vm.ShowSearch)
+                vm.OpenSearchCommand.Execute(null);
+            Dispatcher.UIThread.Post(() => SearchOverlayBox?.Focus(), DispatcherPriority.Input);
             return;
         }
 
@@ -514,18 +534,6 @@ public partial class MainWindow : Window
             e.Handled = true;
             vm.OpenSettingsCommand.Execute(null);
         }
-    }
-
-    private static TextBox? FindSearchBox(Avalonia.Visual root)
-    {
-        if (root is TextBox tb && tb.Classes.Contains("search"))
-            return tb;
-        foreach (var child in Avalonia.VisualTree.VisualExtensions.GetVisualChildren(root))
-        {
-            var found = FindSearchBox(child);
-            if (found is not null) return found;
-        }
-        return null;
     }
 
     // True when focus is on a text-input-ish control — we don't want shortcut keys

@@ -1,0 +1,62 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style Selector="ProgressBar.wizard-progress">
+    <Setter Property="MinHeight" Value="3"/>
+    <Setter Property="MaxHeight" Value="3"/>
+    <Setter Property="CornerRadius" Value="0"/>
+    <Setter Property="Background" Value="#14ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
+  </Style>
+
+  <Style Selector="Border.wizard-top">
+    <Setter Property="Background" Value="{DynamicResource ThemeCard}"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    <Setter Property="Padding" Value="24,14,24,12"/>
+  </Style>
+
+  <Style Selector="Border.wizard-card">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="#0cffffff"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="Border.wizard-card-hi">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="#0affffff"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="TextBlock.wizard-caps">
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="LetterSpacing" Value="0.85"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+  </Style>
+
+  <Style Selector="Border.wizard-kbd">
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Padding" Value="5,2"/>
+    <Setter Property="Background" Value="#14ffffff"/>
+  </Style>
+
+  <!-- Orbit / Cards: border + padding only; background comes from binding. -->
+  <Style Selector="Border.wizard-view-pick">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="BorderBrush" Value="#18ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Padding" Value="16,14"/>
+  </Style>
+
+  <Style Selector="Border.wizard-foot">
+    <Setter Property="Background" Value="{DynamicResource ThemeCard}"/>
+    <Setter Property="BorderBrush" Value="#14ffffff"/>
+    <Setter Property="BorderThickness" Value="0,1,0,0"/>
+    <Setter Property="Padding" Value="20,12,20,14"/>
+  </Style>
+
+</Styles>

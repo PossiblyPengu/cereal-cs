@@ -1,0 +1,175 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Match index.css body: primary foreground and Segoe UI font stack -->
+  <Style Selector="Window, UserControl">
+    <Setter Property="TextElement.FontFamily" Value="Segoe UI, Inter, -apple-system, BlinkMacSystemFont, sans-serif"/>
+    <Setter Property="TextElement.FontSize" Value="13"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+  <Style Selector="TextBox, ComboBox">
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+
+  <!-- Primary action — colors follow accent from ThemePalette -->
+  <Style Selector="Button.action">
+    <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeOnAccent}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="20,9"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.action:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ThemeAccentHover}"/>
+  </Style>
+  <Style Selector="Button.action:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ThemeAccentPressed}"/>
+  </Style>
+  <Style Selector="Button.action:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.action:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="#14ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="16,10"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="#10ffffff"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#22ffffff"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+  </Style>
+  <Style Selector="Button.ghost:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#2affffff"/>
+  </Style>
+  <Style Selector="Button.ghost:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.ghost:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <Style Selector="Button.secondary">
+    <Setter Property="Background" Value="#10ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="BorderBrush" Value="#18ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="14,8"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#18ffffff"/>
+  </Style>
+  <Style Selector="Button.secondary:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#24ffffff"/>
+  </Style>
+  <Style Selector="Button.secondary:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.secondary:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <Style Selector="Button.sm">
+    <Setter Property="Background" Value="#10ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="BorderBrush" Value="#18ffffff"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Padding" Value="10,5"/>
+    <Setter Property="MinHeight" Value="30"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.sm:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#18ffffff"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+  </Style>
+  <Style Selector="Button.sm:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#24ffffff"/>
+  </Style>
+  <Style Selector="Button.sm:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.sm:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <Style Selector="Button.chip">
+    <Setter Property="Background" Value="#10ffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Padding" Value="12,6"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="#18ffffff"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.chip:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#1affffff"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+  </Style>
+  <Style Selector="Button.chip:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#24ffffff"/>
+  </Style>
+  <Style Selector="Button.chip:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.chip:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+  <Style Selector="Button.chip.active">
+    <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeOnAccent}"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <Style Selector="Button /template/ ContentPresenter">
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="ScrollBar">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="ScrollBar:vertical">
+    <Setter Property="Width" Value="8"/>
+  </Style>
+  <Style Selector="ScrollBar:horizontal">
+    <Setter Property="Height" Value="8"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ Thumb">
+    <Setter Property="Background" Value="{DynamicResource ThemeScrollThumb}"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="MinHeight" Value="24"/>
+    <Setter Property="MinWidth" Value="24"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ Thumb:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ThemeScrollThumbHover}"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ RepeatButton">
+    <Setter Property="IsVisible" Value="False"/>
+    <Setter Property="MinHeight" Value="0"/>
+    <Setter Property="MinWidth" Value="0"/>
+  </Style>
+</Styles>

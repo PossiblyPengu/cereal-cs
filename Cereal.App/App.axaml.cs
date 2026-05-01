@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using AvaloniaWebView;
 using Cereal.App.Models;
 using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
@@ -27,7 +26,8 @@ public partial class App : Application
     public override void RegisterServices()
     {
         base.RegisterServices();
-        AvaloniaWebViewBuilder.Initialize(default);
+        // No registration step needed: WebView2Host (Cereal.App/Controls)
+        // initializes the CoreWebView2Environment lazily per session.
     }
 
     public override void Initialize()

@@ -11,11 +11,11 @@
             Background="{DynamicResource ThemeCard}"
             BorderBrush="#0fffffff"
             BorderThickness="0,0,0,1"
-            Padding="14,8">
+            Padding="18,10">
       <Grid ColumnDefinitions="*,Auto,Auto">
         <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
           <TextBlock Text="{Binding PlatformAuthTabTitle}"
-                     FontSize="14" FontWeight="SemiBold"
+                     FontSize="16" FontWeight="SemiBold"
                      Foreground="{DynamicResource ThemeText}"/>
           <TextBlock Text="Complete sign-in in the panel below. Stays in-app with the tab bar like Cloud Gaming."
                      FontSize="11" TextWrapping="Wrap"
@@ -23,7 +23,7 @@
         </StackPanel>
         <Button Grid.Column="1" Classes="ghost" Content="Open in browser" Margin="0,0,8,0"
                 Padding="12,6" Click="OpenBrowser_Click"/>
-        <Button Grid.Column="2" Width="36" Height="32" Classes="ghost" Padding="0"
+        <Button Grid.Column="2" Width="38" Height="34" Classes="ghost" Padding="0"
                 Command="{Binding ClosePlatformAuthCommand}" ToolTip.Tip="Close">
           <PathIcon Width="10" Height="10"
                     Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -33,7 +33,7 @@
     </Border>
 
     <Border Grid.Row="1" x:Name="WebHost"
-            Background="#080818"
+            Background="{DynamicResource ThemeSurface}"
             ClipToBounds="True"/>
   </Grid>
 </UserControl>

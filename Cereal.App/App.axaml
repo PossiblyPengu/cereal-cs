@@ -6,51 +6,15 @@
 
   <Application.Styles>
     <FluentTheme/>
-    <!-- Match index.css body: primary foreground and Segoe UI font stack -->
-    <Style Selector="Window, UserControl">
-      <Setter Property="TextElement.FontFamily" Value="Segoe UI, Inter, -apple-system, BlinkMacSystemFont, sans-serif"/>
-      <Setter Property="TextElement.FontSize" Value="13"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button">
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="FontSize" Value="12"/>
-    </Style>
-    <Style Selector="TextBox, ComboBox">
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="FontSize" Value="12"/>
-    </Style>
+    <StyleInclude Source="avares://Cereal.App/Theme/Cereal.Controls.axaml"/>
   </Application.Styles>
 
-  <!-- Theme color resources — updated at runtime by ThemeService -->
   <Application.Resources>
-    <!-- Midnight defaults; ThemeService overwrites these on startup and on theme change -->
-    <Color x:Key="ThemeVoidColor">#07070d</Color>
-    <Color x:Key="ThemeSurfaceColor">#0d0d16</Color>
-    <Color x:Key="ThemeCardColor">#101018</Color>
-    <Color x:Key="ThemeCardUpColor">#16161f</Color>
-    <Color x:Key="ThemeAccentColor">#d4a853</Color>
-    <Color x:Key="ThemeTextColor">#e8e4de</Color>
-    <Color x:Key="ThemeText2Color">#b0aaa0</Color>
-    <Color x:Key="ThemeText3Color">#706b63</Color>
-    <Color x:Key="ThemeText4Color">#3d3a35</Color>
-    <Color x:Key="ThemeBodyBgColor">#07070d</Color>
-    <!-- RGBA glass tokens (stored as strings, used in code-behind where needed) -->
-    <x:String x:Key="ThemeGlass">rgba(255,255,255,0.03)</x:String>
-    <x:String x:Key="ThemeGlassBorder">rgba(255,255,255,0.06)</x:String>
-    <x:String x:Key="ThemeGlow">rgba(255,255,255,0.08)</x:String>
-
-    <!-- Brush shortcuts -->
-    <SolidColorBrush x:Key="ThemeVoid"    Color="{DynamicResource ThemeVoidColor}"/>
-    <SolidColorBrush x:Key="ThemeSurface" Color="{DynamicResource ThemeSurfaceColor}"/>
-    <SolidColorBrush x:Key="ThemeCard"    Color="{DynamicResource ThemeCardColor}"/>
-    <SolidColorBrush x:Key="ThemeCardUp"  Color="{DynamicResource ThemeCardUpColor}"/>
-    <SolidColorBrush x:Key="ThemeAccent"  Color="{DynamicResource ThemeAccentColor}"/>
-    <SolidColorBrush x:Key="ThemeText"    Color="{DynamicResource ThemeTextColor}"/>
-    <SolidColorBrush x:Key="ThemeText2"   Color="{DynamicResource ThemeText2Color}"/>
-    <SolidColorBrush x:Key="ThemeText3"   Color="{DynamicResource ThemeText3Color}"/>
-    <SolidColorBrush x:Key="ThemeText4"   Color="{DynamicResource ThemeText4Color}"/>
-    <SolidColorBrush x:Key="ThemeBodyBg"  Color="{DynamicResource ThemeBodyBgColor}"/>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://Cereal.App/Theme/Cereal.Palette.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
   </Application.Resources>
 
   <TrayIcon.Icons>

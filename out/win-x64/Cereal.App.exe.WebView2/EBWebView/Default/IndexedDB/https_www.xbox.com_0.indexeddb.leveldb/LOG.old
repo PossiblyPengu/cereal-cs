@@ -1,0 +1,10 @@
+2026/04/28-07:51:41.969 272c Reusing MANIFEST D:\CODE\FUN\cereal-cs\out\win-x64\Cereal.App.exe.WebView2\EBWebView\Default\IndexedDB\https_www.xbox.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/28-07:51:41.970 272c Recovering log #22
+2026/04/28-07:51:42.029 272c Reusing old log D:\CODE\FUN\cereal-cs\out\win-x64\Cereal.App.exe.WebView2\EBWebView\Default\IndexedDB\https_www.xbox.com_0.indexeddb.leveldb/000022.log 
+2026/04/28-07:51:47.320 272c Level-0 table #27: started
+2026/04/28-07:51:47.368 272c Level-0 table #27: 922522 bytes OK
+2026/04/28-07:51:47.370 272c Delete type=0 #22
+2026/04/28-07:51:47.390 272c Compacting 1@0 + 1@1 files
+2026/04/28-07:51:47.420 272c Generated table #28@0: 12382 keys, 420012 bytes
+2026/04/28-07:51:47.420 272c Compacted 1@0 + 1@1 files => 420012 bytes
+2026/04/28-07:51:47.421 272c compacted to: files[ 0 1 1 0 0 0 0 ]

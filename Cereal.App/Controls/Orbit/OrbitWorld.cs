@@ -25,8 +25,8 @@ public class OrbitWorld : Border
     private const double MinZoom = 0.15;
     private const double MaxZoom = 4.0;
     private const double DragThresholdPx = 4;
-    // Larger than the previous 0.90 framing so the galaxy reads bigger by default.
-    private const double FitAllScale = 1.12;
+    private const double FitAllPaddingPx = 96;
+    private const double PanSlackPx = 280;
 
     private readonly Canvas _world;
     private readonly ScaleTransform _scale = new() { ScaleX = 1, ScaleY = 1 };
@@ -94,6 +94,13 @@ public class OrbitWorld : Border
         };
     }
 
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsVisibleProperty && !change.GetNewValue<bool>())
+            CancelDragState();
+    }
+
     /// <summary>The 3000×2000 world canvas that consumers add children to.</summary>
     public Canvas World => _world;
 
@@ -126,12 +133,13 @@ public class OrbitWorld : Border
         // Ignore transient tiny layout passes during initialization.
         if (vw < 200 || vh < 120) return;
 
-        // Slightly tighter framing than the original web version so the galaxy
-        // feels larger and less distant on first open / Fit all.
-        // z = min(vw/GALAXY_W, vh/GALAXY_H) * FitAllScale
+        // Keep explicit viewport padding so Fit All never crops edge content.
+        // z = min((vw-2p)/GALAXY_W, (vh-2p)/GALAXY_H)
         // x = (vw - GALAXY_W * z) / 2
         // y = (vh - GALAXY_H * z) / 2
-        var z = Math.Clamp(Math.Min(vw / WorldWidth, vh / WorldHeight) * FitAllScale, MinZoom, MaxZoom);
+        var availW = Math.Max(1, vw - FitAllPaddingPx * 2);
+        var availH = Math.Max(1, vh - FitAllPaddingPx * 2);
+        var z = Math.Clamp(Math.Min(availW / WorldWidth, availH / WorldHeight), MinZoom, MaxZoom);
         var targetX = (vw - WorldWidth * z) / 2.0;
         var targetY = (vh - WorldHeight * z) / 2.0;
         SetCamera(targetX, targetY, z);
@@ -146,6 +154,7 @@ public class OrbitWorld : Border
     public void FlyTo(double x, double y, double zoom, TimeSpan? duration = null)
     {
         zoom = Math.Clamp(zoom, MinZoom, MaxZoom);
+        (x, y) = ClampCameraPosition(x, y, zoom);
         var dur = duration ?? TimeSpan.FromMilliseconds(600);
 
         _flyTimer?.Stop();
@@ -181,9 +190,8 @@ public class OrbitWorld : Border
     public void SetCamera(double x, double y, double zoom)
     {
         _flyTimer?.Stop();
-        _camX = x;
-        _camY = y;
         _camZoom = Math.Clamp(zoom, MinZoom, MaxZoom);
+        (_camX, _camY) = ClampCameraPosition(x, y, _camZoom);
         ApplyTransform();
     }
 
@@ -205,34 +213,50 @@ public class OrbitWorld : Border
         _dragCamStart = new Point(_camX, _camY);
         _dragMoved = false;
         _flyTimer?.Stop();
-        e.Pointer.Capture(this);
+        // Capture is deferred until the drag threshold is exceeded so that taps
+        // on child controls (GameOrb, SpaceStation) still receive PointerReleased.
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
         if (_dragStart is not { } start) return;
+        // If we missed PointerReleased while another surface was active (for
+        // example after switching away to an embedded stream panel), avoid
+        // getting stuck in drag mode when orbit becomes active again.
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            CancelDragState();
+            return;
+        }
 
         var p = e.GetPosition(this);
         var dx = p.X - start.X;
         var dy = p.Y - start.Y;
         if (Math.Abs(dx) > DragThresholdPx || Math.Abs(dy) > DragThresholdPx)
         {
+            if (!_dragMoved)
+                e.Pointer.Capture(this);
             _dragMoved = true;
             _userMovedCamera = true;
         }
 
-        _camX = _dragCamStart.X + dx;
-        _camY = _dragCamStart.Y + dy;
+        (_camX, _camY) = ClampCameraPosition(_dragCamStart.X + dx, _dragCamStart.Y + dy, _camZoom);
         ApplyTransform();
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        _dragStart = null;
+        CancelDragState();
         if (ReferenceEquals(e.Pointer.Captured, this))
             e.Pointer.Capture(null);
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        CancelDragState();
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -253,10 +277,56 @@ public class OrbitWorld : Border
 
         var m = e.GetPosition(this);
         // Keep the world-point under the cursor stationary on screen.
-        _camX = m.X - (m.X - _camX) * (newZoom / _camZoom);
-        _camY = m.Y - (m.Y - _camY) * (newZoom / _camZoom);
+        var nextX = m.X - (m.X - _camX) * (newZoom / _camZoom);
+        var nextY = m.Y - (m.Y - _camY) * (newZoom / _camZoom);
+        (_camX, _camY) = ClampCameraPosition(nextX, nextY, newZoom);
         _camZoom = newZoom;
         ApplyTransform();
+    }
+
+    private (double X, double Y) ClampCameraPosition(double x, double y, double zoom)
+    {
+        var vw = Bounds.Width;
+        var vh = Bounds.Height;
+        if (vw <= 0 || vh <= 0)
+            return (x, y);
+
+        var scaledW = WorldWidth * zoom;
+        var scaledH = WorldHeight * zoom;
+
+        // Keep clamp ranges continuous across zoom thresholds to avoid visible
+        // camera snaps when crossing from "world smaller than viewport" to
+        // "world larger than viewport" (or vice versa).
+        double minX, maxX;
+        if (scaledW <= vw)
+        {
+            var cx = (vw - scaledW) / 2.0;
+            minX = cx - PanSlackPx;
+            maxX = cx + PanSlackPx;
+        }
+        else
+        {
+            minX = (vw - scaledW) - PanSlackPx;
+            maxX = PanSlackPx;
+        }
+
+        double minY, maxY;
+        if (scaledH <= vh)
+        {
+            var cy = (vh - scaledH) / 2.0;
+            minY = cy - PanSlackPx;
+            maxY = cy + PanSlackPx;
+        }
+        else
+        {
+            minY = (vh - scaledH) - PanSlackPx;
+            maxY = PanSlackPx;
+        }
+
+        var clampedX = Math.Clamp(x, minX, maxX);
+        var clampedY = Math.Clamp(y, minY, maxY);
+
+        return (clampedX, clampedY);
     }
 
     static OrbitWorld()
@@ -264,5 +334,11 @@ public class OrbitWorld : Border
         // Double-click fit-all — attach once to the routed event so all instances
         // pick it up without per-instance subscription.
         DoubleTappedEvent.AddClassHandler<OrbitWorld>((x, _) => x.ResetAndFitAll());
+    }
+
+    private void CancelDragState()
+    {
+        _dragStart = null;
+        _dragMoved = false;
     }
 }

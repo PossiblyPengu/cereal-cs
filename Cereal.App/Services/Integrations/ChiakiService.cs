@@ -356,7 +356,7 @@ public sealed class ChiakiService : IDisposable
             session.Process = Process.Start(psi);
             session.State = "gui";
             _sessions[gameId] = session;
-            RaiseEvent(gameId, "state", new { state = "gui" });
+            RaiseEvent(gameId, "state", new() { ["state"] = "gui" });
             return session;
         }
 
@@ -446,11 +446,13 @@ public sealed class ChiakiService : IDisposable
 
             var elapsed = (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - session.StartTimeMs) / 60000;
 
-            RaiseEvent(gameId, "disconnected", new
+            RaiseEvent(gameId, "disconnected", new()
             {
-                reason, wasError, exitCode = code,
-                sessionMinutes = elapsed,
-                stderr = wasError ? stderrBuf.ToString()[^Math.Min(1024, stderrBuf.Length)..] : "",
+                ["reason"]         = reason,
+                ["wasError"]       = wasError,
+                ["exitCode"]       = code,
+                ["sessionMinutes"] = elapsed,
+                ["stderr"]         = wasError ? stderrBuf.ToString()[^Math.Min(1024, stderrBuf.Length)..] : "",
             });
 
             // Attribute playtime to the current title
@@ -476,7 +478,7 @@ public sealed class ChiakiService : IDisposable
             {
                 var next = reconnectAttempts + 1;
                 var delayMs = (int)Math.Min(1000 * Math.Pow(2, next - 1), 16000);
-                RaiseEvent(gameId, "reconnecting", new { attempt = next, maxAttempts = 5, delayMs });
+                RaiseEvent(gameId, "reconnecting", new() { ["attempt"] = next, ["maxAttempts"] = 5, ["delayMs"] = delayMs });
                 session.ReconnectCts?.Cancel();
                 session.ReconnectCts?.Dispose();
                 session.ReconnectCts = new CancellationTokenSource();
@@ -501,7 +503,7 @@ public sealed class ChiakiService : IDisposable
             }
         });
 
-        RaiseEvent(gameId, "state", new { state = "launching" });
+        RaiseEvent(gameId, "state", new() { ["state"] = "launching" });
 
         // Start Win32 embedding on Windows
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -552,11 +554,11 @@ public sealed class ChiakiService : IDisposable
         {
             case "connecting":
                 session.State = "connecting";
-                RaiseEvent(gameId, "state", new
+                RaiseEvent(gameId, "state", new()
                 {
-                    state = "connecting",
-                    host    = evt.TryGetProperty("host",    out var h) ? h.GetString() : null,
-                    console = evt.TryGetProperty("console", out var c) ? c.GetString() : null,
+                    ["state"]   = "connecting",
+                    ["host"]    = evt.TryGetProperty("host",    out var h) ? h.GetString() : null,
+                    ["console"] = evt.TryGetProperty("console", out var c) ? c.GetString() : null,
                 });
                 break;
             case "streaming":
@@ -567,7 +569,7 @@ public sealed class ChiakiService : IDisposable
                     ["codec"]      = evt.TryGetProperty("codec",      out var cod) ? cod.GetString() : null,
                     ["fps"]        = evt.TryGetProperty("fps",        out var fps) ? fps.GetDouble() : null,
                 };
-                RaiseEvent(gameId, "state", new { state = "streaming", session.StreamInfo });
+                RaiseEvent(gameId, "state", new() { ["state"] = "streaming", ["StreamInfo"] = session.StreamInfo });
                 break;
             case "quality":
                 session.Quality = new()
@@ -584,10 +586,10 @@ public sealed class ChiakiService : IDisposable
                 break;
             case "disconnected":
                 session.State = "disconnected";
-                RaiseEvent(gameId, "chiaki_disconnect", new
+                RaiseEvent(gameId, "chiaki_disconnect", new()
                 {
-                    reason   = evt.TryGetProperty("reason",    out var r) ? r.GetString() : null,
-                    wasError = evt.TryGetProperty("was_error", out var we) && we.GetBoolean(),
+                    ["reason"]   = evt.TryGetProperty("reason",    out var r) ? r.GetString() : null,
+                    ["wasError"] = evt.TryGetProperty("was_error", out var we) && we.GetBoolean(),
                 });
                 break;
             default:
@@ -613,19 +615,19 @@ public sealed class ChiakiService : IDisposable
         if (string.IsNullOrEmpty(titleId))
         {
             session.CurrentGameId = null;
-            RaiseEvent(originalGameId, "title_change", new { titleId = "", titleName = "", gameId = (string?)null });
+            RaiseEvent(originalGameId, "title_change", new() { ["titleId"] = "", ["titleName"] = "", ["gameId"] = null });
             return;
         }
 
         // PlayStation is streaming-only: we do not create/persist tracked game rows.
         session.CurrentGameId = null;
 
-        RaiseEvent(originalGameId, "title_change", new
+        RaiseEvent(originalGameId, "title_change", new()
         {
-            titleId,
-            titleName,
-            gameId   = (string?)null,
-            gameName = titleName,
+            ["titleId"]   = titleId,
+            ["titleName"] = titleName,
+            ["gameId"]    = null,
+            ["gameName"]  = titleName,
         });
     }
 
@@ -639,7 +641,7 @@ public sealed class ChiakiService : IDisposable
             if (session.State != "streaming")
             {
                 session.State = "connecting";
-                RaiseEvent(gameId, "state", new { state = "connecting" });
+                RaiseEvent(gameId, "state", new() { ["state"] = "connecting" });
             }
         }
         else if (lower.Contains("senkusha completed successfully")
@@ -651,14 +653,14 @@ public sealed class ChiakiService : IDisposable
             {
                 session.State = "streaming";
                 session.ReconnectAttempts = 0;
-                RaiseEvent(gameId, "state", new { state = "streaming" });
+                RaiseEvent(gameId, "state", new() { ["state"] = "streaming" });
             }
         }
         else if (lower.Contains("ctrl has failed")
               || lower.Contains("streamconnection run failed")
               || lower.Contains("remote disconnected"))
         {
-            RaiseEvent(gameId, "log", new { level = "error", message = line });
+            RaiseEvent(gameId, "log", new() { ["level"] = "error", ["message"] = line });
         }
     }
 
@@ -669,26 +671,26 @@ public sealed class ChiakiService : IDisposable
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
         if (session.Process is null) return;
 
-        // Give chiaki time to create its window (up to 10s)
+        // Poll until Chiaki creates its window or the process exits (10s timeout).
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         nint chiakiHwnd = nint.Zero;
-        for (var i = 0; i < 50 && chiakiHwnd == nint.Zero; i++)
+        while (chiakiHwnd == nint.Zero && !session.Process.HasExited)
         {
-            await Task.Delay(200);
-            if (session.Process.HasExited) return;
+            try { await Task.Delay(150, cts.Token); } catch (OperationCanceledException) { break; }
             chiakiHwnd = Win32Interop.FindProcessMainWindow(session.Process.Id);
         }
 
         if (chiakiHwnd == nint.Zero)
         {
             Log.Warning("[chiaki] Could not find chiaki window for embedding");
-            RaiseEvent(gameId, "embedded", new { embedded = false, error = "Window not found" });
+            RaiseEvent(gameId, "embedded", new() { ["embedded"] = false, ["error"] = "Window not found" });
             return;
         }
 
         session.EmbedWindowHandle = chiakiHwnd;
         Win32Interop.EmbedWindow(chiakiHwnd, session.Process.Id);
         session.IsEmbedded = true;
-        RaiseEvent(gameId, "embedded", new { embedded = true });
+        RaiseEvent(gameId, "embedded", new() { ["embedded"] = true });
     }
 
     private static void StopEmbedding(ChiakiSession session)
@@ -944,7 +946,7 @@ public sealed class ChiakiService : IDisposable
         if (SystemPaths.Any(File.Exists)) return;
 
         Log.Information("[chiaki] Not found — starting automatic setup...");
-        RaiseEvent("", "setup_started", new { });
+        RaiseEvent("", "setup_started", []);
 
         var scriptPath = _paths.GetResourcePath("scripts/setup-chiaki.ps1");
         if (!File.Exists(scriptPath))
@@ -977,39 +979,32 @@ public sealed class ChiakiService : IDisposable
                 {
                     var version = GetBundledVersion();
                     Log.Information("[chiaki] Auto-setup complete — v{Version}", version);
-                    RaiseEvent("", "setup_complete", new { version });
+                    RaiseEvent("", "setup_complete", new() { ["version"] = version });
                 }
                 else
                 {
                     Log.Error("[chiaki] Auto-setup failed (exit {Code})", p.ExitCode);
-                    RaiseEvent("", "setup_failed", new { error = $"Setup exited with code {p.ExitCode}" });
+                    RaiseEvent("", "setup_failed", new() { ["error"] = $"Setup exited with code {p.ExitCode}" });
                 }
             }
             catch (OperationCanceledException)
             {
                 Log.Error("[chiaki] Auto-setup timed out");
-                RaiseEvent("", "setup_failed", new { error = "Setup timed out after 5 minutes" });
+                RaiseEvent("", "setup_failed", new() { ["error"] = "Setup timed out after 5 minutes" });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "[chiaki] Auto-setup spawn error");
-                RaiseEvent("", "setup_failed", new { error = ex.Message });
+                RaiseEvent("", "setup_failed", new() { ["error"] = ex.Message });
             }
         });
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    private void RaiseEvent(string gameId, string type, object data)
+    private void RaiseEvent(string gameId, string type, Dictionary<string, object?> data)
     {
-        var dict = data.GetType().GetProperties()
-            .ToDictionary(p => p.Name, p => p.GetValue(data));
-        SessionEvent?.Invoke(this, new ChiakiEventArgs
-        {
-            GameId = gameId,
-            Type = type,
-            Data = dict,
-        });
+        SessionEvent?.Invoke(this, new ChiakiEventArgs { GameId = gameId, Type = type, Data = data });
     }
 
     // Reparent an existing session window into a host (Windows-only).
@@ -1023,7 +1018,7 @@ public sealed class ChiakiService : IDisposable
         {
             Win32Interop.ReparentAndPosition(session.EmbedWindowHandle, hostHwnd, x, y, width, height);
             session.IsEmbedded = true;
-            RaiseEvent(gameId, "embedded", new { embedded = true });
+            RaiseEvent(gameId, "embedded", new() { ["embedded"] = true });
             return true;
         }
         catch (Exception ex)
@@ -1049,7 +1044,7 @@ public sealed class ChiakiService : IDisposable
             {
                 Win32Interop.ReparentAndPosition(session.EmbedWindowHandle, hostHwnd, x, y, width, height);
                 session.IsEmbedded = true;
-                RaiseEvent(kv.Key, "embedded", new { embedded = true });
+                RaiseEvent(kv.Key, "embedded", new() { ["embedded"] = true });
                 return true;
             }
             catch (Exception ex)
