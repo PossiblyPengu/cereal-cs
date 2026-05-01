@@ -18,7 +18,6 @@ public sealed class LaunchService
     private readonly GameService _games;
     private readonly SettingsService _settings;
     private readonly DiscordService _discord;
-    private readonly ChiakiService _chiaki;
     private readonly XcloudService _xcloud;
 
     // gameId → session start time (for playtime tracking)
@@ -33,7 +32,6 @@ public sealed class LaunchService
         _games = games;
         _settings = settings;
         _discord = discord;
-        _chiaki = chiaki;
         _xcloud = xcloud;
     }
 
@@ -42,13 +40,6 @@ public sealed class LaunchService
     public async Task<LaunchResult> LaunchAsync(Game game, CancellationToken ct = default)
     {
         var platform = NormalizePlatform(game.Platform);
-
-        // PlayStation → delegate to ChiakiService
-        if (platform == "psn")
-        {
-            var (success, error, state) = _chiaki.StartStream(game.Id);
-            return new LaunchResult { Success = success, Error = error, Opened = state };
-        }
 
         // Xbox Cloud → delegate to XcloudService
         if (platform == "xbox" && game.StreamUrl is not null)
@@ -88,8 +79,6 @@ public sealed class LaunchService
     public Task<LaunchResult> InstallAsync(Game game, CancellationToken ct = default)
     {
         var platform = NormalizePlatform(game.Platform);
-        if (platform == "psn")
-            return Task.FromResult(new LaunchResult { Success = false, Error = "Install is not supported for Remote Play titles" });
         if (platform == "custom")
             return Task.FromResult(new LaunchResult { Success = false, Error = "Custom games must be installed manually" });
         return OpenPlatformAsync(game, ct, "install");

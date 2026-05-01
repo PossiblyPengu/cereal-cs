@@ -169,12 +169,6 @@
                     </Grid>
                   </Border>
 
-                  <!-- PSN: open Chiaki configurator -->
-                  <Button Classes="pp-flat" Content="Configure chiaki-ng"
-                          Command="{Binding OpenChiakiCommand}"
-                          IsVisible="{Binding IsPsn}"
-                          HorizontalAlignment="Stretch"/>
-
                   <!-- Sign-in button (hidden when connected) -->
                   <Button Classes="pp-primary" Command="{Binding SignInCommand}"
                           IsVisible="{Binding ShowSignIn}"

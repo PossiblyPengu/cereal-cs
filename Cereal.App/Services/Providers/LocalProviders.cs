@@ -19,7 +19,7 @@ public class BattleNetProvider(DatabaseService db) : IImportProvider
         try
         {
             var dir = Path.Combine(
-                Environment.GetEnvironmentVariable("ProgramData") ?? @"C:\ProgramData",
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
                 "Battle.net", "Agent", "data", "cache");
             if (!Directory.Exists(dir)) return Task.FromResult(new DetectResult(games));
 

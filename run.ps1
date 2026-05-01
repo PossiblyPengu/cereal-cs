@@ -92,6 +92,14 @@ if ($dotnetLocal) {
 }
 
 if (-not $SkipPublish) {
+    # Kill any running instance so the output DLL is not locked during publish.
+    $running = Get-Process -Name 'Cereal.App' -ErrorAction SilentlyContinue
+    if ($running) {
+        Write-Host "Stopping running Cereal.App instance(s)..." -ForegroundColor DarkYellow
+        $running | Stop-Process -Force
+        Start-Sleep -Milliseconds 400
+    }
+
     Write-Host "Publishing self-contained ($config)..." -ForegroundColor Cyan
     & $dotnet publish $proj -c $config -r win-x64 --self-contained -o $out
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

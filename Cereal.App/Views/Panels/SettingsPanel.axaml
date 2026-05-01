@@ -10,111 +10,81 @@
     <StyleInclude Source="avares://Cereal.App/Theme/SettingsPanel.Styles.axaml"/>
   </UserControl.Styles>
 
-  <!-- Two-pane layout; outer Border = index.css .side-panel left edge -->
+  <!-- No-sidebar: top header bar + horizontal tab strip + full-width content -->
   <Border Background="{DynamicResource ThemeSurface}"
           BorderBrush="#14ffffff"
           BorderThickness="1,0,0,0"
           MinHeight="600">
-  <Grid ColumnDefinitions="188,*">
+  <Grid RowDefinitions="Auto,*,Auto">
 
-    <!-- ── Left nav ── -->
-    <Border Grid.Column="0"
+    <!-- ── Combined header + tab strip ── -->
+    <Border Grid.Row="0"
             Background="{DynamicResource ThemeCard}"
             BorderBrush="#14ffffff"
-            BorderThickness="0,0,1,0">
-      <ScrollViewer VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="8,12,8,8" Spacing="2">
+            BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Column="0" Text="Settings" FontSize="15" FontWeight="Bold"
+                   Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"
+                   Margin="18,0,12,0"/>
+        <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Spacing="0" Margin="0">
+          <Button Classes="tab" Content="Appearance"
+                  Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=appearance}"
+                  Command="{Binding SetSectionCommand}" CommandParameter="appearance"/>
+          <Button Classes="tab" Content="Library"
+                  Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=library}"
+                  Command="{Binding SetSectionCommand}" CommandParameter="library"/>
 
-        <Border CornerRadius="10" Background="#0cffffff" BorderBrush="#14ffffff"
-                BorderThickness="1" Padding="12,10" Margin="0,0,0,10">
-          <StackPanel Spacing="2">
-            <TextBlock Text="CEREAL" FontSize="7" FontWeight="Bold"
-                       LetterSpacing="2" Foreground="{DynamicResource ThemeText3}"/>
-            <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}" FontSize="12" FontWeight="SemiBold"
-                       Foreground="{DynamicResource ThemeText}"/>
-          </StackPanel>
+          <Button Classes="tab" Content="Behavior"
+                  Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=behavior}"
+                  Command="{Binding SetSectionCommand}" CommandParameter="behavior"/>
+          <Button Classes="tab" Content="System &amp; Updates"
+                  Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=system}"
+                  Command="{Binding SetSectionCommand}" CommandParameter="system"/>
+          <Button Classes="tab" Content="About"
+                  Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=about}"
+                  Command="{Binding SetSectionCommand}" CommandParameter="about"/>
+          <Border Width="1" Background="#0affffff" Margin="6,10,6,10"/>
+          <Button Classes="tab tab-danger" Content="Danger"
+                  Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=danger}"
+                  Command="{Binding SetSectionCommand}" CommandParameter="danger"/>
+        </StackPanel>
+        </ScrollViewer>
+        <Border Grid.Column="2" CornerRadius="6" Background="#08ffffff"
+                BorderBrush="#10ffffff" BorderThickness="1"
+                Padding="10,4" VerticalAlignment="Center" Margin="0,0,16,0">
+          <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}"
+                     FontSize="11" FontWeight="Medium"
+                     Foreground="{DynamicResource ThemeText3}"/>
         </Border>
-
-        <TextBlock Classes="nav-group" Text="PERSONALIZATION"/>
-        <Button Classes="nav" Content="Appearance &amp; Layout"
-                Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=appearance}"
-                Command="{Binding SetSectionCommand}" CommandParameter="appearance"/>
-        <Button Classes="nav" Content="Library &amp; Integrations"
-                Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=library}"
-                Command="{Binding SetSectionCommand}" CommandParameter="library"/>
-
-        <TextBlock Classes="nav-group" Text="RUNTIME"/>
-        <Button Classes="nav" Content="Behavior"
-                Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=behavior}"
-                Command="{Binding SetSectionCommand}" CommandParameter="behavior"/>
-        <Button Classes="nav" Content="System &amp; Updates"
-                Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=system}"
-                Command="{Binding SetSectionCommand}" CommandParameter="system"/>
-
-        <TextBlock Classes="nav-group" Text="INFO"/>
-        <Button Classes="nav" Content="About"
-                Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=about}"
-                Command="{Binding SetSectionCommand}" CommandParameter="about"/>
-
-        <!-- Spacer -->
-        <Border Height="1" Background="#0fffffff" Margin="0,8"/>
-
-        <!-- Danger Zone pushed to bottom-ish -->
-        <TextBlock Classes="nav-group" Text="DANGER"/>
-        <Button Classes="nav" Content="Danger Zone"
-                Classes.active="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=danger}"
-                Command="{Binding SetSectionCommand}" CommandParameter="danger"
-                Foreground="#40ff6060"/>
-
-      </StackPanel>
-      </ScrollViewer>
-    </Border>
-
-    <!-- ── Right content pane ── -->
-    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
-
-    <Border Grid.Row="0" Classes="settings-page-hdr" Classes.danger-hdr="{Binding IsDangerSection}">
-      <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Grid.Column="0" Spacing="0" VerticalAlignment="Top">
-          <TextBlock Text="{Binding SectionTitle}" FontSize="22" FontWeight="SemiBold"
-                     Foreground="{DynamicResource ThemeText}"/>
-          <TextBlock Text="{Binding SectionSubtitle}" FontSize="12" Foreground="{DynamicResource ThemeText3}"
-                     TextWrapping="Wrap" MaxWidth="520" Margin="0,4,0,0"/>
-        </StackPanel>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Top">
-          <Border Classes="header-stat" MinWidth="88">
-            <StackPanel HorizontalAlignment="Center" Spacing="0">
-              <TextBlock Text="{Binding GameCount}" FontSize="16" FontWeight="SemiBold"
-                         Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
-              <TextBlock Text="Games" FontSize="9" Foreground="{DynamicResource ThemeText3}"
-                         LetterSpacing="0.5" HorizontalAlignment="Center"/>
-            </StackPanel>
-          </Border>
-          <Border Classes="header-stat" MinWidth="100">
-            <StackPanel HorizontalAlignment="Center" Spacing="0">
-              <TextBlock Text="{Binding TotalPlaytimeLabel}" FontSize="16" FontWeight="SemiBold"
-                         Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
-              <TextBlock Text="Playtime" FontSize="9" Foreground="{DynamicResource ThemeText3}"
-                         LetterSpacing="0.5" HorizontalAlignment="Center"/>
-            </StackPanel>
-          </Border>
-        </StackPanel>
       </Grid>
     </Border>
 
+    <!-- ── Scrollable content ── -->
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-      <StackPanel Margin="26,10,26,22" MaxWidth="980" Spacing="0">
+    <StackPanel Margin="22,20,22,24" MaxWidth="980" Spacing="0">
+
+      <!-- Section header (inline; danger gets a tint) -->
+      <Border Classes.danger-hdr="{Binding IsDangerSection}" Margin="0,0,0,20">
+        <StackPanel Spacing="4">
+          <TextBlock Text="{Binding SectionTitle}" FontSize="22" FontWeight="SemiBold"
+                     Foreground="{DynamicResource ThemeText}"/>
+          <TextBlock Text="{Binding SectionSubtitle}" FontSize="12"
+                     Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
 
         <!-- ══════════════════════════════════════════════
              APPEARANCE
         ══════════════════════════════════════════════ -->
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=appearance}">
 
+          <!-- Theme card -->
           <Border Classes="setting-card">
-          <StackPanel>
+          <StackPanel Spacing="0">
+          <TextBlock Classes="sec-hdr" Text="THEME" Margin="0,0,0,14"/>
           <!-- Theme swatches -->
-          <TextBlock Classes="lbl" Text="Theme" Margin="0,0,0,8"/>
           <ItemsControl ItemsSource="{Binding ThemeSwatches}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
@@ -123,7 +93,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:ThemeSwatchViewModel">
-                <Button Margin="0,0,8,8" Padding="0" CornerRadius="8"
+                <Button Margin="0,0,8,8" Padding="0" CornerRadius="10"
                         BorderThickness="2" Cursor="Hand"
                         Click="ThemeSwatch_Click"
                         Tag="{Binding Id}"
@@ -138,7 +108,7 @@
                   </Button.Styles>
                   <StackPanel Spacing="5" Margin="10,8">
                     <!-- 4-color preview dots: void / accent / surface / text -->
-                    <StackPanel Orientation="Horizontal" Spacing="3">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
                       <Ellipse Width="14" Height="14" Fill="{Binding VoidBrush}"/>
                       <Ellipse Width="14" Height="14" Fill="{Binding AccentBrush}"/>
                       <Ellipse Width="14" Height="14" Fill="{Binding SurfaceBrush}"/>
@@ -152,56 +122,82 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
-          <!-- Accent color override -->
-          <TextBlock Classes="lbl" Text="Custom accent color"/>
-          <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
-            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6"
-                    Margin="0,0,8,0" x:Name="AccentPreview"
-                    BorderBrush="#14ffffff" BorderThickness="1"
-                    PointerPressed="AccentPreview_Click"
-                    Cursor="Hand"/>
-            <TextBox Grid.Column="1" Classes="field"
-                     Text="{Binding AccentColor}"
-                     Watermark="#d4a853"
-                     CornerRadius="6" Padding="8,6" FontSize="12"/>
-            <Button Grid.Column="2" Content="Reset" Margin="8,0,0,0"
-                    Classes="ghost" FontSize="11" Padding="10,6"
-                    Click="ResetAccent_Click"/>
+          <!-- Divider + Accent color row -->
+          <Border Height="1" Background="#0dffffff" Margin="0,6,0,14"/>
+          <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Custom accent color"/>
+              <TextBlock Classes="row-desc" Text="Leave blank to use the theme default"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <Border Width="30" Height="30" CornerRadius="7"
+                      x:Name="AccentPreview"
+                      BorderBrush="#14ffffff" BorderThickness="1"
+                      PointerPressed="AccentPreview_Click"
+                      Cursor="Hand"/>
+              <TextBox Classes="field" Width="114"
+                       Text="{Binding AccentColor}"
+                       Watermark="#d4a853"
+                       CornerRadius="7" Padding="8,6" FontSize="12"/>
+              <Button Content="Reset" Classes="ghost" FontSize="11" Padding="10,6"
+                      Click="ResetAccent_Click"/>
+            </StackPanel>
           </Grid>
-          <TextBlock Text="Leave blank to use theme default"
-                     FontSize="10" Foreground="{DynamicResource ThemeText3}" Margin="0,2,0,0"/>
           <TextBlock Classes="validation-error"
                      Text="{Binding AccentColorValidationMessage}"
                      IsVisible="{Binding !AccentColorValid}"/>
           </StackPanel>
           </Border>
 
-          <!-- Other appearance options -->
+          <!-- Display options card -->
           <Border Classes="setting-card">
-          <StackPanel>
-          <TextBlock Classes="lbl" Text="Default view"/>
-          <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ViewOptionLabels}"
-                    SelectedIndex="{Binding DefaultViewIndex}"/>
+          <StackPanel Spacing="0">
+          <TextBlock Classes="sec-hdr" Text="DISPLAY" Margin="0,0,0,14"/>
 
-          <TextBlock Classes="lbl" Text="Nav pill position"/>
-          <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.NavPositionLabels}"
-                    SelectedIndex="{Binding NavPositionIndex}"/>
+          <!-- 2-col dropdown grid row 1 -->
+          <Grid ColumnDefinitions="*,14,*" Margin="0,0,0,14">
+            <StackPanel Grid.Column="0" Spacing="0">
+              <TextBlock Classes="lbl" Text="Default view" Margin="0,0,0,6"/>
+              <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ViewOptionLabels}"
+                        SelectedIndex="{Binding DefaultViewIndex}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="0">
+              <TextBlock Classes="lbl" Text="Nav pill position" Margin="0,0,0,6"/>
+              <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.NavPositionLabels}"
+                        SelectedIndex="{Binding NavPositionIndex}"/>
+            </StackPanel>
+          </Grid>
 
-          <TextBlock Classes="lbl" Text="UI scale"/>
-          <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.UiScaleOptions}"
-                    SelectedItem="{Binding UiScale}"/>
+          <!-- 2-col dropdown grid row 2 -->
+          <Grid ColumnDefinitions="*,14,*">
+            <StackPanel Grid.Column="0" Spacing="0">
+              <TextBlock Classes="lbl" Text="UI scale" Margin="0,0,0,6"/>
+              <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.UiScaleOptions}"
+                        SelectedItem="{Binding UiScale}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="0">
+              <TextBlock Classes="lbl" Text="Orbit star density" Margin="0,0,0,6"/>
+              <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.StarDensityLabels}"
+                        SelectedIndex="{Binding StarDensityIndex}"/>
+            </StackPanel>
+          </Grid>
 
-          <TextBlock Classes="lbl" Text="Orbit star density"/>
-          <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.StarDensityLabels}"
-                    SelectedIndex="{Binding StarDensityIndex}"/>
-
-          <ToggleSwitch Content="Show animations" IsChecked="{Binding ShowAnimations}" Margin="0,8,0,0"/>
+          <!-- Divider + Animations toggle row -->
+          <Border Height="1" Background="#0dffffff" Margin="0,14,0,0"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,14,0,0">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Animations"/>
+              <TextBlock Classes="row-desc" Text="Enable transitions, parallax, and Orbit effects"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowAnimations}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
           </StackPanel>
           </Border>
 
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource ThemeText3}"
                      IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                     Margin="0,8,0,0"/>
+                     Margin="0,0,0,8"/>
         </StackPanel>
 
         <!-- ══════════════════════════════════════════════
@@ -209,35 +205,29 @@
         ══════════════════════════════════════════════ -->
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=library}">
 
-          <!-- 2-column action card grid (Electron .settings-action-grid) -->
+          <!-- 2×2 action card grid -->
           <Border Classes="setting-card">
-          <StackPanel>
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,0,0,8">
-            <Grid.Styles>
-              <Style Selector="Button.action-card">
-                <Setter Property="Margin" Value="0,0,8,8"/>
-              </Style>
-            </Grid.Styles>
-
-            <Button Grid.Row="0" Classes="action-card"
+          <StackPanel Spacing="0">
+          <TextBlock Classes="sec-hdr" Text="LIBRARY ACTIONS" Margin="0,0,0,12"/>
+          <Grid ColumnDefinitions="*,10,*" RowDefinitions="Auto,10,Auto,10,Auto">
+            <Button Grid.Row="0" Grid.Column="0" Classes="action-card"
                     Command="{Binding RescanAllCommand}">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <PathIcon Width="16" Height="16" VerticalAlignment="Center"
+                <PathIcon Width="14" Height="14" VerticalAlignment="Center"
                           Foreground="{DynamicResource ThemeText3}"
                           Data="M11,3 A8,8 0 1 1 3,11 A8,8 0 0 1 11,3 M21,21 L16.65,16.65"/>
                 <StackPanel Spacing="2">
                   <TextBlock Text="Re-scan Platforms" FontSize="12" FontWeight="SemiBold"
                              Foreground="{DynamicResource ThemeText}"/>
-                  <TextBlock Text="Detect newly installed games" FontSize="10"
+                  <TextBlock Text="Detect new games" FontSize="10"
                              Foreground="{DynamicResource ThemeText3}"/>
                 </StackPanel>
               </StackPanel>
             </Button>
-
-            <Button Grid.Row="1" Classes="action-card"
+            <Button Grid.Row="0" Grid.Column="2" Classes="action-card"
                     Command="{Binding FetchAllMetadataCommand}">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <PathIcon Width="16" Height="16" VerticalAlignment="Center"
+                <PathIcon Width="14" Height="14" VerticalAlignment="Center"
                           Foreground="{DynamicResource ThemeText3}"
                           Data="M21,15 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V15 M7,10 L12,15 L17,10 M12,15 V3"/>
                 <StackPanel Spacing="2">
@@ -248,11 +238,10 @@
                 </StackPanel>
               </StackPanel>
             </Button>
-
-            <Button Grid.Row="2" Classes="action-card"
+            <Button Grid.Row="2" Grid.Column="0" Classes="action-card"
                     Command="{Binding SyncPlaytimeCommand}">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <PathIcon Width="16" Height="16" VerticalAlignment="Center"
+                <PathIcon Width="14" Height="14" VerticalAlignment="Center"
                           Foreground="{DynamicResource ThemeText3}"
                           Data="M23,4 V10 H17 M1,20 V14 H7 M3.51,9 A9,9 0 0 1 18.36,5.64 L23,10 M1,14 L5.64,18.36 A9,9 0 0 0 20.49,15"/>
                 <StackPanel Spacing="2">
@@ -263,33 +252,24 @@
                 </StackPanel>
               </StackPanel>
             </Button>
-
-            <Button Grid.Row="3" Classes="action-card"
+            <Button Grid.Row="2" Grid.Column="2" Classes="action-card"
                     Click="OpenPlatforms_Click">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <PathIcon Width="16" Height="16" VerticalAlignment="Center"
+                <PathIcon Width="14" Height="14" VerticalAlignment="Center"
                           Foreground="{DynamicResource ThemeText3}"
                           Data="M17,21 V19 A4,4 0 0 0 13,15 H5 A4,4 0 0 0 1,19 V21 M9,11 A4,4 0 1 0 9,3 A4,4 0 1 0 9,11 M23,21 V19 A4,4 0 0 0 20,15.13 M16,3.13 A4,4 0 0 1 16,10.87"/>
                 <StackPanel Spacing="2">
                   <TextBlock Text="Platforms" FontSize="12" FontWeight="SemiBold"
                              Foreground="{DynamicResource ThemeText}"/>
-                  <TextBlock Text="Manage connected accounts" FontSize="10"
+                  <TextBlock Text="Manage accounts" FontSize="10"
                              Foreground="{DynamicResource ThemeText3}"/>
                 </StackPanel>
               </StackPanel>
             </Button>
-          </Grid>
-          </StackPanel>
-          </Border>
-
-          <!-- Backup -->
-          <TextBlock Classes="sec-hdr" Text="BACKUP" Margin="0,10,0,10"/>
-          <Border Classes="setting-card">
-          <StackPanel Margin="0,0,0,8" Spacing="8">
-            <Button Classes="action-card"
+            <Button Grid.Row="4" Grid.Column="0" Classes="action-card"
                     Click="ExportLibrary_Click">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <PathIcon Width="16" Height="16" VerticalAlignment="Center"
+                <PathIcon Width="14" Height="14" VerticalAlignment="Center"
                           Foreground="{DynamicResource ThemeText3}"
                           Data="M21,15 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V15 M17,8 L12,3 L7,8 M12,3 V15"/>
                 <StackPanel Spacing="2">
@@ -300,10 +280,10 @@
                 </StackPanel>
               </StackPanel>
             </Button>
-            <Button Classes="action-card"
+            <Button Grid.Row="4" Grid.Column="2" Classes="action-card"
                     Click="ImportLibrary_Click">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <PathIcon Width="16" Height="16" VerticalAlignment="Center"
+                <PathIcon Width="14" Height="14" VerticalAlignment="Center"
                           Foreground="{DynamicResource ThemeText3}"
                           Data="M21,15 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V15 M7,10 L12,15 L17,10 M12,15 V3"/>
                 <StackPanel Spacing="2">
@@ -314,15 +294,26 @@
                 </StackPanel>
               </StackPanel>
             </Button>
+          </Grid>
+          <Border Height="1" Background="#0affffff" Margin="0,12,0,12"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Storage location"/>
+              <TextBlock Text="{Binding DataPath}" FontSize="11"
+                         Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Open folder" Classes="ghost" Padding="10,6"
+                    Command="{Binding OpenDataFolderCommand}" VerticalAlignment="Center"/>
+          </Grid>
           </StackPanel>
           </Border>
 
           <!-- SteamGridDB — SettingsPanel.tsx lib-key-card -->
-          <TextBlock Classes="sec-hdr" Text="INTEGRATIONS" Margin="0,10,0,0"/>
-          <Border Classes="lib-key-card" Margin="0,0,0,0">
-            <StackPanel Spacing="8">
+          <TextBlock Classes="sec-hdr" Text="INTEGRATIONS" Margin="0,4,0,10"/>
+          <Border Classes="lib-key-card">
+            <StackPanel Spacing="10">
               <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" Text="SteamGridDB" FontSize="12" FontWeight="SemiBold"
+                <TextBlock Grid.Column="0" Text="SteamGridDB" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                   <Border Classes="sgdb-st busy" IsVisible="{Binding SteamGridDbShowStatusBusy}">
@@ -371,25 +362,48 @@
                          Foreground="{DynamicResource ThemeText3}"/>
             </StackPanel>
           </Border>
+
+          <TextBlock Classes="sec-hdr" Text="METADATA" Margin="0,4,0,8"/>
+          <Border Classes="lib-key-card">
+            <StackPanel Spacing="10">
+              <!-- Header: source selector + label -->
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Metadata source" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding MetadataSourceOptions}"
+                          SelectedItem="{Binding MetadataSource}"
+                          MinWidth="130"/>
+              </Grid>
+              <TextBlock Text="Steam: store + search. Wikipedia: free text. IGDB: structured data via Twitch API."
+                         FontSize="10" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
+              <!-- IGDB sub-section -->
+              <Border Height="1" Background="#0affffff"/>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="IGDB (Twitch API)" FontSize="11" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Content="Open Twitch dev console" Classes="ghost" Padding="10,5"
+                        Command="{Binding OpenIgdbDevPortalCommand}"/>
+              </Grid>
+              <TextBlock Text="Create an app in the Twitch console, copy Client ID + Client Secret, and enable IGDB access."
+                         FontSize="10" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
+              <TextBox Classes="field" Text="{Binding IgdbClientId}" Watermark="Client ID"/>
+              <TextBox Classes="field" Text="{Binding IgdbClientSecret}" Watermark="Client secret" PasswordChar="•"/>
+              <WrapPanel Orientation="Horizontal" ItemHeight="30">
+                <Button Content="Save IGDB keys" Classes="primary" FontSize="11" Padding="10,5"
+                        Command="{Binding SaveIgdbKeysCommand}"/>
+                <Button Content="Remove" Classes="ghost" FontSize="11" Padding="10,5"
+                        Foreground="#ff7070"
+                        Command="{Binding DeleteIgdbKeysCommand}"
+                        IsVisible="{Binding HasIgdbClientId}"/>
+              </WrapPanel>
+              <TextBlock Text="Keys stored locally (encrypted on Windows). Falls back to Steam + Wikipedia without keys."
+                         FontSize="10" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource ThemeText3}"
                      IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                     Margin="0,4,0,0"/>
-
-          <!-- Data / Storage location -->
-          <TextBlock Classes="sec-hdr" Text="DATA" Margin="0,14,0,10"/>
-          <Border CornerRadius="10" Background="#0dffffff" BorderBrush="#14ffffff"
-                  BorderThickness="1" Padding="14,12">
-            <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Grid.Column="0" Spacing="3">
-                <TextBlock Text="Storage location" FontSize="10" FontWeight="SemiBold"
-                           LetterSpacing="0.6" Foreground="{DynamicResource ThemeText3}"/>
-                <TextBlock Text="{Binding DataPath}" FontSize="11"
-                           Foreground="{DynamicResource ThemeText2}" TextWrapping="Wrap"/>
-              </StackPanel>
-              <Button Grid.Column="1" Content="Open" Classes="ghost" Padding="10,6"
-                      Command="{Binding OpenDataFolderCommand}" VerticalAlignment="Center"/>
-            </Grid>
-          </Border>
+                     Margin="0,0,0,4"/>
 
         </StackPanel>
 
@@ -398,48 +412,111 @@
         ══════════════════════════════════════════════ -->
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=behavior}">
 
+          <!-- Window & tray -->
           <Border Classes="setting-card">
-          <StackPanel>
-          <ToggleSwitch Content="Minimize to tray when a game launches" IsChecked="{Binding MinimizeOnLaunch}"/>
-          <ToggleSwitch Content="Close to tray" IsChecked="{Binding CloseToTray}"/>
-          <ToggleSwitch Content="Minimize to tray" IsChecked="{Binding MinimizeToTray}"/>
-          <ToggleSwitch Content="Start minimized" IsChecked="{Binding StartMinimized}"/>
-          <ToggleSwitch Content="Launch on Windows startup" IsChecked="{Binding LaunchOnStartup}"/>
-          <ToggleSwitch Content="Remember window size and position" IsChecked="{Binding RememberWindowBounds}"/>
-          <StackPanel Spacing="6">
-            <ToggleSwitch Content="Auto-sync playtime from Steam"
-                          IsChecked="{Binding AutoSyncPlaytime}"/>
-            <Button Content="Sync now"
-                    Command="{Binding SyncPlaytimeCommand}"
-                    Background="#14ffffff" Foreground="{DynamicResource ThemeText2}"
-                    CornerRadius="6" Padding="10,5" BorderThickness="1"
-                    BorderBrush="#18ffffff" FontSize="11" Cursor="Hand"
-                    HorizontalAlignment="Left"/>
-          </StackPanel>
-          <ToggleSwitch Content="Hide Steam software &amp; tools" IsChecked="{Binding FilterHideSteamSoftware}"/>
+          <StackPanel Spacing="0">
+          <TextBlock Classes="sec-hdr" Text="WINDOW &amp; TRAY" Margin="0,0,0,4"/>
+
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,10">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Minimize when a game launches"/>
+              <TextBlock Classes="row-desc" Text="Hides the window as soon as a game starts"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding MinimizeOnLaunch}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Height="1" Background="#0affffff"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,10">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Close to tray"/>
+              <TextBlock Classes="row-desc" Text="Keep Cereal running when the window is closed"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Height="1" Background="#0affffff"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,10">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Minimize to tray"/>
+              <TextBlock Classes="row-desc" Text="Send to tray instead of taskbar when minimized"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding MinimizeToTray}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Height="1" Background="#0affffff"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,10">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Start minimized"/>
+              <TextBlock Classes="row-desc" Text="Launch hidden to tray on Windows startup"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding StartMinimized}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Height="1" Background="#0affffff"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,10">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Remember window size &amp; position"/>
+              <TextBlock Classes="row-desc" Text="Restore the last window bounds on launch"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding RememberWindowBounds}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Height="1" Background="#0affffff"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Launch on Windows startup"/>
+              <TextBlock Classes="row-desc" Text="Auto-start Cereal when you log in"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchOnStartup}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
           </StackPanel>
           </Border>
 
-          <!-- Discord -->
+          <!-- Sync & filters -->
           <Border Classes="setting-card">
-          <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-            <StackPanel Grid.Column="0" Spacing="2">
-              <TextBlock Text="Discord Rich Presence" FontSize="12" FontWeight="Medium"
-                         Foreground="{DynamicResource ThemeText}"/>
+          <StackPanel Spacing="0">
+          <TextBlock Classes="sec-hdr" Text="LIBRARY SYNC" Margin="0,0,0,4"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,10">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Auto-sync playtime from Steam"/>
+              <TextBlock Classes="row-desc" Text="Pull play hours automatically on launch"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <Button Content="Sync now" Command="{Binding SyncPlaytimeCommand}"
+                      Classes="ghost" FontSize="11" Padding="10,5"/>
+              <ToggleSwitch IsChecked="{Binding AutoSyncPlaytime}" Margin="0"/>
+            </StackPanel>
+          </Grid>
+          <Border Height="1" Background="#0affffff"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Hide Steam software &amp; tools"/>
+              <TextBlock Classes="row-desc" Text="Filter non-game items from the library"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding FilterHideSteamSoftware}"
+                          Margin="0" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Height="1" Background="#0affffff"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="row-title" Text="Discord Rich Presence"/>
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <Ellipse Width="6" Height="6" VerticalAlignment="Center"
                          Fill="{Binding DiscordStatusColor}"/>
-                <TextBlock Text="{Binding DiscordStatusLabel}" FontSize="11"
-                           Foreground="{DynamicResource ThemeText3}"/>
+                <TextBlock Text="{Binding DiscordStatusLabel}" Classes="row-desc"
+                           Margin="0"/>
               </StackPanel>
             </StackPanel>
             <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordPresence}"
-                          VerticalAlignment="Center"/>
+                          Margin="0" VerticalAlignment="Center"/>
           </Grid>
+          </StackPanel>
           </Border>
+
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource ThemeText3}"
                      IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                     Margin="0,8,0,0"/>
+                     Margin="0,0,0,8"/>
         </StackPanel>
 
         <!-- ══════════════════════════════════════════════
@@ -447,118 +524,118 @@
         ══════════════════════════════════════════════ -->
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=system}">
 
-          <!-- Platform paths -->
+          <!-- Platform paths — 2-column grid -->
           <TextBlock Classes="sec-hdr" Text="PLATFORM PATHS" Margin="0,0,0,8"/>
           <Border Classes="setting-card">
-          <StackPanel>
-
-          <TextBlock Classes="lbl" Text="Steam path (optional)"/>
-          <TextBox Classes="field" Text="{Binding SteamPath}" Watermark="Auto-detected"/>
-          <TextBlock Classes="lbl" Text="Epic Games path (optional)"/>
-          <TextBox Classes="field" Text="{Binding EpicPath}" Watermark="Auto-detected"/>
-          <TextBlock Classes="lbl" Text="GOG Galaxy path (optional)"/>
-          <TextBox Classes="field" Text="{Binding GogPath}" Watermark="Auto-detected"/>
-          <TextBlock Classes="lbl" Text="Chiaki-ng executable (optional)"/>
-          <TextBox Classes="field" Text="{Binding ChiakiPath}" Watermark="Auto-detected"/>
-          </StackPanel>
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel Grid.Column="0" Spacing="0">
+              <TextBlock Classes="lbl" Text="Steam path (optional)" Margin="0,0,0,6"/>
+              <TextBox Classes="field" Text="{Binding SteamPath}" Watermark="Auto-detected"/>
+              <TextBlock Classes="lbl" Text="GOG Galaxy path (optional)" Margin="0,12,0,6"/>
+              <TextBox Classes="field" Text="{Binding GogPath}" Watermark="Auto-detected"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="0">
+              <TextBlock Classes="lbl" Text="Epic Games path (optional)" Margin="0,0,0,6"/>
+              <TextBox Classes="field" Text="{Binding EpicPath}" Watermark="Auto-detected"/>
+              <TextBlock Classes="lbl" Text="Chiaki-ng executable (optional)" Margin="0,12,0,6"/>
+              <TextBox Classes="field" Text="{Binding ChiakiPath}" Watermark="Auto-detected"/>
+            </StackPanel>
+          </Grid>
           </Border>
 
-          <!-- Metadata source selector -->
-          <TextBlock Classes="sec-hdr" Text="METADATA" Margin="0,16,0,8"/>
-          <Border Classes="setting-card">
-          <StackPanel>
-          <TextBlock Classes="lbl" Text="Primary metadata source"/>
-          <ComboBox ItemsSource="{Binding MetadataSourceOptions}"
-                    SelectedItem="{Binding MetadataSource}"
-                    HorizontalAlignment="Stretch"/>
-          <TextBlock Text="Steam: store + search. Wikipedia: free text (no keys). IGDB: structured game data via Twitch API (register an app and paste keys below)."
-                     FontSize="11" Foreground="{DynamicResource ThemeText3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
-
-          <TextBlock Classes="lbl" Text="IGDB (Twitch API)" Margin="0,12,0,0"/>
-          <StackPanel Spacing="8" Margin="0,0,0,6">
-            <Button Content="Open Twitch dev console" Classes="ghost" Padding="10,5"
-                    Command="{Binding OpenIgdbDevPortalCommand}"/>
-            <TextBlock Text="Create an app, copy Client ID and Client Secret, enable IGDB access for the client."
-                       FontSize="10" Foreground="{DynamicResource ThemeText3}" VerticalAlignment="Center" TextWrapping="Wrap"/>
-          </StackPanel>
-          <TextBox Classes="field" Text="{Binding IgdbClientId}" Watermark="Client ID (or paste to replace)"/>
-          <TextBox Classes="field" Text="{Binding IgdbClientSecret}" Watermark="Client secret" PasswordChar="•" Margin="0,6,0,0"/>
-          <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
-            <Button Content="Save IGDB keys" Classes="primary" Padding="10,5"
-                    Command="{Binding SaveIgdbKeysCommand}"/>
-            <Button Content="Remove" Classes="ghost" Padding="10,5"
-                    Command="{Binding DeleteIgdbKeysCommand}"
-                    IsVisible="{Binding HasIgdbClientId}"/>
-          </StackPanel>
-          <TextBlock Text="Keys are stored locally (encrypted on Windows). Without keys, the IGDB source falls back to Steam + Wikipedia."
-                     FontSize="10" Foreground="{DynamicResource ThemeText3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
-          </StackPanel>
-          </Border>
-
-          <!-- Cereal update card -->
-          <TextBlock Classes="sec-hdr" Text="UPDATES" Margin="0,16,0,8"/>
-
-          <Border CornerRadius="8" Background="#0dffffff" BorderBrush="#14ffffff"
-                  BorderThickness="1" Padding="14,12" Margin="0,0,0,8">
-            <StackPanel Spacing="10">
-              <StackPanel Spacing="3">
-                <TextBlock Text="Cereal" FontSize="12" FontWeight="SemiBold"
-                           Foreground="{DynamicResource ThemeText}"/>
-                <TextBlock FontSize="11" Foreground="{DynamicResource ThemeText3}"
-                           Text="{Binding AppVersion, StringFormat='Current: {0}'}"/>
-                <TextBlock Text="{Binding UpdateVersion, StringFormat='Available: {0}'}"
-                           FontSize="11" Foreground="{DynamicResource ThemeAccent}"
-                           IsVisible="{Binding UpdateAvailable}"/>
+          <!-- Updates — two side-by-side cards -->
+          <TextBlock Classes="sec-hdr" Text="UPDATES" Margin="0,4,0,8"/>
+          <Grid ColumnDefinitions="*,14,*" Margin="0,0,0,14">
+            <!-- Cereal update card -->
+            <Border Grid.Column="0" Classes="setting-card">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Top">
+                  <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8"
+                          Background="{DynamicResource ThemeAccent}" Margin="0,0,10,0"
+                          VerticalAlignment="Center">
+                    <TextBlock Text="C" FontSize="15" FontWeight="Bold"
+                               Foreground="{DynamicResource ThemeVoid}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="Cereal" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeText}"/>
+                    <TextBlock FontSize="11" Foreground="{DynamicResource ThemeText3}"
+                               Text="{Binding AppVersion, StringFormat='v{0}'}"/>
+                  </StackPanel>
+                  <Border Grid.Column="2" CornerRadius="4" Background="#1a22c55e"
+                          Padding="6,3" VerticalAlignment="Center"
+                          IsVisible="{Binding UpdateAvailable}">
+                    <TextBlock Text="{Binding UpdateVersion, StringFormat='→ {0}'}"
+                               FontSize="10" Foreground="#22c55e"/>
+                  </Border>
+                </Grid>
                 <TextBlock Text="{Binding UpdateProgress, StringFormat='Downloading… {0}%'}"
                            FontSize="11" Foreground="{DynamicResource ThemeAccent}"
                            IsVisible="{Binding UpdateDownloading}"/>
                 <TextBlock Text="Update downloaded — restart to apply"
                            FontSize="11" Foreground="#22c55e"
                            IsVisible="{Binding UpdateReady}"/>
+                <Border Height="1" Background="#0affffff"/>
+                <WrapPanel Orientation="Horizontal" ItemHeight="30">
+                  <Button Content="Check for updates" Classes="ghost" Padding="10,5"
+                          Command="{Binding CheckForUpdateCommand}"
+                          IsVisible="{Binding !UpdateAvailable}"/>
+                  <Button Content="Download update" Classes="primary" Padding="10,5"
+                          Command="{Binding DownloadUpdateCommand}"
+                          IsVisible="{Binding UpdateAvailable}"/>
+                  <Button Content="Restart to apply" Padding="10,5"
+                          Background="#22c55e" Foreground="{DynamicResource ThemeVoid}"
+                          CornerRadius="6" BorderThickness="0"
+                          Command="{Binding InstallUpdateCommand}"
+                          IsVisible="{Binding UpdateReady}"/>
+                </WrapPanel>
               </StackPanel>
-              <WrapPanel Orientation="Horizontal" ItemHeight="34">
-                <Button Content="Check for updates" Classes="ghost" Padding="12,6"
-                        Command="{Binding CheckForUpdateCommand}"
-                        IsVisible="{Binding !UpdateAvailable}"/>
-                <Button Content="Download update" Classes="primary" Padding="12,6"
-                        Command="{Binding DownloadUpdateCommand}"
-                        IsVisible="{Binding UpdateAvailable}"/>
-                <Button Content="Restart to apply" Padding="12,6"
-                        Background="#22c55e" Foreground="{DynamicResource ThemeVoid}"
-                        CornerRadius="6" BorderThickness="0"
-                        Command="{Binding InstallUpdateCommand}"
-                        IsVisible="{Binding UpdateReady}"/>
-              </WrapPanel>
-            </StackPanel>
-          </Border>
-
-          <!-- chiaki-ng update card -->
-          <Border CornerRadius="8" Background="#0dffffff" BorderBrush="#14ffffff"
-                  BorderThickness="1" Padding="14,12">
-            <StackPanel Spacing="10">
-              <StackPanel Spacing="3">
-                <TextBlock Text="chiaki-ng" FontSize="12" FontWeight="SemiBold"
-                           Foreground="{DynamicResource ThemeText}"/>
-                <TextBlock Text="{Binding ChiakiVersion}" FontSize="11" Foreground="{DynamicResource ThemeText3}"
-                           IsVisible="{Binding ChiakiVersion, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
-                <TextBlock Text="Not installed / not detected" FontSize="11" Foreground="{DynamicResource ThemeText3}"
-                           IsVisible="{Binding ChiakiVersion, Converter={x:Static conv:ObjectConverters.IsNull}}"/>
-                <TextBlock Text="{Binding ChiakiUpdateVersion, StringFormat='Update available: {0}'}"
-                           FontSize="11" Foreground="{DynamicResource ThemeAccent}"
-                           IsVisible="{Binding ChiakiUpdateAvailable}"/>
+            </Border>
+            <!-- chiaki-ng update card -->
+            <Border Grid.Column="2" Classes="setting-card">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Top">
+                  <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8"
+                          Background="#1a3b82f6" Margin="0,0,10,0"
+                          VerticalAlignment="Center">
+                    <TextBlock Text="PS" FontSize="11" FontWeight="Bold"
+                               Foreground="#3b82f6"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="chiaki-ng" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeText}"/>
+                    <TextBlock Text="{Binding ChiakiVersion}" FontSize="11"
+                               Foreground="{DynamicResource ThemeText3}"
+                               IsVisible="{Binding ChiakiVersion, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+                    <TextBlock Text="Not installed" FontSize="11"
+                               Foreground="{DynamicResource ThemeText3}"
+                               IsVisible="{Binding ChiakiVersion, Converter={x:Static conv:ObjectConverters.IsNull}}"/>
+                  </StackPanel>
+                  <Border Grid.Column="2" CornerRadius="4" Background="#1a22c55e"
+                          Padding="6,3" VerticalAlignment="Center"
+                          IsVisible="{Binding ChiakiUpdateAvailable}">
+                    <TextBlock Text="{Binding ChiakiUpdateVersion, StringFormat='→ {0}'}"
+                               FontSize="10" Foreground="#22c55e"/>
+                  </Border>
+                </Grid>
+                <Border Height="1" Background="#0affffff"/>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Content="Install" Classes="ghost" Padding="10,5"
+                          Command="{Binding UpdateChiakiCommand}"
+                          IsVisible="{Binding ChiakiVersion, Converter={x:Static conv:ObjectConverters.IsNull}}"/>
+                  <Button Content="Check for updates" Classes="ghost" Padding="10,5"
+                          Command="{Binding UpdateChiakiCommand}"
+                          IsVisible="{Binding ChiakiVersion, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+                  <Button Content="Uninstall" Classes="ghost" Padding="10,5"
+                          Foreground="#ff7070"
+                          Command="{Binding UninstallChiakiCommand}"
+                          IsVisible="{Binding ChiakiCanUninstall}"/>
+                </StackPanel>
               </StackPanel>
-              <WrapPanel Orientation="Horizontal" ItemHeight="34">
-                <Button Content="Check / install update" Classes="ghost" Padding="12,6"
-                        Command="{Binding UpdateChiakiCommand}"/>
-                <Button Content="Open chiaki-ng" Classes="ghost" Padding="12,6"
-                        Command="{Binding OpenChiakiGuiCommand}"/>
-                <Button Content="Uninstall" Padding="12,6"
-                        Background="#33ff4444" Foreground="#ff7070"
-                        BorderThickness="0" CornerRadius="6" Cursor="Hand"
-                        Command="{Binding UninstallChiakiCommand}"/>
-              </WrapPanel>
-            </StackPanel>
-          </Border>
+            </Border>
+          </Grid>
 
           <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource ThemeText3}"
                      IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
@@ -570,50 +647,36 @@
         ══════════════════════════════════════════════ -->
         <StackPanel IsVisible="{Binding ActiveSection, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=about}">
 
-          <!-- Hero block (Electron .about-hero) -->
-          <StackPanel Margin="0,0,0,18">
-            <TextBlock Text="Cereal" FontSize="36" FontWeight="Bold"
-                       Foreground="{DynamicResource ThemeAccent}" LineHeight="40"/>
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
-              <Border CornerRadius="5" Background="#0affffff" Padding="6,2">
-                <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}" FontSize="10"
-                           Foreground="{DynamicResource ThemeText3}"/>
-              </Border>
-              <TextBlock Text="Your universal game launcher" FontSize="12"
-                         Foreground="{DynamicResource ThemeText3}" VerticalAlignment="Center"/>
-            </StackPanel>
-          </StackPanel>
-
-          <!-- Library stats (4 boxes) -->
+          <!-- 4-across stat row -->
           <TextBlock Classes="sec-hdr" Text="LIBRARY" Margin="0,0,0,10"/>
-          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Margin="0,0,0,8">
-            <Border Grid.Row="0" Grid.Column="0" Classes="stat-box" Margin="0,0,6,6">
+          <Grid ColumnDefinitions="*,*,*,*" Margin="0,0,0,14">
+            <Border Grid.Column="0" Classes="stat-box" Margin="0,0,6,0">
               <StackPanel Spacing="2" HorizontalAlignment="Center">
-                <TextBlock Text="{Binding GameCount}" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{Binding GameCount}" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
                 <TextBlock Text="Games" FontSize="9" LetterSpacing="0.6"
                            Foreground="{DynamicResource ThemeText3}" HorizontalAlignment="Center"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="0" Grid.Column="1" Classes="stat-box" Margin="6,0,0,6">
+            <Border Grid.Column="1" Classes="stat-box" Margin="6,0,6,0">
               <StackPanel Spacing="2" HorizontalAlignment="Center">
-                <TextBlock Text="{Binding InstalledCount}" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{Binding InstalledCount}" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
                 <TextBlock Text="Installed" FontSize="9" LetterSpacing="0.6"
                            Foreground="{DynamicResource ThemeText3}" HorizontalAlignment="Center"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="1" Grid.Column="0" Classes="stat-box" Margin="0,6,6,0">
+            <Border Grid.Column="2" Classes="stat-box" Margin="6,0,6,0">
               <StackPanel Spacing="2" HorizontalAlignment="Center">
-                <TextBlock Text="{Binding FavoriteCount}" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{Binding FavoriteCount}" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
                 <TextBlock Text="Favorites" FontSize="9" LetterSpacing="0.6"
                            Foreground="{DynamicResource ThemeText3}" HorizontalAlignment="Center"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="1" Grid.Column="1" Classes="stat-box" Margin="6,6,0,0">
+            <Border Grid.Column="3" Classes="stat-box" Margin="6,0,0,0">
               <StackPanel Spacing="2" HorizontalAlignment="Center">
-                <TextBlock Text="{Binding TotalPlaytimeLabel}" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{Binding TotalPlaytimeLabel}" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource ThemeText}" HorizontalAlignment="Center"/>
                 <TextBlock Text="Playtime" FontSize="9" LetterSpacing="0.6"
                            Foreground="{DynamicResource ThemeText3}" HorizontalAlignment="Center"/>
@@ -623,9 +686,9 @@
 
           <!-- Platform bars -->
           <StackPanel IsVisible="{Binding HasPlatformBreakdown}">
-            <TextBlock Classes="sec-hdr" Text="PLATFORMS" Margin="0,14,0,10"/>
+            <TextBlock Classes="sec-hdr" Text="PLATFORMS" Margin="0,4,0,10"/>
             <Border CornerRadius="10" Background="#0dffffff" BorderBrush="#14ffffff"
-                    BorderThickness="1" Padding="14,10">
+                    BorderThickness="1" Padding="14,10" Margin="0,0,0,14">
               <ItemsControl ItemsSource="{Binding PlatformBreakdown}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
@@ -651,9 +714,9 @@
 
           <!-- Most played -->
           <StackPanel IsVisible="{Binding HasMostPlayed}">
-            <TextBlock Classes="sec-hdr" Text="MOST PLAYED" Margin="0,14,0,10"/>
+            <TextBlock Classes="sec-hdr" Text="MOST PLAYED" Margin="0,4,0,10"/>
             <Border CornerRadius="10" Background="#0dffffff" BorderBrush="#14ffffff"
-                    BorderThickness="1" Padding="14,10">
+                    BorderThickness="1" Padding="14,10" Margin="0,0,0,14">
               <ItemsControl ItemsSource="{Binding MostPlayed}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
@@ -678,9 +741,9 @@
           </StackPanel>
 
           <!-- System specs -->
-          <TextBlock Classes="sec-hdr" Text="SYSTEM" Margin="0,14,0,10"/>
+          <TextBlock Classes="sec-hdr" Text="SYSTEM" Margin="0,4,0,10"/>
           <Border CornerRadius="10" Background="#0dffffff" BorderBrush="#14ffffff"
-                  BorderThickness="1" Padding="14,10">
+                  BorderThickness="1" Padding="14,10" Margin="0,0,0,14">
             <StackPanel Spacing="6">
               <Grid ColumnDefinitions="70,*">
                 <TextBlock Grid.Column="0" Text="Tier" FontSize="10" FontWeight="SemiBold"
@@ -725,9 +788,9 @@
           </Border>
 
           <!-- Storage location -->
-          <TextBlock Classes="sec-hdr" Text="STORAGE" Margin="0,14,0,10"/>
+          <TextBlock Classes="sec-hdr" Text="STORAGE" Margin="0,4,0,10"/>
           <Border CornerRadius="10" Background="#0dffffff" BorderBrush="#14ffffff"
-                  BorderThickness="1" Padding="14,12">
+                  BorderThickness="1" Padding="14,12" Margin="0,0,0,14">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0" Spacing="3">
                 <TextBlock Text="Data folder" FontSize="10" FontWeight="SemiBold"
@@ -861,23 +924,22 @@
                      Foreground="{DynamicResource ThemeText3}"/>
         </StackPanel>
 
-      </StackPanel>
+    </StackPanel>
     </ScrollViewer>
-      <Border Grid.Row="2" Classes="save-bar">
-        <Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
-          <TextBlock Grid.Column="0" Text="{Binding SaveHint}"
-                     FontSize="11" Foreground="{DynamicResource ThemeText2}"
-                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-          <Button Grid.Column="1" Classes="ghost" Content="Reset"
-                  Margin="8,0,0,0"
-                  Command="{Binding ResetCommand}"/>
-          <Button Grid.Column="2" Classes="primary" Content="Save settings"
-                  Margin="8,0,0,0"
-                  IsEnabled="{Binding HasPendingChanges}"
-                  Command="{Binding SaveCommand}"/>
-        </Grid>
-      </Border>
-    </Grid>
+
+    <!-- ── Save bar ── -->
+    <Border Grid.Row="2" Classes="save-bar">
+      <Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
+        <TextBlock Grid.Column="0" Text="{Binding SaveHint}"
+                   FontSize="11" Foreground="{DynamicResource ThemeText2}"
+                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        <Button Grid.Column="1" Classes="ghost" Content="Reset"
+                Margin="8,0,0,0" Command="{Binding ResetCommand}"/>
+        <Button Grid.Column="2" Classes="primary" Content="Save settings"
+                Margin="8,0,0,0" IsEnabled="{Binding HasPendingChanges}"
+                Command="{Binding SaveCommand}"/>
+      </Grid>
+    </Border>
 
   </Grid>
   </Border>

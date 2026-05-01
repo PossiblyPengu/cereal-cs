@@ -72,7 +72,7 @@ public partial class PlatformsPanelViewModel : ObservableObject
         _allProviders = allProviders;
 
         // Ordered list mirrors source PLATS array
-        foreach (var id in new[] { "steam", "gog", "epic", "xbox", "psn", "ea", "battlenet", "itchio", "ubisoft" })
+        foreach (var id in new[] { "steam", "gog", "epic", "xbox", "ea", "battlenet", "itchio", "ubisoft" })
             Platforms.Add(new PlatformRowViewModel(id, this));
 
         _ = RefreshAllAsync();
@@ -308,7 +308,6 @@ public partial class PlatformRowViewModel : ObservableObject
     public string? ApiKeyUrl { get; }
     public bool SupportsApiKey => ApiKeyLabel is not null;
     public bool SupportsSignIn { get; }
-    public bool IsPsn => Id == "psn";
     public bool IsXbox => Id == "xbox";
 
     [ObservableProperty] private bool _isConnected;
@@ -331,7 +330,7 @@ public partial class PlatformRowViewModel : ObservableObject
         {
             if (IsConnected) return AccountName ?? "Connected";
             if (InstalledCount > 0) return $"{InstalledCount} installed locally";
-            return IsPsn ? "Not configured" : "Not connected";
+            return "Not connected";
         }
     }
 
@@ -340,7 +339,7 @@ public partial class PlatformRowViewModel : ObservableObject
     // Combined visibility flags (simpler than MultiBindings in XAML).
     public bool ShowSignIn => SupportsSignIn && !IsConnected;
     public bool ShowReconnect => SupportsSignIn && IsConnected;
-    public bool ShowRescan => !SupportsSignIn && !IsPsn;
+    public bool ShowRescan => !SupportsSignIn;
     public bool DotOk => IsConnected;
     public bool DotWarn => !IsConnected && (InstalledCount > 0 || IsXbox);
 
@@ -381,7 +380,6 @@ public partial class PlatformRowViewModel : ObservableObject
                 "Epic's developer APIs require special registration and may limit library imports.",
                 null, null, null, true),
             "xbox" => ("Xbox", "X", "#0e6a0e", null, null, null, null, true),
-            "psn"  => ("PlayStation", "P", "#003087", null, null, null, null, false),
             "ea"   => ("EA App", "EA", "#0f6fc6",
                 "Scans your local EA App installation for installed games.", null, null, null, false),
             "battlenet" => ("Battle.net", "BN", "#148eff",

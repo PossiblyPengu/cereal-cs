@@ -98,6 +98,30 @@ if ($entries.Count -eq 1 -and $entries[0].PSIsContainer) {
     Remove-Item $sub -Recurse -Force
 }
 
+# Some releases wrap the portable zip in another zip — extract the inner zip if no exe found yet
+$exeNames = @('chiaki-ng.exe','chiaki.exe')
+$hasExe = $exeNames | ForEach-Object { Test-Path (Join-Path $installDir $_) } | Where-Object { $_ }
+if (-not $hasExe) {
+    $innerZip = Get-ChildItem -Path $installDir -Filter '*.zip' | Select-Object -First 1
+    if ($innerZip) {
+        Write-Output "Extracting inner archive $($innerZip.Name)..."
+        $innerTmp = Join-Path $installDir '_inner'
+        Expand-Archive -Path $innerZip.FullName -DestinationPath $innerTmp -Force
+        Remove-Item $innerZip.FullName -Force
+
+        # Flatten inner archive if it extracted into a single subdirectory
+        $innerEntries = Get-ChildItem -Path $innerTmp
+        if ($innerEntries.Count -eq 1 -and $innerEntries[0].PSIsContainer) {
+            $innerSub = $innerEntries[0].FullName
+            Get-ChildItem -Path $innerSub | Move-Item -Destination $installDir
+            Remove-Item $innerSub -Recurse -Force
+        } else {
+            Get-ChildItem -Path $innerTmp | Move-Item -Destination $installDir
+        }
+        Remove-Item $innerTmp -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 # Write version marker
 Set-Content -Path $versionFile -Value $release.tag_name -Encoding UTF8
 

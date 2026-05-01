@@ -313,8 +313,10 @@ public partial class SteamProvider(DatabaseService db) : IImportProvider
         var candidates = new List<string>();
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            candidates.Add(@"C:\Program Files (x86)\Steam");
-            candidates.Add(@"C:\Program Files\Steam");
+            var pf   = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            if (!string.IsNullOrEmpty(pf86)) candidates.Add(Path.Combine(pf86, "Steam"));
+            if (!string.IsNullOrEmpty(pf))   candidates.Add(Path.Combine(pf,   "Steam"));
         }
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         candidates.Add(Path.Combine(home, "Steam"));

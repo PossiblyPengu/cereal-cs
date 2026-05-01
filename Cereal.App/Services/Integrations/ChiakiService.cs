@@ -74,12 +74,31 @@ public sealed class ChiakiService : IDisposable
     private readonly DatabaseService _db;
     private readonly ConcurrentDictionary<string, ChiakiSession> _sessions = new();
 
-    private static readonly string[] SystemPaths = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-        ? [
-            @"C:\Program Files\chiaki-ng\chiaki-ng.exe",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "chiaki-ng", "chiaki-ng.exe"),
-          ]
-        : ["/usr/bin/chiaki", "/usr/local/bin/chiaki", "/usr/bin/chiaki-ng", "/usr/local/bin/chiaki-ng"];
+    private static IEnumerable<string> GetSystemCandidates()
+    {
+        var names = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? new[] { "chiaki-ng.exe", "chiaki.exe" }
+            : new[] { "chiaki-ng", "chiaki" };
+
+        // Search every directory on PATH
+        var pathVar = Environment.GetEnvironmentVariable("PATH") ?? "";
+        foreach (var dir in pathVar.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var name in names)
+                yield return Path.Combine(dir, name);
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            // Per-user install (LocalApplicationData is always dynamic)
+            yield return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "chiaki-ng", "chiaki-ng.exe");
+            // Per-machine install via ProgramFiles env var (respects 32/64-bit and custom installs)
+            var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (!string.IsNullOrEmpty(pf))
+                yield return Path.Combine(pf, "chiaki-ng", "chiaki-ng.exe");
+        }
+    }
+
 
     public event EventHandler<ChiakiEventArgs>? SessionEvent;
     public event EventHandler? GamesRefreshed;
@@ -136,16 +155,25 @@ public sealed class ChiakiService : IDisposable
         }
     }
 
+    private string? GetUserConfiguredExe()
+    {
+        var c1 = _db.Db.Settings.ChiakiPath;
+        if (!string.IsNullOrEmpty(c1) && File.Exists(c1)) return c1;
+        var c2 = _db.Db.ChiakiConfig.ExecutablePath;
+        if (!string.IsNullOrEmpty(c2) && File.Exists(c2)) return c2;
+        return null;
+    }
+
     public string? ResolveExe(string? fallback = null)
     {
         var bundled = GetBundledExe();
         if (bundled is not null) return bundled;
 
-        foreach (var p in SystemPaths)
+        foreach (var p in GetSystemCandidates())
             if (File.Exists(p)) return p;
 
-        var config = _db.Db.ChiakiConfig.ExecutablePath;
-        if (!string.IsNullOrEmpty(config) && File.Exists(config)) return config;
+        var configured = GetUserConfiguredExe();
+        if (configured is not null) return configured;
 
         if (!string.IsNullOrEmpty(fallback) && File.Exists(fallback)) return fallback;
 
@@ -156,36 +184,59 @@ public sealed class ChiakiService : IDisposable
     {
         var exe = GetBundledExe();
         if (exe is not null) return ("bundled", exe, GetBundledVersion());
-        foreach (var p in SystemPaths)
+        foreach (var p in GetSystemCandidates())
             if (File.Exists(p)) return ("system", p, null);
+        var configured = GetUserConfiguredExe();
+        if (configured is not null) return ("system", configured, null);
         return ("missing", null, null);
     }
 
     // ─── Install management ──────────────────────────────────────────────────
 
-    public bool Uninstall()
+    /// <summary>
+    /// Removes the bundled chiaki-ng install and/or clears the user-configured path.
+    /// Returns: "bundled" if the bundled dir was deleted, "config" if only the config path was cleared,
+    /// "system" if chiaki is on PATH (can't be removed), or "none" if nothing was found.
+    /// </summary>
+    public string UninstallFull()
     {
-        // Stop anything running first.
-        try
-        {
-            foreach (var id in _sessions.Keys.ToList()) StopSession(id);
-        }
+        // Stop any running sessions first.
+        try { foreach (var id in _sessions.Keys.ToList()) StopSession(id); }
         catch (Exception ex) { Log.Debug(ex, "[chiaki] Failed stopping sessions during uninstall"); }
 
+        var removedBundled = false;
         var dir = Path.Combine(_paths.AppDataDir, "chiaki-ng");
-        if (!Directory.Exists(dir)) return false;
-        try
+        if (Directory.Exists(dir))
         {
-            Directory.Delete(dir, recursive: true);
-            Log.Information("[chiaki] Uninstalled bundled chiaki-ng");
-            return true;
+            try { Directory.Delete(dir, recursive: true); removedBundled = true; }
+            catch (Exception ex) { Log.Warning(ex, "[chiaki] Failed to delete {Dir}", dir); }
         }
-        catch (Exception ex)
+
+        // Clear user-configured path from both possible locations.
+        var clearedConfig = false;
+        if (!string.IsNullOrEmpty(_db.Db.Settings.ChiakiPath))
         {
-            Log.Warning(ex, "[chiaki] Failed to delete {Dir}", dir);
-            return false;
+            _db.Db.Settings.ChiakiPath = null;
+            clearedConfig = true;
         }
+        if (!string.IsNullOrEmpty(_db.Db.ChiakiConfig.ExecutablePath))
+        {
+            _db.Db.ChiakiConfig.ExecutablePath = null;
+            clearedConfig = true;
+        }
+        if (clearedConfig) _db.Save();
+
+        if (removedBundled) return "bundled";
+        if (clearedConfig)  return "config";
+
+        // Still on system PATH — we can't uninstall it.
+        if (GetSystemCandidates().Any(File.Exists)) return "system";
+
+        return "none";
     }
+
+    // Keep the old bool overload so nothing else breaks.
+    public bool Uninstall() => UninstallFull() is "bundled" or "config";
 
     public async Task<(bool Updated, string? Version, string? Error)> CheckAndUpdateAsync()
     {
@@ -943,7 +994,8 @@ public sealed class ChiakiService : IDisposable
     public void AutoSetupIfMissing()
     {
         if (GetBundledExe() is not null) return;
-        if (SystemPaths.Any(File.Exists)) return;
+        if (GetSystemCandidates().Any(File.Exists)) return;
+        if (GetUserConfiguredExe() is not null) return;
 
         Log.Information("[chiaki] Not found — starting automatic setup...");
         RaiseEvent("", "setup_started", []);

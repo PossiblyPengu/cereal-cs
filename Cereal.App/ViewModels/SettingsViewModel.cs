@@ -309,13 +309,20 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string? _chiakiVersion;
     [ObservableProperty] private bool _chiakiUpdateAvailable;
     [ObservableProperty] private string? _chiakiUpdateVersion;
+    [ObservableProperty] private bool _chiakiCanUninstall;
 
     private void LoadChiakiStatus()
     {
         var chiaki = App.Services.GetService(typeof(ChiakiService)) as ChiakiService;
         if (chiaki is null) return;
-        var (_, _, version) = chiaki.GetStatus();
-        ChiakiVersion = version;
+        var (status, exe, version) = chiaki.GetStatus();
+        // For system/config installs there's no .version file — use a placeholder
+        // so the UI knows chiaki-ng is present (not null = installed).
+        ChiakiVersion = status == "missing" ? null : (version ?? "installed");
+        // Show Uninstall whenever the bundled dir exists or a custom path is configured,
+        // regardless of whether detection succeeded.
+        ChiakiCanUninstall = chiaki.GetChiakiDir() is not null
+            || !string.IsNullOrEmpty(ChiakiPath);
     }
 
     private static readonly HttpClient _http = CreateHttpClient();
@@ -822,6 +829,7 @@ public partial class SettingsViewModel : ObservableObject
         if (DiscordPresence && !_discord.IsConnected) _discord.Connect();
         else if (!DiscordPresence && _discord.IsConnected) _discord.Disconnect();
 
+        LoadChiakiStatus();
         StatusMessage = "Settings saved.";
         ClearPendingChanges("All changes saved.");
     }
@@ -850,10 +858,17 @@ public partial class SettingsViewModel : ObservableObject
     private void UninstallChiaki()
     {
         var chiaki = App.Services.GetRequiredService<ChiakiService>();
-        var removed = chiaki.Uninstall();
-        StatusMessage = removed
-            ? "chiaki-ng uninstalled. You can reinstall it from the wizard."
-            : "chiaki-ng was not installed.";
+        var result = chiaki.UninstallFull();
+        StatusMessage = result switch
+        {
+            "bundled" => "chiaki-ng uninstalled. You can reinstall it from the wizard.",
+            "config"  => "Custom chiaki-ng path cleared.",
+            "system"  => "chiaki-ng is a system install — remove it via your package manager or installer.",
+            _         => "chiaki-ng was not found.",
+        };
+        // Clear the path textbox and refresh the status card.
+        ChiakiPath = null;
+        LoadChiakiStatus();
     }
 
     [RelayCommand]

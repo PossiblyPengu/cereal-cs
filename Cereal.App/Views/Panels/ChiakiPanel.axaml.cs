@@ -9,6 +9,7 @@ using System.Threading;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using Cereal.App.Models;
+using Cereal.App.Services;
 using Cereal.App.Services.Integrations;
 
 namespace Cereal.App.Views.Panels;
@@ -162,6 +163,14 @@ public partial class ChiakiPanel : UserControl
 
         Loaded += (_, _) => Load();
         _chiaki.SessionEvent += OnChiakiEvent;
+
+        // Refresh status when the user saves settings (e.g. after entering the exe path).
+        var settingsSvc = App.Services.GetRequiredService<SettingsService>();
+        settingsSvc.SettingsSaved += (_, _) =>
+        {
+            var (status, _, version) = _chiaki.GetStatus();
+            Dispatcher.UIThread.Post(() => VM.SetStatus(status, version));
+        };
     }
 
     private void Load()
@@ -205,7 +214,6 @@ public partial class ChiakiPanel : UserControl
         {
             this.FindControl<TextBox>("NewNicknameBox")!.Text = "";
             this.FindControl<TextBox>("NewHostBox")!.Text     = "";
-            this.FindControl<TextBox>("NewProfileBox")!.Text  = "";
         }
     }
 
@@ -216,7 +224,6 @@ public partial class ChiakiPanel : UserControl
     {
         var nickname = this.FindControl<TextBox>("NewNicknameBox")!.Text?.Trim() ?? "";
         var host     = this.FindControl<TextBox>("NewHostBox")!.Text?.Trim() ?? "";
-        var profile  = this.FindControl<TextBox>("NewProfileBox")!.Text?.Trim() ?? "";
 
         if (string.IsNullOrEmpty(nickname) || string.IsNullOrEmpty(host)) return;
 
@@ -226,7 +233,6 @@ public partial class ChiakiPanel : UserControl
             {
                 Nickname = nickname,
                 Host     = host,
-                Profile  = string.IsNullOrEmpty(profile) ? null : profile,
             }
         });
         VM.ShowAddConsoleForm = false;

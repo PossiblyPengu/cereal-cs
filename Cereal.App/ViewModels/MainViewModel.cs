@@ -449,7 +449,7 @@ public partial class MainViewModel : ObservableObject
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
         && IsStreaming
         && ActiveStreamTab is { Platform: var p }
-        && (string.Equals(p, "psn", StringComparison.OrdinalIgnoreCase)
+        && (string.Equals(p, "chiaki", StringComparison.OrdinalIgnoreCase)
             || string.Equals(p, "psremote", StringComparison.OrdinalIgnoreCase));
 
     public MainViewModel(
@@ -764,7 +764,7 @@ public partial class MainViewModel : ObservableObject
         var latest = _games.GetAll()
             .Where(g => g.LastPlayed != null
                         && g.Hidden != true
-                        && g.Platform is not "psn" and not "psremote" and not "xbox")
+                        && g.Platform is not "psn" and not "psremote" and not "chiaki" and not "xbox")
             .OrderByDescending(g => g.LastPlayed)
             .FirstOrDefault();
         ContinueGame = latest is not null ? new GameCardViewModel(latest, _games) : null;
@@ -778,7 +778,7 @@ public partial class MainViewModel : ObservableObject
         // Streaming-only PlayStation entries should not appear as tracked library
         // games; they are represented by stream sessions instead.
         var visibleAll = allGames
-            .Where(g => g.Platform is not "psn" and not "psremote")
+            .Where(g => g.Platform is not "psn" and not "psremote" and not "chiaki")
             .Where(g => !HideSteamSoftware || !IsSteamSoftwareGame(g))
             .ToList();
 
@@ -824,7 +824,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             var stale = _games.GetAll()
-                .Where(g => g.Platform is "psn" or "psremote")
+                .Where(g => g.Platform is "psn" or "psremote" or "chiaki")
                 .Select(g => g.Id)
                 .ToList();
             foreach (var id in stale)
@@ -902,7 +902,7 @@ public partial class MainViewModel : ObservableObject
             _gamesById[game.Id] = game;
 
         _searchLibraryCards = all
-            .Where(g => g.Platform is not "psn" and not "psremote")
+            .Where(g => g.Platform is not "psn" and not "psremote" and not "chiaki")
             .Select(g => new GameCardViewModel(g, _games))
             .ToList();
     }
@@ -1590,7 +1590,7 @@ public partial class MainViewModel : ObservableObject
                 if (tab is null)
                 {
                     var game = FindGameById(e.GameId);
-                    tab = new StreamTabViewModel(e.GameId, game?.Name ?? e.GameId, "psn") { State = stateStr };
+                    tab = new StreamTabViewModel(e.GameId, game?.Name ?? e.GameId, "chiaki") { State = stateStr };
                     StreamTabs.Add(tab);
                 }
                 else
@@ -1658,7 +1658,7 @@ public partial class MainViewModel : ObservableObject
                     try
                     {
                         var discord = App.Services.GetRequiredService<Services.Integrations.DiscordService>();
-                        discord.SetPresence(g.Name, g.Platform ?? "psn",
+                        discord.SetPresence(g.Name, g.Platform ?? "chiaki",
                             DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                     }
                     catch (Exception ex) { Serilog.Log.Debug(ex, "[main] Failed updating Discord presence on title change"); }
@@ -1735,7 +1735,7 @@ public partial class StreamTabViewModel : ObservableObject
 
     public string PlatformLabel => Platform switch
     {
-        "psn" or "psremote" => "PS Remote Play",
+        "chiaki" or "psremote" => "PS Remote Play",
         "xbox" => "Xbox Cloud Gaming",
         _ => Platform,
     };
@@ -1750,7 +1750,7 @@ public partial class StreamTabViewModel : ObservableObject
     public string StreamAccentColor => Platform switch
     {
         "xbox" => "#2ea043",
-        "psn" or "psremote" => "#1e8fff",
+        "chiaki" or "psremote" => "#1e8fff",
         _ => "#6a6578",
     };
 
