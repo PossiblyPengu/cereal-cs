@@ -10,6 +10,7 @@
 
   <UserControl.Styles>
 
+    <!-- Compact icon button for the xcloud control bar -->
     <Style Selector="Button.xc-ghost">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Foreground" Value="#55b0aaa0"/>
@@ -25,9 +26,10 @@
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
     </Style>
     <Style Selector="Button.xc-ghost:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
 
+    <!-- Stop/danger action in compact bar -->
     <Style Selector="Button.xc-stop">
       <Setter Property="Background" Value="#22ff4444"/>
       <Setter Property="Foreground" Value="#ff7070"/>
@@ -44,7 +46,7 @@
       <Setter Property="TextElement.Foreground" Value="#ff9090"/>
     </Style>
     <Style Selector="Button.xc-stop:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dff4444"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
 
     <!-- Window controls (mirror MainWindow.win-ctrl, sized for the slim xcloud bar) -->

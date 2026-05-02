@@ -25,7 +25,7 @@
       <Setter Property="Background" Value="#26ffffff"/>
     </Style>
     <Style Selector="Button.zoom-btn:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadowInset}"/>
     </Style>
   </UserControl.Styles>
 

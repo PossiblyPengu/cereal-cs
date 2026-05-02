@@ -73,7 +73,7 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty] private string _defaultView = "orbit";
     [ObservableProperty] private string _theme = "midnight";
-    [ObservableProperty] private string _accentColor = "#7c6af7";
+    [ObservableProperty] private string _accentColor = "";
     [ObservableProperty] private bool _showAnimations = true;
     [ObservableProperty] private bool _minimizeOnLaunch;
     [ObservableProperty] private bool _closeToTray;
@@ -664,11 +664,16 @@ public partial class SettingsViewModel : ObservableObject
     public IEnumerable<ThemeSwatchViewModel> ThemeSwatches =>
         AppThemes.All.Select(t => new ThemeSwatchViewModel(t, Theme));
 
+    /// <summary>Watermark hint for the accent field — shows the active theme's default accent so the user knows what “leave blank” means.</summary>
+    public string ThemeAccentWatermark =>
+        AppThemes.Find(Theme)?.Accent ?? "#d4a853";
+
     partial void OnThemeChanged(string value)
     {
         _themeSvc.Apply(value, AccentColor);
         OnPropertyChanged(nameof(SelectedTheme));
         OnPropertyChanged(nameof(ThemeSwatches));
+        OnPropertyChanged(nameof(ThemeAccentWatermark));
     }
 
     partial void OnAccentColorChanged(string value)

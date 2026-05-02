@@ -19,6 +19,9 @@ public partial class App : Application
     /// <summary>Global service provider — available after OnFrameworkInitializationCompleted.</summary>
     public static IServiceProvider Services { get; private set; } = null!;
 
+    /// <summary>Cancelled when the app starts shutting down — use to stop long-running background tasks.</summary>
+    private static readonly CancellationTokenSource _shutdownCts = new();
+
     // Tray icon commands (bound in App.axaml)
     public static readonly CommunityToolkit.Mvvm.Input.RelayCommand ShowWindowCommand = new(ShowWindow);
     public static readonly CommunityToolkit.Mvvm.Input.RelayCommand QuitCommand       = new(Quit);
@@ -164,12 +167,17 @@ public partial class App : Application
         ApplyTrayVisibility(settings);
 
         var covers = Services.GetRequiredService<CoverService>();
-        _ = Task.Run(covers.EnqueueAll);
+        _ = Task.Run(() =>
+        {
+            try { covers.EnqueueAll(); }
+            catch (Exception ex) { Log.Warning(ex, "[covers] EnqueueAll failed"); }
+        });
 
         // Auto-sync Steam playtime if enabled: one sync at startup + every 30 min
         // (matches src/App.tsx 303-319 — setTimeout(sync,3000) + setInterval(30min)).
         if (settings.AutoSyncPlaytime)
         {
+            var ct = _shutdownCts.Token;
             _ = Task.Run(async () =>
             {
                 async Task RunOnce()
@@ -182,16 +190,17 @@ public partial class App : Application
                     }
                     catch (Exception ex) { Log.Warning(ex, "[playtime] Auto-sync failed"); }
                 }
-                await Task.Delay(3_000);
+                await Task.Delay(3_000, ct);
                 await RunOnce();
                 var tick = TimeSpan.FromMinutes(30);
-                while (true)
+                while (!ct.IsCancellationRequested)
                 {
-                    await Task.Delay(tick);
+                    await Task.Delay(tick, ct);
+                    if (ct.IsCancellationRequested) break;
                     if (!Services.GetRequiredService<SettingsService>().Get().AutoSyncPlaytime) continue;
                     await RunOnce();
                 }
-            });
+            }, ct);
         }
 
         Services.GetRequiredService<ChiakiService>().AutoSetupIfMissing();
@@ -291,6 +300,7 @@ public partial class App : Application
 
     private static void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e)
     {
+        _shutdownCts.Cancel();
         Log.Information("[shutdown] Flushing database…");
         try { Services.GetRequiredService<DatabaseService>().Flush(); }
         catch (Exception ex) { Log.Warning(ex, "[shutdown] DB flush failed"); }

@@ -8,109 +8,11 @@
              Background="Transparent">
 
   <UserControl.Styles>
-
-    <!-- .btn-play (index.css 529) -->
-    <Style Selector="Button.focus-action">
-      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="FontWeight" Value="Bold"/>
-      <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="Padding" Value="24,10"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.focus-action:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#e8b85e"/>
-    </Style>
-    <Style Selector="Button.focus-action:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#d29f45"/>
-    </Style>
-    <Style Selector="Button.focus-action:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.focus-action:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-
-    <!-- .btn-ghost (index.css 532) — transparent w/ 1px border -->
-    <Style Selector="Button.focus-ghost">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="FontWeight" Value="Normal"/>
-      <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="Padding" Value="20,10"/>
-      <Setter Property="BorderBrush" Value="#17ffffff"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.focus-ghost:pointerover /template/ ContentPresenter">
-      <Setter Property="BorderBrush" Value="{DynamicResource ThemeText3}"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button.focus-ghost:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#14ffffff"/>
-    </Style>
-    <Style Selector="Button.focus-ghost:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.focus-ghost:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-
-    <Style Selector="Button.focus-danger">
-      <Setter Property="Background" Value="#33ff4444"/>
-      <Setter Property="Foreground" Value="#ff7070"/>
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="FontWeight" Value="Medium"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="10,8"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.focus-danger:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#55ff4444"/>
-      <Setter Property="TextElement.Foreground" Value="#ff9090"/>
-    </Style>
-    <Style Selector="Button.focus-danger:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#66ff4444"/>
-    </Style>
-    <Style Selector="Button.focus-danger:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.focus-danger:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-
-    <Style Selector="Button.focus-close">
-      <Setter Property="Background" Value="#0dffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="FontSize" Value="18"/>
-      <Setter Property="Width" Value="36"/>
-      <Setter Property="Height" Value="36"/>
-      <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="Padding" Value="0"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.focus-close:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#33ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button.focus-close:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#40ffffff"/>
-    </Style>
-    <Style Selector="Button.focus-close:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-
     <Style Selector="Border.cat-chip">
-      <Setter Property="Background" Value="#1ad4a853"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentSoft}"/>
       <Setter Property="CornerRadius" Value="10"/>
       <Setter Property="Padding" Value="8,3"/>
     </Style>
-
   </UserControl.Styles>
 
   <!-- Root grid — matches Electron .focus-overlay (App.tsx / FocusView.tsx / index.css 412-447).
@@ -142,7 +44,7 @@
     </Image>
 
     <!-- Dim overlay (index.css 414 — rgba(7,7,13,0.78)) -->
-    <Border Background="#c707070d" IsHitTestVisible="False"/>
+    <Border Background="#c702020c" IsHitTestVisible="False"/>
 
     <!-- Content row (index.css 415): art + details, 48px gap, max 860px, 80vh -->
     <Border x:Name="ContentCard"
@@ -351,7 +253,8 @@
 
             <!-- Action buttons -->
             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-              <Button Classes="focus-action"
+              <Button Classes="action"
+                      CornerRadius="10" Padding="24,10" FontSize="13" FontWeight="Bold"
                       Command="{Binding LaunchGameCommand}"
                       CommandParameter="{Binding SelectedGame}">
                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -361,7 +264,8 @@
                   <TextBlock Text="Play" VerticalAlignment="Center"/>
                 </StackPanel>
               </Button>
-              <Button Classes="focus-ghost"
+              <Button Classes="ghost"
+                      CornerRadius="10" Padding="20,10" FontSize="13"
                       Command="{Binding SelectedGame.ToggleFavoriteCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                   <PathIcon Width="14" Height="14"
@@ -370,7 +274,8 @@
                   <TextBlock Text="{Binding SelectedGame.FavoriteLabel}" VerticalAlignment="Center"/>
                 </StackPanel>
               </Button>
-              <Button Classes="focus-ghost" Command="{Binding EditGameCommand}">
+              <Button Classes="ghost" CornerRadius="10" Padding="20,10" FontSize="13"
+                      Command="{Binding EditGameCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                   <PathIcon Width="14" Height="14"
                             Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -378,7 +283,7 @@
                   <TextBlock Text="Edit" VerticalAlignment="Center"/>
                 </StackPanel>
               </Button>
-              <Button Classes="focus-danger"
+              <Button Classes="danger"
                       Command="{Binding DeleteGameCommand}"
                       CommandParameter="{Binding SelectedGame.Id}"
                       Click="Delete_Click">
@@ -391,10 +296,12 @@
             <!-- Secondary actions (mirrors electron games:install / games:openInClient) -->
             <Border Height="1" Background="#0bffffff" Margin="0,8,0,4"/>
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Classes="focus-ghost" Content="Install"
+              <Button Classes="ghost" CornerRadius="10" Padding="20,10" FontSize="13"
+                      Content="Install"
                       Command="{Binding InstallGameCommand}"
                       IsVisible="{Binding SelectedGame.IsNotInstalled}"/>
-              <Button Classes="focus-ghost" Content="Open in client"
+              <Button Classes="ghost" CornerRadius="10" Padding="20,10" FontSize="13"
+                      Content="Open in client"
                       Command="{Binding OpenInClientCommand}"/>
             </StackPanel>
 
@@ -405,7 +312,8 @@
     </Border>
 
     <!-- Close button top-right -->
-    <Button Classes="focus-close"
+    <Button Classes="icon-btn"
+            ToolTip.Tip="Close"
             HorizontalAlignment="Right"
             VerticalAlignment="Top"
             Margin="0,44,32,0"
@@ -428,7 +336,7 @@
     <Panel IsVisible="{Binding ZoomScreenshotUrl,
                        Converter={x:Static conv:ObjectConverters.IsNotNull}}"
            PointerPressed="Zoom_PointerPressed">
-      <Border Background="#ee07070d"/>
+      <Border Background="#ee02020c"/>
       <Border HorizontalAlignment="Center" VerticalAlignment="Center"
               MaxWidth="1000" MaxHeight="620" Margin="40"
               CornerRadius="8" ClipToBounds="True"

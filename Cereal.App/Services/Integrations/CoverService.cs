@@ -3,6 +3,7 @@
 // Uses a background Channel<string> queue with up to 2 retries per game.
 // SteamGridDB API key is loaded from CredentialService.
 
+using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Channels;
 using Cereal.App.Models;
@@ -26,7 +27,7 @@ public sealed class CoverService : IDisposable
 
     private readonly Channel<string> _queue = Channel.CreateUnbounded<string>(
         new UnboundedChannelOptions { SingleReader = true });
-    private readonly Dictionary<string, int> _retries = [];
+    private readonly ConcurrentDictionary<string, int> _retries = new();
     private const int MaxRetries = 2;
     private Task? _workerTask;
     private readonly CancellationTokenSource _workerCts = new();
@@ -81,15 +82,14 @@ public sealed class CoverService : IDisposable
                     catch (Exception ex)
                     {
                         Log.Warning("[covers] Download failed for {GameId}: {Error}", gid, ex.Message);
-                        var retries = (_retries.TryGetValue(gid, out var r) ? r : 0) + 1;
+                        var retries = _retries.AddOrUpdate(gid, 1, (_, r) => r + 1);
                         if (retries <= MaxRetries)
                         {
-                            _retries[gid] = retries;
                             _queue.Writer.TryWrite(gid);
                         }
                         else
                         {
-                            _retries.Remove(gid);
+                            _retries.TryRemove(gid, out _);
                         }
                     }
                 }));
@@ -152,7 +152,7 @@ public sealed class CoverService : IDisposable
                     await DownloadFileAsync(url, dest, ct);
                     game.LocalCoverPath = dest;
                     game.ImgStamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    _retries.Remove(gameId);
+                    _retries.TryRemove(gameId, out _);
                     changed = true;
                     break;
                 }

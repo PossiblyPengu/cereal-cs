@@ -8,6 +8,7 @@ using Cereal.App.Services.Integrations;
 using Cereal.App.Services.Providers;
 using Cereal.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel;
 
 namespace Cereal.App.Views.Panels;
 
@@ -39,15 +40,28 @@ public partial class SettingsPanel : UserControl
     }
 
     // Shows the accent preview square color from the current AccentColor text.
+    private SettingsViewModel? _attachedVm;
+
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+        if (_attachedVm is not null)
+        {
+            _attachedVm.PropertyChanged -= Vm_PropertyChanged;
+            _attachedVm = null;
+        }
         if (DataContext is SettingsViewModel vm)
-            vm.PropertyChanged += (_, args) =>
-            {
-                if (args.PropertyName == nameof(SettingsViewModel.AccentColor))
-                    UpdateAccentPreview(vm.AccentColor);
-            };
+        {
+            _attachedVm = vm;
+            vm.PropertyChanged += Vm_PropertyChanged;
+            UpdateAccentPreview(vm.AccentColor);
+        }
+    }
+
+    private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(SettingsViewModel.AccentColor) && sender is SettingsViewModel vm)
+            UpdateAccentPreview(vm.AccentColor);
     }
 
     private void UpdateAccentPreview(string? hex)

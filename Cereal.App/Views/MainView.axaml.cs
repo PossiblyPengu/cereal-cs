@@ -34,6 +34,8 @@ public partial class MainView : UserControl
 
     private void OnUnloaded(object? s, RoutedEventArgs e)
     {
+        if (this.FindControl<ScrollViewer>("LibraryScroll") is { } sc)
+            sc.SizeChanged -= LibraryScroll_OnSizeChanged;
         DetachToolbarScaleWatcher();
         DetachGameLibraryListener();
     }

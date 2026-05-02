@@ -15,6 +15,7 @@ public class CredentialService
     private readonly string _storePath;
     private readonly string _backupPath;
     private Dictionary<string, string> _cache = [];
+    private readonly object _sync = new();
 
     public CredentialService(PathService paths)
     {
@@ -26,14 +27,16 @@ public class CredentialService
     public void SetPassword(string service, string account, string secret)
     {
         var key = $"{service}/{account}";
-        _cache[key] = Encrypt(secret);
+        var cipher = Encrypt(secret);
+        lock (_sync) _cache[key] = cipher;
         Persist();
     }
 
     public string? GetPassword(string service, string account)
     {
         var key = $"{service}/{account}";
-        if (!_cache.TryGetValue(key, out var cipher)) return null;
+        string? cipher;
+        lock (_sync) { if (!_cache.TryGetValue(key, out cipher)) return null; }
         try { return Decrypt(cipher); }
         catch (Exception ex)
         {
@@ -45,7 +48,9 @@ public class CredentialService
     public bool DeletePassword(string service, string account)
     {
         var key = $"{service}/{account}";
-        if (!_cache.Remove(key)) return false;
+        bool removed;
+        lock (_sync) removed = _cache.Remove(key);
+        if (!removed) return false;
         Persist();
         return true;
     }

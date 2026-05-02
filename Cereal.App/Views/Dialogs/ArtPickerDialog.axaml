@@ -7,39 +7,32 @@
         WindowStartupLocation="CenterOwner"
         CanResize="True"
         MinWidth="500" MinHeight="400"
-        Background="#12122a"
+        Background="{DynamicResource ThemeVoid}"
         ExtendClientAreaToDecorationsHint="False">
 
   <Window.Styles>
     <Style Selector="TextBox">
-      <Setter Property="Background" Value="#1a1a3a"/>
-      <Setter Property="BorderBrush" Value="#33aaaaff"/>
-      <Setter Property="Foreground" Value="White"/>
-      <Setter Property="CornerRadius" Value="20"/>
-      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="Background" Value="#08ffffff"/>
+      <Setter Property="BorderBrush" Value="#14ffffff"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+      <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="10,7"/>
     </Style>
-    <Style Selector="Button.action">
-      <Setter Property="Background" Value="#33aaaaff"/>
-      <Setter Property="Foreground" Value="#ccccff"/>
-      <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="14,8"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.action:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#55aaaaff"/>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeFocusRingColor}"/>
     </Style>
     <Style Selector="Border.thumb">
-      <Setter Property="Background" Value="#1a1a3a"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeCardUp}"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="ClipToBounds" Value="True"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Border.thumb:pointerover">
-      <Setter Property="Background" Value="#2a2a5a"/>
+      <Setter Property="Background" Value="#1affffff"/>
     </Style>
     <Style Selector="Border.thumb.selected">
-      <Setter Property="BorderBrush" Value="#aaaaff"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccent}"/>
       <Setter Property="BorderThickness" Value="2"/>
     </Style>
   </Window.Styles>
@@ -79,12 +72,12 @@
       <!-- States -->
       <TextBlock x:Name="StatusText"
                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                 Foreground="#55ccccff" FontSize="14" IsVisible="True"
+                 Foreground="{DynamicResource ThemeText3}" FontSize="14" IsVisible="True"
                  Text="Enter a game name and press Search"/>
 
       <TextBlock x:Name="LoadingText"
                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                 Foreground="#55ccccff" FontSize="14" IsVisible="False"
+                 Foreground="{DynamicResource ThemeText3}" FontSize="14" IsVisible="False"
                  Text="Searching…"/>
     </Panel>
 
@@ -92,9 +85,7 @@
     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="10" Margin="0,16,0,0">
       <Button Content="Cancel" Click="Cancel_Click"
-              Background="Transparent" Foreground="#88ccccff"
-              BorderBrush="#33aaaaff" BorderThickness="1"
-              CornerRadius="6" Padding="14,8" Cursor="Hand" IsCancel="True"/>
+              Classes="ghost" Padding="14,8" IsCancel="True"/>
       <Button Classes="action" Content="Use selected" Click="Use_Click"
               x:Name="UseButton" IsEnabled="False" IsDefault="True"/>
     </StackPanel>

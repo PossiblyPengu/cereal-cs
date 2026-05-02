@@ -74,7 +74,7 @@
       <Setter Property="TextElement.Foreground" Value="White"/>
     </Style>
     <Style Selector="Button.win-ctrl:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="inset 0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadowInset}"/>
     </Style>
 
     <!-- Tab strip: close affordance always visible; lift on row hover -->
@@ -99,7 +99,7 @@
       <Setter Property="Background" Value="#30ffffff"/>
     </Style>
     <Style Selector="Button.tab-close:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadowInset}"/>
     </Style>
     <Style Selector="Button.title-tab:pointerover Button.tab-close">
       <Setter Property="Opacity" Value="1"/>
@@ -129,7 +129,7 @@
       <Setter Property="Background" Value="#12ffffff"/>
     </Style>
     <Style Selector="Button.title-tab:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadowInset}"/>
     </Style>
 
     <!-- index.css .search-esc -->
@@ -148,7 +148,7 @@
       <Setter Property="TextElement.Foreground" Value="#b0aaa0"/>
     </Style>
     <Style Selector="Button.search-esc:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
 
     <!-- index.css .search-plat-chip (active colors come from MultiBinding) -->
@@ -183,7 +183,7 @@
     <!-- ── Side panel slide-in: 560px panels (#2) ── -->
     <Style Selector="panels|SettingsPanel, panels|ChiakiPanel, panels|PlatformsPanel, panels|PlatformAuthPanel">
       <Setter Property="Opacity" Value="0"/>
-      <Setter Property="RenderTransform" Value="translateX(580px)"/>
+      <Setter Property="RenderTransform" Value="translateX(700px)"/>
       <Setter Property="Transitions">
         <Transitions>
           <DoubleTransition Property="Opacity" Duration="0:0:0.22" Easing="CubicEaseOut"/>
@@ -287,13 +287,13 @@
                        IsVisible="{Binding IsLibraryTabActive}"/>
             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="10,0">
               <Panel Width="14" Height="14" VerticalAlignment="Center">
-                <Ellipse Width="13" Height="13" Stroke="#d4a853" StrokeThickness="1.2"
+                <Ellipse Width="13" Height="13" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.2"
                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Ellipse Width="2.4" Height="2.4" Fill="#9ad4a853"
+                <Ellipse Width="2.4" Height="2.4" Fill="{DynamicResource ThemeAccentSoft}"
                          HorizontalAlignment="Left" VerticalAlignment="Top" Margin="3,3,0,0"/>
-                <Ellipse Width="2.4" Height="2.4" Fill="#d4a853"
+                <Ellipse Width="2.4" Height="2.4" Fill="{DynamicResource ThemeAccent}"
                          HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,3,2,0"/>
-                <Ellipse Width="2" Height="2" Fill="#7ad4a853"
+                <Ellipse Width="2" Height="2" Fill="{DynamicResource ThemeAccentSoft}"
                          HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
               </Panel>
               <StackPanel Spacing="1" VerticalAlignment="Center">
@@ -330,6 +330,7 @@
                                  FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
                                  MaxWidth="148" TextTrimming="CharacterEllipsis"/>
                       <Button Classes="tab-close"
+                              ToolTip.Tip="Close tab"
                               Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ClosePanelTabCommand}"
                               CommandParameter="{Binding Id}">
                         <PathIcon Width="7" Height="7"
@@ -373,6 +374,7 @@
                                    FontSize="9" Foreground="{DynamicResource ThemeText4}" Margin="0,1,0,0"/>
                       </StackPanel>
                       <Button Classes="tab-close"
+                              ToolTip.Tip="Close tab"
                               Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).CloseStreamTabCommand}"
                               CommandParameter="{Binding GameId}">
                         <PathIcon Width="7" Height="7"
@@ -432,7 +434,7 @@
 
       <!-- Side widths: index.css .side-panel 480px, .side-panel.wide 560px -->
       <panels:SettingsPanel HorizontalAlignment="Right"
-                            Width="560"
+                            Width="680"
                             IsHitTestVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsSettingsPanelVisible}"
                             Classes.open="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsSettingsPanelVisible}"/>
 
@@ -469,7 +471,7 @@
               VerticalAlignment="{Binding ToolbarVerticalAlignment}"
               IsVisible="{Binding ShowStreamBar}"
               Classes="surface-fade"
-              Background="#d20d0d16"
+              Background="#d206071e"
               BorderBrush="#17ffffff"
               BorderThickness="{Binding StreamBarBorderThickness}"
               BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
@@ -590,7 +592,7 @@
       <Panel IsVisible="{Binding IsStreamConnecting}"
              IsHitTestVisible="False"
              ZIndex="55">
-        <Border Background="#cc07070d"/>
+        <Border Background="#cc02020c"/>
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
           <Border Width="40" Height="40" CornerRadius="20"
                   BorderBrush="#1affffff" BorderThickness="2"
@@ -619,7 +621,7 @@
               Classes="continue-banner"
               Classes.shown="{Binding ShowContinueBanner}"
               CornerRadius="12"
-              Background="#e8101018"
+              Background="#e80b0d26"
               BorderBrush="#1affffff"
               BorderThickness="1"
               ZIndex="50">
@@ -650,9 +652,9 @@
                        Foreground="#60b0aaa0"/>
           </StackPanel>
           <Button VerticalAlignment="Center"
-                  Background="#1fd4a853" Foreground="{DynamicResource ThemeAccent}"
+                  Background="{DynamicResource ThemeAccentSoft}" Foreground="{DynamicResource ThemeAccent}"
                   FontSize="11" FontWeight="Bold"
-                  CornerRadius="8" Padding="14,7" BorderThickness="1" BorderBrush="#4dd4a853" Cursor="Hand"
+                  CornerRadius="8" Padding="14,7" BorderThickness="1" BorderBrush="{DynamicResource ThemeFocusRingColor}" Cursor="Hand"
                   Command="{Binding LaunchGameCommand}"
                   CommandParameter="{Binding ContinueGame}">
             <Button.Styles>
@@ -672,6 +674,7 @@
                   Background="Transparent" Foreground="{DynamicResource ThemeText3}"
                   FontSize="16" Width="28" Height="28"
                   CornerRadius="14" Padding="0" BorderThickness="0" Cursor="Hand"
+                  ToolTip.Tip="Dismiss"
                   Command="{Binding DismissContinueBannerCommand}">
             <PathIcon Width="10" Height="10"
                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -743,6 +746,7 @@
                   Background="Transparent" Foreground="{DynamicResource ThemeText3}"
                   FontSize="11"
                   BorderThickness="0" Cursor="Hand"
+                  ToolTip.Tip="Dismiss"
                   Command="{Binding DismissAppUpdateCommand}">
             <PathIcon Width="9" Height="9"
                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -757,7 +761,7 @@
               ZIndex="199"
               CornerRadius="8"
               Padding="10,6"
-              Background="#cc101018"
+              Background="#cc0b0d26"
               BorderBrush="#1affffff"
               BorderThickness="1">
         <TextBlock Text="{Binding AppUsageLabel}"
@@ -779,7 +783,7 @@
           <DataTemplate x:DataType="vm:ToastViewModel">
             <Border CornerRadius="10" Padding="14,9"
                     Classes="surface-fade"
-                    Background="#e8101018"
+                    Background="#e80b0d26"
                     BorderBrush="#1affffff"
                     BorderThickness="1">
               <TextBlock Text="{Binding Message}"
@@ -797,7 +801,7 @@
               HorizontalAlignment="Left"
               Margin="{Binding $parent[Window].((vm:MainViewModel)DataContext).MediaWidgetMargin}"
               CornerRadius="22"
-              Background="#d20d0d16"
+              Background="#d206071e"
               BorderBrush="#17ffffff" BorderThickness="1"
               BoxShadow="0 8 32 0 #b3000000, 0 2 8 0 #80000000, inset 0 2 0 0 #0dffffff"
               IsVisible="{Binding HasMedia}"
@@ -857,7 +861,7 @@
                             Data="M6,5 L6,19 M8,12 L18,5 V19 Z"/>
                 </Button>
                 <Button Width="30" Height="30" Padding="0"
-                        Background="#1fd4a853"
+                        Background="{DynamicResource ThemeAccentSoft}"
                         Foreground="{DynamicResource ThemeAccent}"
                         BorderThickness="0" CornerRadius="15" Cursor="Hand"
                         ToolTip.Tip="Play / Pause"
@@ -899,7 +903,7 @@
       <Panel Classes="search-overlay"
              Classes.open="{Binding ShowSearch}"
              IsVisible="{Binding ShowSearch}" ZIndex="300">
-        <Border Background="#eb07070d"
+        <Border Background="#eb02020c"
                 PointerPressed="SearchBackdrop_PointerPressed"/>
         <Grid PointerPressed="ContentCard_PointerPressedNoop">
           <Grid.ColumnDefinitions>

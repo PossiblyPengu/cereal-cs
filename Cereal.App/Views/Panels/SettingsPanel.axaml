@@ -137,7 +137,7 @@
                       Cursor="Hand"/>
               <TextBox Classes="field" Width="114"
                        Text="{Binding AccentColor}"
-                       Watermark="#d4a853"
+                       Watermark="{Binding ThemeAccentWatermark}"
                        CornerRadius="7" Padding="8,6" FontSize="12"/>
               <Button Content="Reset" Classes="ghost" FontSize="11" Padding="10,6"
                       Click="ResetAccent_Click"/>
@@ -350,7 +350,7 @@
                           Classes="ghost" FontSize="11" Padding="10,6"/>
                   <Button Content="Save"
                           Command="{Binding SaveSteamGridDbKeyCommand}"
-                          Classes="primary" FontSize="11" Padding="10,6"/>
+                          Classes="action" FontSize="11" Padding="10,6"/>
                   <Button Content="Delete"
                           Command="{Binding DeleteSteamGridDbKeyCommand}"
                           Classes="ghost" FontSize="11" Padding="10,6"
@@ -389,7 +389,7 @@
               <TextBox Classes="field" Text="{Binding IgdbClientId}" Watermark="Client ID"/>
               <TextBox Classes="field" Text="{Binding IgdbClientSecret}" Watermark="Client secret" PasswordChar="•"/>
               <WrapPanel Orientation="Horizontal" ItemHeight="30">
-                <Button Content="Save IGDB keys" Classes="primary" FontSize="11" Padding="10,5"
+                <Button Content="Save IGDB keys" Classes="action" FontSize="11" Padding="10,5"
                         Command="{Binding SaveIgdbKeysCommand}"/>
                 <Button Content="Remove" Classes="ghost" FontSize="11" Padding="10,5"
                         Foreground="#ff7070"
@@ -581,7 +581,7 @@
                   <Button Content="Check for updates" Classes="ghost" Padding="10,5"
                           Command="{Binding CheckForUpdateCommand}"
                           IsVisible="{Binding !UpdateAvailable}"/>
-                  <Button Content="Download update" Classes="primary" Padding="10,5"
+                  <Button Content="Download update" Classes="action" Padding="10,5"
                           Command="{Binding DownloadUpdateCommand}"
                           IsVisible="{Binding UpdateAvailable}"/>
                   <Button Content="Restart to apply" Padding="10,5"
@@ -935,7 +935,7 @@
                    VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
         <Button Grid.Column="1" Classes="ghost" Content="Reset"
                 Margin="8,0,0,0" Command="{Binding ResetCommand}"/>
-        <Button Grid.Column="2" Classes="primary" Content="Save settings"
+        <Button Grid.Column="2" Classes="action" Content="Save settings"
                 Margin="8,0,0,0" IsEnabled="{Binding HasPendingChanges}"
                 Command="{Binding SaveCommand}"/>
       </Grid>

@@ -66,6 +66,7 @@ public sealed class AuthService
         _creds = creds;
         _http = new HttpClient();
         _http.DefaultRequestHeaders.Add("User-Agent", "cereal-launcher/1.0");
+        _http.Timeout = TimeSpan.FromSeconds(30);
     }
 
     // ─── Auth URL builders ────────────────────────────────────────────────────

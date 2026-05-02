@@ -27,6 +27,10 @@ public static class ThemeResourceKeys
     public const string FocusRing    = "ThemeFocusRingColor";
     /// <summary>Preformatted <see cref="Avalonia.Media.BoxShadows"/> string (1px, accent @ ~40% α).</summary>
     public const string FocusRingBoxShadow = "ThemeFocusRingBoxShadow";
+    /// <summary>Preformatted inset <see cref="Avalonia.Media.BoxShadows"/> string for inner focus outlines.</summary>
+    public const string FocusRingBoxShadowInset = "ThemeFocusRingBoxShadowInset";
+    /// <summary>~12% opacity accent tint — used for active/selected background fills.</summary>
+    public const string AccentSoft   = "ThemeAccentSoftColor";
     public const string ScrollThumb  = "ThemeScrollThumbColor";
     public const string ScrollThumbHover = "ThemeScrollThumbHoverColor";
 }

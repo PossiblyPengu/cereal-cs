@@ -44,6 +44,8 @@ public static class ThemePalette
         // Avalonia parses BoxShadows from a string (see default styles); color must be #AARRGGBB
         // 1px outline to match legacy control chrome
         res[ThemeResourceKeys.FocusRingBoxShadow] = $"0 0 0 1 {ToHex(focusC)}";
+        res[ThemeResourceKeys.FocusRingBoxShadowInset] = $"inset 0 0 0 1 {ToHex(focusC)}";
+        SetColor(ThemeResourceKeys.AccentSoft, ToHex(ThemeColorMath.WithAlpha(accent, 31)));
 
         if (Color.TryParse(theme.Text3, out var t3))
         {

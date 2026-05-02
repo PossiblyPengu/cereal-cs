@@ -7,109 +7,6 @@
              Background="Transparent">
 
   <UserControl.Styles>
-
-    <Style Selector="Button.chiaki-tab">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="FontWeight" Value="Medium"/>
-      <Setter Property="Padding" Value="12,8"/>
-      <Setter Property="MinHeight" Value="34"/>
-      <Setter Property="BorderThickness" Value="0,0,0,2"/>
-      <Setter Property="BorderBrush" Value="Transparent"/>
-      <Setter Property="CornerRadius" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.chiaki-tab.active">
-      <Setter Property="Foreground" Value="#d4a853"/>
-      <Setter Property="BorderBrush" Value="#d4a853"/>
-    </Style>
-    <Style Selector="Button.chiaki-tab:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#08ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
-    </Style>
-    <Style Selector="Button.chiaki-tab:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="inset 0 0 0 1 #4dd4a853"/>
-    </Style>
-
-    <Style Selector="Button.ch-sm">
-      <Setter Property="Background" Value="#14ffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Padding" Value="10,8"/>
-      <Setter Property="MinHeight" Value="34"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="BorderBrush" Value="#10ffffff"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.ch-sm:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#20ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button.ch-sm:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.ch-sm:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-
-    <Style Selector="Button.ch-primary">
-      <Setter Property="Background" Value="#d4a853"/>
-      <Setter Property="Foreground" Value="#07070d"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Padding" Value="10,8"/>
-      <Setter Property="MinHeight" Value="34"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.ch-primary:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#e8b85e"/>
-    </Style>
-    <Style Selector="Button.ch-primary:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.ch-primary:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-
-    <Style Selector="Button.ch-danger">
-      <Setter Property="Background" Value="#33ff4444"/>
-      <Setter Property="Foreground" Value="#ff7070"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Padding" Value="8,8"/>
-      <Setter Property="MinHeight" Value="34"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.ch-danger:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#55ff4444"/>
-    </Style>
-    <Style Selector="Button.ch-danger:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.ch-danger:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-
-    <Style Selector="TextBox.ch-input">
-      <Setter Property="Background" Value="#08ffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
-      <Setter Property="BorderBrush" Value="#14ffffff"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="10,8"/>
-      <Setter Property="MinHeight" Value="34"/>
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="CaretBrush" Value="#d4a853"/>
-    </Style>
-    <Style Selector="TextBox.ch-input:focus /template/ Border#PART_BorderElement">
-      <Setter Property="BorderBrush" Value="#4dd4a853"/>
-    </Style>
-
   </UserControl.Styles>
 
   <Border Background="{DynamicResource ThemeSurface}"
@@ -136,7 +33,7 @@
             </StackPanel>
           </Border>
         </StackPanel>
-        <Button Grid.Column="1" Classes="ch-sm" Content="Open chiaki-ng"
+        <Button Grid.Column="1" Classes="sm" Content="Open chiaki-ng"
                 Click="OpenGui_Click" VerticalAlignment="Center"/>
       </Grid>
     </Border>
@@ -150,7 +47,7 @@
         <Grid ColumnDefinitions="*,Auto">
           <TextBlock Grid.Column="0" Text="MY CONSOLES" FontSize="9" FontWeight="Bold"
                      LetterSpacing="1.5" Foreground="#40b0aaa0" VerticalAlignment="Center"/>
-          <Button Grid.Column="1" Classes="ch-sm" Content="+ Add"
+          <Button Grid.Column="1" Classes="sm" Content="+ Add"
                   Click="ShowAddConsole_Click"/>
         </Grid>
 
@@ -162,16 +59,16 @@
             <Grid ColumnDefinitions="*,12,*">
               <StackPanel Grid.Column="0" Spacing="4">
                 <TextBlock Text="Nickname" FontSize="10" Foreground="#50b0aaa0"/>
-                <TextBox Classes="ch-input" x:Name="NewNicknameBox" Watermark="PS5-Living-Room"/>
+                <TextBox Classes="field" x:Name="NewNicknameBox" Watermark="PS5-Living-Room"/>
               </StackPanel>
               <StackPanel Grid.Column="2" Spacing="4">
                 <TextBlock Text="Host IP" FontSize="10" Foreground="#50b0aaa0"/>
-                <TextBox Classes="ch-input" x:Name="NewHostBox" Watermark="192.168.1.x"/>
+                <TextBox Classes="field" x:Name="NewHostBox" Watermark="192.168.1.x"/>
               </StackPanel>
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-              <Button Classes="ch-sm" Content="Cancel" Click="CancelAddConsole_Click"/>
-              <Button Classes="ch-primary" Content="Add" Click="AddConsole_Click"/>
+              <Button Classes="sm" Content="Cancel" Click="CancelAddConsole_Click"/>
+              <Button Classes="action" Content="Add" Click="AddConsole_Click"/>
             </StackPanel>
           </StackPanel>
         </Border>
@@ -211,16 +108,16 @@
                     <TextBlock Text="{Binding Host}" FontSize="11" Foreground="#50b0aaa0"/>
                   </StackPanel>
                   <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <Button Classes="ch-danger" Content="Stop"
+                    <Button Classes="danger" Content="Stop"
                             IsVisible="{Binding IsLive}"
                             Tag="{Binding Host}" Click="StopConsole_Click"/>
-                    <Button Classes="ch-primary" Content="Connect"
+                    <Button Classes="action" Content="Connect"
                             IsVisible="{Binding !IsLive}"
                             Tag="{Binding .}" Click="ConnectConsole_Click"/>
-                    <Button Classes="ch-sm" Content="Wake"
+                    <Button Classes="sm" Content="Wake"
                             IsVisible="{Binding !IsLive}"
                             Tag="{Binding .}" Click="WakeConsole_Click"/>
-                    <Button Classes="ch-sm" Tag="{Binding .}" Click="RemoveConsole_Click" Padding="8,6">
+                    <Button Classes="sm" Tag="{Binding .}" Click="RemoveConsole_Click" Padding="8,6" ToolTip.Tip="Remove">
                       <PathIcon Width="9" Height="9"
                                 Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                 Data="M1,1 L9,9 M9,1 L1,9"/>
@@ -242,14 +139,14 @@
             <TextBlock Text="Find consoles on your local network."
                        FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
           </StackPanel>
-          <Button Grid.Column="1" Classes="ch-primary" Content="Scan" Click="Discover_Click"/>
+          <Button Grid.Column="1" Classes="action" Content="Scan" Click="Discover_Click"/>
         </Grid>
 
         <Border IsVisible="{Binding IsDiscovering}"
-                Background="#0fd4a853" CornerRadius="6" Padding="10,7">
+                Background="{DynamicResource ThemeAccentSoft}" CornerRadius="6" Padding="10,7">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Ellipse Width="5" Height="5" Fill="#d4a853" VerticalAlignment="Center"/>
-            <TextBlock Text="Scanning…" FontSize="11" FontWeight="SemiBold" Foreground="#d4a853"/>
+            <Ellipse Width="5" Height="5" Fill="{DynamicResource ThemeAccent}" VerticalAlignment="Center"/>
+            <TextBlock Text="Scanning…" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}"/>
           </StackPanel>
         </Border>
 
@@ -281,10 +178,10 @@
                     </StackPanel>
                   </StackPanel>
                   <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <Button Classes="ch-primary" Content="Add"
+                    <Button Classes="action" Content="Add"
                             IsVisible="{Binding !AlreadyAdded}"
                             Tag="{Binding .}" Click="AddDiscovered_Click"/>
-                    <Button Classes="ch-sm" Content="Added"
+                    <Button Classes="sm" Content="Added"
                             IsVisible="{Binding AlreadyAdded}"
                             IsEnabled="False"/>
                   </StackPanel>
@@ -303,15 +200,15 @@
         <StackPanel Spacing="8">
           <StackPanel Spacing="4">
             <TextBlock Text="Console IP" FontSize="10" Foreground="#50b0aaa0"/>
-            <TextBox Classes="ch-input" x:Name="RegHostBox" Watermark="192.168.1.x"/>
+            <TextBox Classes="field" x:Name="RegHostBox" Watermark="192.168.1.x"/>
           </StackPanel>
           <StackPanel Spacing="4">
             <TextBlock Text="PSN Account ID (Base64)" FontSize="10" Foreground="#50b0aaa0"/>
-            <TextBox Classes="ch-input" x:Name="RegAccountIdBox" Watermark="ab12CDef3ghIjk…"/>
+            <TextBox Classes="field" x:Name="RegAccountIdBox" Watermark="ab12CDef3ghIjk…"/>
           </StackPanel>
           <StackPanel Spacing="4">
             <TextBlock Text="Link Code (8 digits)" FontSize="10" Foreground="#50b0aaa0"/>
-            <TextBox Classes="ch-input" x:Name="RegPinBox" Watermark="12345678" MaxLength="8"/>
+            <TextBox Classes="field" x:Name="RegPinBox" Watermark="12345678" MaxLength="8"/>
           </StackPanel>
         </StackPanel>
 
@@ -322,8 +219,8 @@
         </Border>
 
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <Button Classes="ch-primary" Content="Pair" Click="Register_Click"/>
-          <Button Classes="ch-sm" Content="Reset" Click="RegReset_Click"/>
+          <Button Classes="action" Content="Pair" Click="Register_Click"/>
+          <Button Classes="sm" Content="Reset" Click="RegReset_Click"/>
         </StackPanel>
 
       </StackPanel>

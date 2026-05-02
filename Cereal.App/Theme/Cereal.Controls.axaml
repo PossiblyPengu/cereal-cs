@@ -46,7 +46,7 @@
     <Setter Property="CornerRadius" Value="8"/>
     <Setter Property="Padding" Value="16,10"/>
     <Setter Property="BorderThickness" Value="1"/>
-    <Setter Property="BorderBrush" Value="#10ffffff"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentSoft}"/>
     <Setter Property="Cursor" Value="Hand"/>
   </Style>
   <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
@@ -139,6 +139,109 @@
     <Setter Property="Foreground" Value="{DynamicResource ThemeOnAccent}"/>
     <Setter Property="BorderBrush" Value="Transparent"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <!-- Danger button — destructive actions -->
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="#33ff4444"/>
+    <Setter Property="Foreground" Value="#ff7070"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="10,7"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#55ff4444"/>
+    <Setter Property="TextElement.Foreground" Value="#ff9090"/>
+  </Style>
+  <Style Selector="Button.danger:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#66ff4444"/>
+  </Style>
+  <Style Selector="Button.danger:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.danger:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <!-- Icon button — square icon-only controls -->
+  <Style Selector="Button.icon-btn">
+    <Setter Property="Background" Value="#0dffffff"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
+    <Setter Property="Width" Value="36"/>
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.icon-btn:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#1affffff"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
+  </Style>
+  <Style Selector="Button.icon-btn:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#2affffff"/>
+  </Style>
+  <Style Selector="Button.icon-btn:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.icon-btn:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+
+  <!-- Tab navigation strip — horizontal underline tabs -->
+  <Style Selector="Button.tab">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="Padding" Value="12,13"/>
+    <Setter Property="CornerRadius" Value="0"/>
+    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="MinHeight" Value="44"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button.tab:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText2}"/>
+  </Style>
+  <Style Selector="Button.tab:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#10ffffff"/>
+  </Style>
+  <Style Selector="Button.tab:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="Button.tab:focus-visible /template/ ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
+  </Style>
+  <Style Selector="Button.tab.active">
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccent}"/>
+  </Style>
+  <Style Selector="Button.tab-danger">
+    <Setter Property="Foreground" Value="#66ff6060"/>
+  </Style>
+  <Style Selector="Button.tab-danger.active">
+    <Setter Property="Foreground" Value="#ff7070"/>
+    <Setter Property="BorderBrush" Value="#aa5555"/>
+  </Style>
+
+  <!-- Standard input field -->
+  <Style Selector="TextBox.field">
+    <Setter Property="Background" Value="#08ffffff"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentSoft}"/>
+    <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
+    <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="10,7"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+  <Style Selector="TextBox.field:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource ThemeFocusRingColor}"/>
   </Style>
 
   <Style Selector="Button /template/ ContentPresenter">

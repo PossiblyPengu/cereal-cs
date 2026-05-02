@@ -157,11 +157,14 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(MediaWidgetMargin));
     }
 
+    private string[]? _allCategoriesCache;
+
     public IEnumerable<string> AllCategories =>
-        _games.GetAll()
+        _allCategoriesCache ??= _games.GetAll()
               .SelectMany(g => g.Categories ?? Enumerable.Empty<string>())
               .Distinct()
-              .OrderBy(c => c);
+              .OrderBy(c => c)
+              .ToArray();
 
     // Mirrors Electron's filterCount badge on the nav-pill filter button
     // (App.tsx 968): sum of platforms + categories + sort + text + flags.
@@ -816,6 +819,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(AllCategories));
+        _allCategoriesCache = null;
         UpdateContinueBanner();
     }
 

@@ -11,7 +11,7 @@ public class Settings
     public string Theme { get; set; } = "midnight";
 
     [JsonPropertyName("accentColor")]
-    public string AccentColor { get; set; } = "#d4a853";
+    public string AccentColor { get; set; } = "";
 
     [JsonPropertyName("navPosition")]
     public string NavPosition { get; set; } = "top";

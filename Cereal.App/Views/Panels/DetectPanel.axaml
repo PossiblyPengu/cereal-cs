@@ -18,45 +18,6 @@
       <Setter Property="CornerRadius" Value="12"/>
       <Setter Property="Padding" Value="14,12"/>
     </Style>
-    <Style Selector="Button.detect-primary">
-      <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeVoid}"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="14,8"/>
-      <Setter Property="MinHeight" Value="34"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.detect-primary:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#e8b85e"/>
-    </Style>
-    <Style Selector="Button.detect-primary:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.detect-primary:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
-    <Style Selector="Button.detect-ghost">
-      <Setter Property="Background" Value="#14ffffff"/>
-      <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
-      <Setter Property="BorderBrush" Value="#10ffffff"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="8"/>
-      <Setter Property="Padding" Value="12,8"/>
-      <Setter Property="MinHeight" Value="34"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style Selector="Button.detect-ghost:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#22ffffff"/>
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeText}"/>
-    </Style>
-    <Style Selector="Button.detect-ghost:disabled /template/ ContentPresenter">
-      <Setter Property="Opacity" Value="0.45"/>
-    </Style>
-    <Style Selector="Button.detect-ghost:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
-    </Style>
   </UserControl.Styles>
 
   <Border Background="{DynamicResource ThemeSurface}"
@@ -74,7 +35,7 @@
       <Button Content="Manage platform accounts"
               HorizontalAlignment="Left"
               Margin="0,8,0,0"
-              Classes="detect-ghost"
+              Classes="secondary"
               Click="OpenPlatforms_Click"/>
     </StackPanel>
 
@@ -99,7 +60,7 @@
         <Button Content="Scan installed games"
                 Command="{Binding ScanCommand}"
                 IsEnabled="{Binding !IsScanning}"
-                Classes="detect-primary"
+                Classes="action"
                 HorizontalAlignment="Left" Margin="0,12,0,0" Cursor="Hand"/>
       </StackPanel>
       </Border>
@@ -153,19 +114,19 @@
       </TextBlock>
       <Button Content="Import selected"
               Command="{Binding ImportSelectedCommand}"
-              Classes="detect-primary" Margin="0,0,8,8"/>
+              Classes="action" Margin="0,0,8,8"/>
       <Button Content="Import all"
               Command="{Binding ImportAllCommand}"
-              Classes="detect-ghost" Margin="0,0,8,8"/>
+              Classes="secondary" Margin="0,0,8,8"/>
       <Button Content="Import new only"
               Command="{Binding ImportNewOnlyCommand}"
-              Classes="detect-ghost" Margin="0,0,8,8"/>
+              Classes="secondary" Margin="0,0,8,8"/>
       <Button Content="Select none"
               Command="{Binding SelectNoneCommand}"
-              Classes="detect-ghost" Margin="0,0,8,8"/>
+              Classes="secondary" Margin="0,0,8,8"/>
       <Button Content="Clear results"
               Command="{Binding ClearResultsCommand}"
-              Classes="detect-ghost" Margin="0,0,8,8"/>
+              Classes="secondary" Margin="0,0,8,8"/>
       <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"
              Foreground="#50b0aaa0" FontSize="12"
              IsVisible="{Binding StatusMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>

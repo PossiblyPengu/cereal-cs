@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cereal.App.ViewModels"
              xmlns:conv="using:Cereal.App"
@@ -29,7 +29,7 @@
               <Border.Background>
                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
                   <GradientStop Color="Transparent" Offset="0"/>
-                  <GradientStop Color="#b207070d" Offset="1"/>
+                  <GradientStop Color="#b202020c" Offset="1"/>
                 </LinearGradientBrush>
               </Border.Background>
             </Border>
@@ -59,7 +59,7 @@
               </Panel>
             </Border>
             <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8" Width="22" Height="22"
-                    CornerRadius="11" Background="#e6d4a853" BoxShadow="0 2 8 0 #4cd4a853" IsVisible="{Binding IsFavorite}">
+                    CornerRadius="11" Background="{DynamicResource ThemeAccent}" BoxShadow="0 2 8 0 #4cd4a853" IsVisible="{Binding IsFavorite}">
               <PathIcon Width="10" Height="10"
                         Foreground="#0a0a0f"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -114,7 +114,7 @@
 
   <UserControl.Styles>
 
-    <!-- ── Nav pill chip ── -->
+    <!-- â”€â”€ Nav pill chip â”€â”€ -->
     <Style Selector="Button.chip">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
@@ -139,10 +139,10 @@
     <Style Selector="Button.chip:focus-visible /template/ ContentPresenter">
       <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
-    <!-- index.css .chip.active — rgba(212,168,83,0.12) accent-soft -->
+    <!-- index.css .chip.active â€” rgba(212,168,83,0.12) accent-soft -->
     <Style Selector="Button.chip.active">
-      <Setter Property="Background" Value="#1FD4A853"/>
-      <Setter Property="BorderBrush" Value="#4dd4a853"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentSoft}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeFocusRingColor}"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
     <!-- Side rail: same thickness as top/bottom bar; chips must stay within the fixed width. -->
@@ -164,7 +164,7 @@
       <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
-    <!-- ── Nav pill icon button ── -->
+    <!-- â”€â”€ Nav pill icon button â”€â”€ -->
     <Style Selector="Button.nav-btn">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
@@ -186,7 +186,7 @@
       <Setter Property="Opacity" Value="0.45"/>
     </Style>
     <Style Selector="Button.nav-btn:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
 
     <!-- index.css .theme-picker-btn -->
@@ -207,10 +207,10 @@
       <Setter Property="Background" Value="#18ffffff"/>
     </Style>
     <Style Selector="Button.theme-picker-btn:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
 
-    <!-- ── View toggle button ── -->
+    <!-- â”€â”€ View toggle button â”€â”€ -->
     <Style Selector="Button.view-btn">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText4}"/>
@@ -232,14 +232,14 @@
       <Setter Property="Opacity" Value="0.45"/>
     </Style>
     <Style Selector="Button.view-btn:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
     <Style Selector="Button.view-btn.active">
-      <Setter Property="Background" Value="#1fd4a853"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentSoft}"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
 
-    <!-- ── Game card (index.css .game-card) ── -->
+    <!-- â”€â”€ Game card (index.css .game-card) â”€â”€ -->
     <Style Selector="Border.game-card">
       <Setter Property="CornerRadius" Value="12"/>
       <Setter Property="Background" Value="{DynamicResource ThemeCard}"/>
@@ -259,10 +259,10 @@
     <Style Selector="Border.game-card:pointerover">
       <Setter Property="RenderTransform" Value="scale(1.02) translateY(-4px)"/>
       <Setter Property="BoxShadow" Value="0 12 32 0 #66000000"/>
-      <Setter Property="BorderBrush" Value="#1affffff"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeFocusRingColor}"/>
     </Style>
     <Style Selector="Border.game-card:focus">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
     <!-- index.css .game-card:hover .card-cover img -->
     <Style Selector="Border.game-card Image">
@@ -279,7 +279,7 @@
     </Style>
 
     <!-- Not-installed: dimmed -->
-    <!-- index.css .game-card.not-installed — opacity 0.6 -->
+    <!-- index.css .game-card.not-installed â€” opacity 0.6 -->
     <Style Selector="Border.game-card.not-installed">
       <Setter Property="Opacity" Value="0.6"/>
     </Style>
@@ -303,7 +303,7 @@
     <!-- Search box -->
     <Style Selector="TextBox.search">
       <Setter Property="Background" Value="#08ffffff"/>
-      <Setter Property="BorderBrush" Value="#0fffffff"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccentSoft}"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText}"/>
       <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}"/>
       <Setter Property="CornerRadius" Value="8"/>
@@ -312,10 +312,10 @@
       <Setter Property="MinWidth" Value="160"/>
     </Style>
     <Style Selector="TextBox.search:focus /template/ Border#PART_BorderElement">
-      <Setter Property="BorderBrush" Value="#4dd4a853"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeFocusRingColor}"/>
     </Style>
 
-    <!-- ── Stream pill button (index.css 707-710) ── -->
+    <!-- â”€â”€ Stream pill button (index.css 707-710) â”€â”€ -->
     <Style Selector="Button.stream-pill-btn">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText3}"/>
@@ -337,10 +337,10 @@
       <Setter Property="Opacity" Value="0.45"/>
     </Style>
     <Style Selector="Button.stream-pill-btn:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
 
-    <!-- Play / ghost hover buttons — .card-hover-btn (index.css 806-810) -->
+    <!-- Play / ghost hover buttons â€” .card-hover-btn (index.css 806-810) -->
     <Style Selector="Button.btn-play-hover">
       <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
       <Setter Property="Foreground" Value="#0a0a0f"/>
@@ -352,16 +352,16 @@
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.btn-play-hover:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#e8b85e"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentHover}"/>
     </Style>
     <Style Selector="Button.btn-play-hover:pressed /template/ ContentPresenter">
-      <Setter Property="Background" Value="#d29f45"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentPressed}"/>
     </Style>
     <Style Selector="Button.btn-play-hover:disabled /template/ ContentPresenter">
       <Setter Property="Opacity" Value="0.45"/>
     </Style>
     <Style Selector="Button.btn-play-hover:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
     <Style Selector="Button.btn-ghost-hover">
       <Setter Property="Background" Value="#14ffffff"/>
@@ -386,10 +386,10 @@
       <Setter Property="Opacity" Value="0.45"/>
     </Style>
     <Style Selector="Button.btn-ghost-hover:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 1 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
 
-    <!-- ── Filter flyout buttons (sort + categories) ── -->
+    <!-- â”€â”€ Filter flyout buttons (sort + categories) â”€â”€ -->
     <Style Selector="Button.filter-btn">
       <Setter Property="Background" Value="#10ffffff"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeText2}"/>
@@ -408,11 +408,11 @@
       <Setter Property="Background" Value="#22ffffff"/>
     </Style>
     <Style Selector="Button.filter-btn:focus-visible /template/ ContentPresenter">
-      <Setter Property="BoxShadow" Value="0 0 0 2 #4dd4a853"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ThemeFocusRingBoxShadow}"/>
     </Style>
     <Style Selector="Button.filter-btn.active">
-      <Setter Property="Background" Value="#1fd4a853"/>
-      <Setter Property="BorderBrush" Value="#4dd4a853"/>
+      <Setter Property="Background" Value="{DynamicResource ThemeAccentSoft}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeFocusRingColor}"/>
       <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}"/>
     </Style>
 
@@ -449,7 +449,7 @@
       </Setter>
     </Style>
 
-    <!-- ── Cards view fade-in on enter (#10) ── -->
+    <!-- â”€â”€ Cards view fade-in on enter (#10) â”€â”€ -->
     <Style Selector="Panel.cards-view">
       <Setter Property="Opacity" Value="0"/>
       <Setter Property="Transitions">
@@ -467,17 +467,17 @@
 
   </UserControl.Styles>
 
-  <!-- Root panel — content + floating nav pill -->
+  <!-- Root panel â€” content + floating nav pill -->
   <Panel>
 
-    <!-- ── Card grid (scroll area) ── -->
+    <!-- â”€â”€ Card grid (scroll area) â”€â”€ -->
     <!-- Outer Panel: empty-state overlay; scroll has one virtualized list of
          section headers + short horizontal card rows. -->
     <Panel Classes="cards-view"
            Classes.active="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}"
            IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=cards}">
 
-      <!-- Empty state overlay — centered, only shown when library is empty -->
+      <!-- Empty state overlay â€” centered, only shown when library is empty -->
       <StackPanel IsVisible="{Binding !VisibleGames.Count}"
                   VerticalAlignment="Center" HorizontalAlignment="Center"
                   IsHitTestVisible="{Binding !VisibleGames.Count}"
@@ -520,20 +520,20 @@
 
     </Panel>
 
-    <!-- ── Orbit mode ── -->
+    <!-- â”€â”€ Orbit mode â”€â”€ -->
     <views:OrbitView x:Name="OrbitViewControl"
                      IsVisible="{Binding ViewMode, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=orbit}"
                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
-    <!-- ─────────────────────────────────────────────────────────
-         Floating nav pill — direct port of App.tsx 944-1156.
-         Order: brand · All/Fav/Recent · plat-chips · filter ·
-         view-toggle · theme-picker · layout-picker · add + settings.
-         Detect / Chiaki / Xcloud are NOT on the nav in Electron —
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+         Floating nav pill â€” direct port of App.tsx 944-1156.
+         Order: brand Â· All/Fav/Recent Â· plat-chips Â· filter Â·
+         view-toggle Â· theme-picker Â· layout-picker Â· add + settings.
+         Detect / Chiaki / Xcloud are NOT on the nav in Electron â€”
          Detect is on the empty-state and Chiaki/Xcloud live on the
          bottom-right `.stream-pill`.
-    ───────────────────────────────────────────────────────── -->
-    <!-- index.css .nav-pill — rgba(13,13,22,0.82), border rgba(255,255,255,0.09) -->
+    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- index.css .nav-pill â€” rgba(13,13,22,0.82), border rgba(255,255,255,0.09) -->
     <Border Classes.rail="{Binding IsSideNav}"
             VerticalAlignment="{Binding ToolbarVerticalAlignment}"
             HorizontalAlignment="{Binding ToolbarHorizontalAlignment}"
@@ -554,14 +554,14 @@
       </Border.RenderTransform>
       <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="2" VerticalAlignment="Center">
 
-        <!-- Brand — horizontal on top/bottom, vertical on left/right -->
+        <!-- Brand â€” horizontal on top/bottom, vertical on left/right -->
         <Panel Margin="6,0,10,0" VerticalAlignment="Center">
           <TextBlock Text="CEREAL" FontSize="11" FontWeight="Light"
                      LetterSpacing="4" VerticalAlignment="Center"
                      IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=top}">
             <TextBlock.Foreground>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="{DynamicResource ThemeAccentColor}" Offset="0"/>
                 <GradientStop Color="#b0aaa0" Offset="1"/>
               </LinearGradientBrush>
             </TextBlock.Foreground>
@@ -571,7 +571,7 @@
                      IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=bottom}">
             <TextBlock.Foreground>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="{DynamicResource ThemeAccentColor}" Offset="0"/>
                 <GradientStop Color="#b0aaa0" Offset="1"/>
               </LinearGradientBrush>
             </TextBlock.Foreground>
@@ -581,7 +581,7 @@
                      IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=left}">
             <TextBlock.Foreground>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="{DynamicResource ThemeAccentColor}" Offset="0"/>
                 <GradientStop Color="#b0aaa0" Offset="1"/>
               </LinearGradientBrush>
             </TextBlock.Foreground>
@@ -591,7 +591,7 @@
                      IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}">
             <TextBlock.Foreground>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                <GradientStop Color="#d4a853" Offset="0"/>
+                <GradientStop Color="{DynamicResource ThemeAccentColor}" Offset="0"/>
                 <GradientStop Color="#b0aaa0" Offset="1"/>
               </LinearGradientBrush>
             </TextBlock.Foreground>
@@ -621,7 +621,7 @@
                 Command="{Binding SetQuickFilterCommand}"
                 CommandParameter="recent"/>
 
-        <!-- Filter flyout — trigger icon matches Vite I.search (constants.tsx) -->
+        <!-- Filter flyout â€” trigger icon matches Vite I.search (constants.tsx) -->
         <Button Classes="nav-btn" ToolTip.Tip="Filter games" ClipToBounds="False">
           <Panel ClipToBounds="False">
             <Viewbox Width="14" Height="14">
@@ -961,7 +961,7 @@
         <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
                 IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}"/>
 
-        <!-- Theme picker (App.tsx 1034-1091) — dots + custom accent input -->
+        <!-- Theme picker (App.tsx 1034-1091) â€” dots + custom accent input -->
         <Button Classes="theme-picker-btn" ToolTip.Tip="Theme">
           <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="5" VerticalAlignment="Center">
             <Ellipse Width="14" Height="14" Fill="{DynamicResource ThemeAccent}"/>
@@ -1014,7 +1014,7 @@
           </Button.Flyout>
         </Button>
 
-        <!-- Toolbar position — current glyph matches Vite layoutOptions (App.tsx 1094–1101) -->
+        <!-- Toolbar position â€” current glyph matches Vite layoutOptions (App.tsx 1094â€“1101) -->
         <Button Classes="theme-picker-btn" ToolTip.Tip="Toolbar position">
           <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="5" VerticalAlignment="Center">
             <Panel Width="14" Height="14">
@@ -1135,7 +1135,7 @@
         <Border Width="16" Height="1" Background="#0fffffff" Margin="0,4"
                 IsVisible="{Binding ToolbarPosition, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}, ConverterParameter=right}"/>
 
-        <!-- Trailing nav-actions — index.css .nav-actions margin-left 6px, gap 1px -->
+        <!-- Trailing nav-actions â€” index.css .nav-actions margin-left 6px, gap 1px -->
         <StackPanel Orientation="{Binding ToolbarOrientation}" Spacing="1" Margin="0" VerticalAlignment="Center">
           <Button Classes="nav-btn" ToolTip.Tip="Add game"
                   Command="{Binding ShowAddGameCommand}">
@@ -1160,14 +1160,14 @@
       </StackPanel>
     </Border>
 
-    <!-- ─────────────────────────────────────────────────────────
-         Stream pill (App.tsx 922-935) — floats bottom-right only
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+         Stream pill (App.tsx 922-935) â€” floats bottom-right only
          in cards mode and only offers the two streamable platforms.
          Remote Play opens the Chiaki panel; Cloud Gaming opens the
          xCloud panel. Detect / Connect live in the empty state and
          Settings panel respectively; they deliberately do NOT have
          a dedicated nav-pill button in the Electron original.
-    ───────────────────────────────────────────────────────── -->
+    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
             Margin="0,0,16,16"
             CornerRadius="22" Padding="6,4"
@@ -1212,7 +1212,7 @@
       </StackPanel>
     </Border>
 
-    <!-- ── Status bar (cover download progress) ── -->
+    <!-- â”€â”€ Status bar (cover download progress) â”€â”€ -->
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Center"
             Margin="0,0,0,20"
             CornerRadius="20" Padding="14,6"
@@ -1221,10 +1221,10 @@
       <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{DynamicResource ThemeText3}"/>
     </Border>
 
-    <!-- ── Subtle progress pill (bottom-right) — mirrors Electron's subtle-pill ── -->
+    <!-- â”€â”€ Subtle progress pill (bottom-right) â€” mirrors Electron's subtle-pill â”€â”€ -->
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
             Margin="0,0,20,20" CornerRadius="14" Padding="12,8"
-            Background="#ec0d0d16" BorderBrush="#18ffffff" BorderThickness="1"
+            Background="#ec06071e" BorderBrush="#18ffffff" BorderThickness="1"
             MinWidth="220"
             BoxShadow="0 8 24 0 #80000000"
             IsVisible="{Binding ShowProgressPill}">
@@ -1234,7 +1234,7 @@
           <Border Width="14" Height="14" CornerRadius="7"
                   Background="{DynamicResource ThemeAccent}"
                   IsVisible="{Binding ProgressPillDone}">
-            <TextBlock Text="✓" FontSize="10" FontWeight="Bold"
+            <TextBlock Text="âœ“" FontSize="10" FontWeight="Bold"
                        Foreground="{DynamicResource ThemeOnAccent}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
@@ -1242,7 +1242,7 @@
                   RenderTransformOrigin="0.5,0.5"
                   IsVisible="{Binding !ProgressPillDone}">
             <Ellipse Width="11" Height="11" Canvas.Left="1.5" Canvas.Top="1.5"
-                     Stroke="#22d4a853" StrokeThickness="2" Fill="Transparent"/>
+                     Stroke="{DynamicResource ThemeFocusRingColor}" StrokeThickness="2" Fill="Transparent"/>
             <Path Stroke="{DynamicResource ThemeAccent}" StrokeThickness="2"
                   StrokeLineCap="Round" Fill="Transparent"
                   Data="M 7,1.5 A 5.5,5.5 0 1 1 1.5,7"/>
@@ -1265,3 +1265,4 @@
   </Panel>
 
 </UserControl>
+

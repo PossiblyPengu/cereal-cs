@@ -24,7 +24,7 @@ public class ThemeSwatchViewModel
 
         VoidBrush    = ParseBrush(theme.Void);
         AccentBrush  = ParseBrush(theme.Accent);
-        SurfaceBrush = ParseBrush(theme.Surface);
+        SurfaceBrush = ParseBrush(theme.Card);
         TextBrush    = ParseBrush(theme.Text);
         BorderBrush  = IsActive
             ? ParseBrush(theme.Accent)
