@@ -120,6 +120,29 @@ public partial class OrbitView : UserControl
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Updates orb covers in-place after a cover download batch completes.
+    /// Much cheaper than a full Rebuild() — only swaps letter→image for orbs whose file now exists.
+    /// </summary>
+    public void RefreshCovers()
+    {
+        var db = App.Services.GetRequiredService<DatabaseService>();
+        foreach (var orb in _orbs)
+        {
+            // Prefer LocalCoverPath stored on the game row (set by CoverService after download).
+            // Fall back to PathService glob-search so covers from previous sessions also apply.
+            var game = db.Db.Games.Find(g => g.Id == orb.GameId);
+            var localPath = game?.LocalCoverPath;
+            if (string.IsNullOrEmpty(localPath))
+            {
+                var paths = App.Services.GetRequiredService<PathService>();
+                localPath = paths.GetCoverPath(orb.GameId);
+            }
+            if (!string.IsNullOrEmpty(localPath) && File.Exists(localPath))
+                orb.UpdateCover(localPath);
+        }
+    }
+
     /// <summary>Full scene rebuild (stars + clusters + orbs) — triggered by
     /// settings changes such as star density or animations toggle.</summary>
     public void Rebuild()

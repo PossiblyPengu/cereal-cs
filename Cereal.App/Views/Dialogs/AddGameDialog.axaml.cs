@@ -26,69 +26,83 @@ public partial class AddGameDialog : Window
 
     private void NameBox_AttachedToVisualTree(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
     {
-        if (sender is not TextBox tb) return;
-        tb.Focus();
-        tb.SelectionStart = 0;
-        tb.SelectionEnd = tb.Text?.Length ?? 0;
+        NameBox.Focus();
+        NameBox.SelectionStart = 0;
+        NameBox.SelectionEnd = NameBox.Text?.Length ?? 0;
     }
 
     public void LoadGame(Game g)
     {
-        _editGame = g;
+        _editGame   = g;
         _isEditMode = true;
 
-        this.FindControl<TextBlock>("DialogTitle")!.Text = "Edit Game";
-        this.FindControl<Button>("SaveBtn")!.Content = "Save Changes";
+        DialogTitle.Text    = "Edit Game";
+        SaveBtn.Content     = "Save Changes";
 
-        this.FindControl<TextBox>("NameBox")!.Text = g.Name;
-        this.FindControl<TextBox>("NotesBox")!.Text = g.Notes ?? "";
-        this.FindControl<TextBox>("CoverBox")!.Text = g.CoverUrl ?? g.LocalCoverPath ?? "";
-        this.FindControl<TextBox>("HeaderBox")!.Text = g.HeaderUrl ?? g.LocalHeaderPath ?? "";
-        this.FindControl<TextBox>("PlatformIdBox")!.Text = g.PlatformId ?? "";
-        this.FindControl<TextBox>("ExeBox")!.Text = g.ExecutablePath ?? "";
-        this.FindControl<TextBox>("CategoriesBox")!.Text =
-            g.Categories is { Count: > 0 } ? string.Join(", ", g.Categories) : "";
+        NameBox.Text        = g.Name;
+        NotesBox.Text       = g.Notes ?? "";
+        CoverBox.Text       = g.CoverUrl ?? g.LocalCoverPath ?? "";
+        HeaderBox.Text      = g.HeaderUrl ?? g.LocalHeaderPath ?? "";
+        PlatformIdBox.Text  = g.PlatformId ?? "";
+        ExeBox.Text         = g.ExecutablePath ?? "";
+        CategoriesBox.Text  = g.Categories is { Count: > 0 } ? string.Join(", ", g.Categories) : "";
+        DescBox.Text        = g.Description ?? "";
+        DevBox.Text         = g.Developer ?? "";
+        PubBox.Text         = g.Publisher ?? "";
+        ReleaseDateBox.Text = g.ReleaseDate ?? "";
+        MetacriticBox.Text  = g.Metacritic?.ToString() ?? "";
+        WebsiteBox.Text     = g.Website ?? "";
 
-        // Metadata
-        this.FindControl<TextBox>("DescBox")!.Text = g.Description ?? "";
-        this.FindControl<TextBox>("DevBox")!.Text = g.Developer ?? "";
-        this.FindControl<TextBox>("PubBox")!.Text = g.Publisher ?? "";
-        this.FindControl<TextBox>("ReleaseDateBox")!.Text = g.ReleaseDate ?? "";
-        this.FindControl<TextBox>("MetacriticBox")!.Text = g.Metacritic?.ToString() ?? "";
-        this.FindControl<TextBox>("WebsiteBox")!.Text = g.Website ?? "";
-
-        // Auto-expand metadata if any field set
         if (g.Description != null || g.Developer != null || g.Publisher != null ||
             g.ReleaseDate != null || g.Metacritic != null || g.Website != null)
-            this.FindControl<Expander>("MetaExpander")!.IsExpanded = true;
+            MetaExpander.IsExpanded = true;
 
-        // Platform
-        var platformBox = this.FindControl<ComboBox>("PlatformBox")!;
-        var match = platformBox.Items.OfType<ComboBoxItem>()
+        var match = PlatformBox.Items.OfType<ComboBoxItem>()
             .FirstOrDefault(i => i.Content?.ToString() == g.Platform);
-        if (match is not null) platformBox.SelectedItem = match;
+        if (match is not null) PlatformBox.SelectedItem = match;
 
         UpdatePlatformSections(g.Platform);
 
         if (!string.IsNullOrEmpty(g.CoverUrl) || !string.IsNullOrEmpty(g.LocalCoverPath))
-            _ = LoadPreviewAsync(g.CoverUrl ?? g.LocalCoverPath!);
+            _ = LoadPreviewAsync(g.CoverUrl ?? g.LocalCoverPath!, CoverPreview);
         if (!string.IsNullOrEmpty(g.HeaderUrl) || !string.IsNullOrEmpty(g.LocalHeaderPath))
-            _ = LoadPreviewAsync(g.HeaderUrl ?? g.LocalHeaderPath!, "HeaderPreview");
+            _ = LoadPreviewAsync(g.HeaderUrl ?? g.LocalHeaderPath!, HeaderPreview);
     }
 
     private void PlatformBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        var platform = (this.FindControl<ComboBox>("PlatformBox")!.SelectedItem as ComboBoxItem)
-            ?.Content?.ToString() ?? "custom";
+        var platform = (PlatformBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "custom";
         UpdatePlatformSections(platform);
     }
 
     private void UpdatePlatformSections(string? platform)
     {
-        var showId = platform is "steam" or "epic" or "gog" or "battlenet" or "ea" or "ubisoft" or "itchio" or "xbox";
-        var showExe = platform == "custom";
-        this.FindControl<StackPanel>("PlatformIdSection")!.IsVisible = showId;
-        this.FindControl<StackPanel>("ExeSection")!.IsVisible = showExe;
+        PlatformIdSection.IsVisible = platform is "steam" or "epic" or "gog" or "battlenet" or "ea" or "ubisoft" or "itchio" or "xbox";
+        ExeSection.IsVisible        = platform == "custom";
+    }
+
+    // ─── Browse file ──────────────────────────────────────────────────────────
+
+    private async void BrowseCover_Click(object? sender, RoutedEventArgs e)  => await BrowseImageAsync(CoverBox, CoverPreview);
+    private async void BrowseHeader_Click(object? sender, RoutedEventArgs e) => await BrowseImageAsync(HeaderBox, HeaderPreview);
+
+    private async Task BrowseImageAsync(TextBox target, Image preview)
+    {
+        try
+        {
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select image",
+                AllowMultiple = false,
+                FileTypeFilter = [new FilePickerFileType("Images") { Patterns = ["*.jpg", "*.jpeg", "*.png", "*.webp"] }],
+            });
+            if (files.Count > 0)
+            {
+                target.Text = files[0].Path.LocalPath;
+                _ = LoadPreviewAsync(target.Text, preview);
+            }
+        }
+        catch (Exception ex) { Log.Warning(ex, "[AddGame] BrowseImage failed"); }
     }
 
     private async void BrowseExe_Click(object? sender, RoutedEventArgs e)
@@ -103,242 +117,141 @@ public partial class AddGameDialog : Window
             });
             if (files.Count > 0)
             {
-                var path = files[0].Path.LocalPath;
-                this.FindControl<TextBox>("ExeBox")!.Text = path;
-                // Auto-fill name if empty
-                var nameBox = this.FindControl<TextBox>("NameBox")!;
-                if (string.IsNullOrWhiteSpace(nameBox.Text))
-                {
-                    var filename = System.IO.Path.GetFileNameWithoutExtension(path)
+                ExeBox.Text = files[0].Path.LocalPath;
+                if (string.IsNullOrWhiteSpace(NameBox.Text))
+                    NameBox.Text = System.IO.Path.GetFileNameWithoutExtension(ExeBox.Text)
                         .Replace('-', ' ').Replace('_', ' ').Trim();
-                    nameBox.Text = filename;
-                }
             }
         }
         catch (Exception ex) { Log.Warning(ex, "[AddGame] BrowseExe failed"); }
     }
 
-    private async void BrowseCover_Click(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-            {
-                Title = "Select cover image",
-                AllowMultiple = false,
-                FileTypeFilter = [new FilePickerFileType("Images") { Patterns = ["*.jpg", "*.jpeg", "*.png", "*.webp"] }],
-            });
-            if (files.Count > 0)
-            {
-                var path = files[0].Path.LocalPath;
-                this.FindControl<TextBox>("CoverBox")!.Text = path;
-                _ = LoadPreviewAsync(path);
-            }
-        }
-        catch (Exception ex) { Log.Warning(ex, "[AddGame] BrowseCover failed"); }
-    }
+    // ─── Art picker ───────────────────────────────────────────────────────────
 
-    private async void BrowseHeader_Click(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-            {
-                Title = "Select header image",
-                AllowMultiple = false,
-                FileTypeFilter = [new FilePickerFileType("Images") { Patterns = ["*.jpg", "*.jpeg", "*.png", "*.webp"] }],
-            });
-            if (files.Count > 0)
-            {
-                var path = files[0].Path.LocalPath;
-                this.FindControl<TextBox>("HeaderBox")!.Text = path;
-                _ = LoadPreviewAsync(path, "HeaderPreview");
-            }
-        }
-        catch (Exception ex) { Log.Warning(ex, "[AddGame] BrowseHeader failed"); }
-    }
+    private async void PickArt_Click(object? sender, RoutedEventArgs e)       => await PickArtAsync(CoverBox, CoverPreview);
+    private async void PickHeaderArt_Click(object? sender, RoutedEventArgs e) => await PickArtAsync(HeaderBox, HeaderPreview);
 
-    private async void PickArt_Click(object? sender, RoutedEventArgs e)
+    private async Task PickArtAsync(TextBox target, Image preview)
     {
-        var name = this.FindControl<TextBox>("NameBox")!.Text ?? "";
-        var dlg = new ArtPickerDialog(name);
-        var result = await dlg.ShowDialog<string?>(this);
+        var result = await new ArtPickerDialog(NameBox.Text ?? "").ShowDialog<string?>(this);
         if (result is not null)
         {
-            this.FindControl<TextBox>("CoverBox")!.Text = result;
-            _ = LoadPreviewAsync(result);
+            target.Text = result;
+            _ = LoadPreviewAsync(result, preview);
         }
     }
 
-    private async void PickHeaderArt_Click(object? sender, RoutedEventArgs e)
-    {
-        var name = this.FindControl<TextBox>("NameBox")!.Text ?? "";
-        var dlg = new ArtPickerDialog(name);
-        var result = await dlg.ShowDialog<string?>(this);
-        if (result is not null)
-        {
-            this.FindControl<TextBox>("HeaderBox")!.Text = result;
-            _ = LoadPreviewAsync(result, "HeaderPreview");
-        }
-    }
+    // ─── Live preview on URL change ───────────────────────────────────────────
 
     private void CoverBox_TextChanged(object? sender, TextChangedEventArgs e)
     {
-        var text = this.FindControl<TextBox>("CoverBox")!.Text;
-        if (!string.IsNullOrWhiteSpace(text))
-            _ = LoadPreviewAsync(text);
+        if (!string.IsNullOrWhiteSpace(CoverBox.Text)) _ = LoadPreviewAsync(CoverBox.Text, CoverPreview);
     }
 
     private void HeaderBox_TextChanged(object? sender, TextChangedEventArgs e)
     {
-        var text = this.FindControl<TextBox>("HeaderBox")!.Text;
-        if (!string.IsNullOrWhiteSpace(text))
-            _ = LoadPreviewAsync(text, "HeaderPreview");
+        if (!string.IsNullOrWhiteSpace(HeaderBox.Text)) _ = LoadPreviewAsync(HeaderBox.Text, HeaderPreview);
     }
+
+    // ─── Metadata auto-fill ───────────────────────────────────────────────────
 
     private async void FetchMeta_Click(object? sender, RoutedEventArgs e)
     {
-        var name = this.FindControl<TextBox>("NameBox")!.Text?.Trim() ?? "";
-        var statusTb = this.FindControl<TextBlock>("FetchMetaStatus")!;
-        var btn = this.FindControl<Button>("FetchMetaBtn")!;
-        if (string.IsNullOrEmpty(name))
-        {
-            statusTb.Text = "Enter a name first";
-            return;
-        }
+        var name = NameBox.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(name)) { FetchMetaStatus.Text = "Enter a name first"; return; }
 
         try
         {
-            btn.IsEnabled = false;
-            statusTb.Text = "Fetching…";
-            var platform = (this.FindControl<ComboBox>("PlatformBox")!.SelectedItem as ComboBoxItem)
-                ?.Content?.ToString();
+            FetchMetaBtn.IsEnabled = false;
+            FetchMetaStatus.Text   = "Fetching…";
 
-            var svc = App.Services.GetRequiredService<MetadataService>();
-            var meta = await svc.FetchForNameAsync(name, platform);
-            if (meta is null)
+            var platform = (PlatformBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+            var meta = await App.Services.GetRequiredService<MetadataService>().FetchForNameAsync(name, platform);
+            if (meta is null) { FetchMetaStatus.Text = "No match found"; return; }
+
+            void Fill(TextBox tb, string? value) { if (!string.IsNullOrEmpty(value) && string.IsNullOrWhiteSpace(tb.Text)) tb.Text = value; }
+
+            Fill(DescBox,        meta.Description);
+            Fill(DevBox,         meta.Developer);
+            Fill(PubBox,         meta.Publisher);
+            Fill(ReleaseDateBox, meta.ReleaseDate);
+            Fill(WebsiteBox,     meta.Website);
+            if (meta.Metacritic is int mc) Fill(MetacriticBox, mc.ToString());
+
+            if (!string.IsNullOrEmpty(meta.CoverUrl) && string.IsNullOrWhiteSpace(CoverBox.Text))
             {
-                statusTb.Text = "No match found";
-                return;
+                CoverBox.Text = meta.CoverUrl;
+                _ = LoadPreviewAsync(meta.CoverUrl, CoverPreview);
+            }
+            if (!string.IsNullOrEmpty(meta.HeaderUrl) && string.IsNullOrWhiteSpace(HeaderBox.Text))
+            {
+                HeaderBox.Text = meta.HeaderUrl;
+                _ = LoadPreviewAsync(meta.HeaderUrl, HeaderPreview);
             }
 
-            // Only overwrite fields the user hasn't already filled in.
-            void Fill(string id, string? value)
-            {
-                if (string.IsNullOrEmpty(value)) return;
-                var tb = this.FindControl<TextBox>(id)!;
-                if (string.IsNullOrWhiteSpace(tb.Text)) tb.Text = value;
-            }
-
-            Fill("DescBox", meta.Description);
-            Fill("DevBox", meta.Developer);
-            Fill("PubBox", meta.Publisher);
-            Fill("ReleaseDateBox", meta.ReleaseDate);
-            Fill("WebsiteBox", meta.Website);
-            if (meta.Metacritic is int mc) Fill("MetacriticBox", mc.ToString());
-
-            var coverBox = this.FindControl<TextBox>("CoverBox")!;
-            var cover = meta.SgdbCoverUrl ?? meta.CoverUrl;
-            if (!string.IsNullOrEmpty(cover) && string.IsNullOrWhiteSpace(coverBox.Text))
-            {
-                coverBox.Text = cover;
-                _ = LoadPreviewAsync(cover);
-            }
-
-            var headerBox = this.FindControl<TextBox>("HeaderBox")!;
-            if (!string.IsNullOrEmpty(meta.HeaderUrl) && string.IsNullOrWhiteSpace(headerBox.Text))
-            {
-                headerBox.Text = meta.HeaderUrl;
-                _ = LoadPreviewAsync(meta.HeaderUrl, "HeaderPreview");
-            }
-
-            this.FindControl<Expander>("MetaExpander")!.IsExpanded = true;
-            statusTb.Text = $"Filled from {meta.Source}";
+            MetaExpander.IsExpanded = true;
+            FetchMetaStatus.Text    = $"Filled from {meta.Source}";
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "[AddGame] FetchMeta failed");
-            statusTb.Text = "Fetch failed";
+            FetchMetaStatus.Text = "Fetch failed";
         }
-        finally { btn.IsEnabled = true; }
+        finally { FetchMetaBtn.IsEnabled = true; }
     }
+
+    // ─── Save / Cancel ────────────────────────────────────────────────────────
 
     private void Cancel_Click(object? sender, RoutedEventArgs e) => Close(null);
 
     private void Save_Click(object? sender, RoutedEventArgs e)
     {
-        this.FindControl<TextBlock>("ErrorText")!.IsVisible = false;
-        var name = this.FindControl<TextBox>("NameBox")!.Text?.Trim() ?? "";
-        if (string.IsNullOrEmpty(name))
-        {
-            ShowError("Game name is required.");
-            return;
-        }
+        ErrorText.IsVisible = false;
+        var name = NameBox.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(name)) { ShowError("Game name is required."); return; }
 
-        var platform = (this.FindControl<ComboBox>("PlatformBox")!.SelectedItem as ComboBoxItem)
-            ?.Content?.ToString() ?? "custom";
-        var exe = this.FindControl<TextBox>("ExeBox")!.Text?.Trim();
-        var cover = this.FindControl<TextBox>("CoverBox")!.Text?.Trim();
-        var header = this.FindControl<TextBox>("HeaderBox")!.Text?.Trim();
-        var platformId = this.FindControl<TextBox>("PlatformIdBox")!.Text?.Trim();
-        var cats = this.FindControl<TextBox>("CategoriesBox")!.Text?.Trim();
-        var notes = this.FindControl<TextBox>("NotesBox")!.Text?.Trim();
-        var desc = this.FindControl<TextBox>("DescBox")!.Text?.Trim();
-        var dev = this.FindControl<TextBox>("DevBox")!.Text?.Trim();
-        var pub = this.FindControl<TextBox>("PubBox")!.Text?.Trim();
-        var releaseDate = this.FindControl<TextBox>("ReleaseDateBox")!.Text?.Trim();
-        var mcText = this.FindControl<TextBox>("MetacriticBox")!.Text?.Trim();
-        var website = this.FindControl<TextBox>("WebsiteBox")!.Text?.Trim();
-
+        var platform = (PlatformBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "custom";
         int? metacritic = null;
-        if (!string.IsNullOrEmpty(mcText) && int.TryParse(mcText, out var mc))
+        if (int.TryParse(MetacriticBox.Text?.Trim(), out var mc))
             metacritic = Math.Clamp(mc, 0, 100);
 
         var game = _isEditMode && _editGame is not null
             ? _editGame
-            : new Game
-            {
-                Id = Guid.NewGuid().ToString("N")[..12],
-                AddedAt = DateTime.UtcNow.ToString("o"),
-                Installed = true,
-            };
+            : new Game { Id = Guid.NewGuid().ToString("N")[..12], AddedAt = DateTime.UtcNow.ToString("o"), Installed = true };
 
-        game.Name = name;
-        game.Platform = platform;
-        game.IsCustom = platform == "custom";
-        game.ExecutablePath = string.IsNullOrEmpty(exe) ? null : exe;
-        game.CoverUrl = string.IsNullOrEmpty(cover) ? null : cover;
-        game.HeaderUrl = string.IsNullOrEmpty(header) ? null : header;
-        game.PlatformId = string.IsNullOrEmpty(platformId) ? null : platformId;
-        game.Categories = string.IsNullOrWhiteSpace(cats)
-            ? []
-            : cats.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(c => !string.IsNullOrWhiteSpace(c))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        game.Notes = string.IsNullOrEmpty(notes) ? null : notes;
-        game.Description = string.IsNullOrEmpty(desc) ? null : desc;
-        game.Developer = string.IsNullOrEmpty(dev) ? null : dev;
-        game.Publisher = string.IsNullOrEmpty(pub) ? null : pub;
-        game.ReleaseDate = string.IsNullOrEmpty(releaseDate) ? null : releaseDate;
-        game.Metacritic = metacritic;
-        game.Website = string.IsNullOrEmpty(website) ? null : website;
+        game.Name           = name;
+        game.Platform       = platform;
+        game.IsCustom       = platform == "custom";
+        game.ExecutablePath = ExeBox.Text?.Trim().NullIfEmpty();
+        game.CoverUrl       = CoverBox.Text?.Trim().NullIfEmpty();
+        game.HeaderUrl      = HeaderBox.Text?.Trim().NullIfEmpty();
+        game.PlatformId     = PlatformIdBox.Text?.Trim().NullIfEmpty();
+        game.Notes          = NotesBox.Text?.Trim().NullIfEmpty();
+        game.Description    = DescBox.Text?.Trim().NullIfEmpty();
+        game.Developer      = DevBox.Text?.Trim().NullIfEmpty();
+        game.Publisher      = PubBox.Text?.Trim().NullIfEmpty();
+        game.ReleaseDate    = ReleaseDateBox.Text?.Trim().NullIfEmpty();
+        game.Website        = WebsiteBox.Text?.Trim().NullIfEmpty();
+        game.Metacritic     = metacritic;
+        game.Categories     = CategoriesBox.Text?.Trim() is { Length: > 0 } cats
+            ? cats.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                  .Where(c => !string.IsNullOrWhiteSpace(c))
+                  .Distinct(StringComparer.OrdinalIgnoreCase)
+                  .ToList()
+            : [];
 
         Close(new AddGameResult { Game = game });
     }
 
-    private void ShowError(string msg)
-    {
-        var tb = this.FindControl<TextBlock>("ErrorText")!;
-        tb.Text = msg;
-        tb.IsVisible = true;
-    }
+    private void ShowError(string msg) { ErrorText.Text = msg; ErrorText.IsVisible = true; }
 
-    private async Task LoadPreviewAsync(string url, string imageName = "CoverPreview")
+    // ─── Image preview loader ─────────────────────────────────────────────────
+
+    private async Task LoadPreviewAsync(string url, Image preview)
     {
         try
         {
-            Bitmap? bmp;
+            Bitmap bmp;
             if (System.IO.File.Exists(url))
             {
                 bmp = new Bitmap(url);
@@ -351,14 +264,14 @@ public partial class AddGameDialog : Window
                 using var ms = new MemoryStream(bytes);
                 bmp = new Bitmap(ms);
             }
-
-            var preview = this.FindControl<Image>(imageName)!;
-            preview.Source = bmp;
+            preview.Source    = bmp;
             preview.IsVisible = true;
         }
-        catch (Exception ex)
-        {
-            Log.Debug(ex, "[AddGame] Preview load failed for {Url}", url);
-        }
+        catch (Exception ex) { Log.Debug(ex, "[AddGame] Preview load failed for {Url}", url); }
     }
+}
+
+file static class StringExt
+{
+    public static string? NullIfEmpty(this string? s) => string.IsNullOrEmpty(s) ? null : s;
 }

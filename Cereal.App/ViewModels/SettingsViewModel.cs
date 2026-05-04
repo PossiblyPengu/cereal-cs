@@ -16,6 +16,7 @@ using Cereal.App.Services.Providers;
 using Cereal.App.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using AppSettings = Cereal.App.Models.Settings;
 
 namespace Cereal.App.ViewModels;
 
@@ -91,13 +92,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _metadataSource = "steam";
 
     /// <summary>Items for the metadata ComboBox (must match <see cref="MetadataService"/>).</summary>
-    public IReadOnlyList<string> MetadataSourceOptions { get; } = ["steam", "wikipedia", "igdb"];
+    public IReadOnlyList<string> MetadataSourceOptions { get; } = ["steam", "wikipedia"];
 
     private static string NormalizeMetadataSource(string? v) =>
         v?.ToLowerInvariant() switch
         {
             "wikipedia" => "wikipedia",
-            "igdb"      => "igdb",
             _           => "steam",
         };
     private static string NormalizeUiScale(string? raw)
@@ -106,11 +106,6 @@ public partial class SettingsViewModel : ObservableObject
         var pct = (int)Math.Round(scale * 100.0, MidpointRounding.AwayFromZero);
         return $"{pct}%";
     }
-    [ObservableProperty] private string? _igdbClientId;
-    [ObservableProperty] private string? _igdbClientSecret;
-    [ObservableProperty] private bool _hasIgdbClientId;
-    [ObservableProperty] private bool _hasIgdbClientSecret;
-
     [ObservableProperty] private string? _steamGridDbKey;
     [ObservableProperty] private bool _hasSteamGridDbSecret;
     [ObservableProperty] private bool _steamGridDbKeyInvalid;
@@ -565,7 +560,6 @@ public partial class SettingsViewModel : ObservableObject
         _ = Task.Run(LoadSystemSpecs);
         SyncSteamGridDbSecret();
         RefreshSteamGridDbUi();
-        RefreshIgdbUi();
     }
 
     public string SteamGridDbKeyWatermark =>
@@ -582,51 +576,6 @@ public partial class SettingsViewModel : ObservableObject
     private void SyncSteamGridDbSecret() =>
         HasSteamGridDbSecret = !string.IsNullOrEmpty(
             _creds.GetPassword("cereal", "steamgriddb_key"));
-
-    private void RefreshIgdbUi()
-    {
-        HasIgdbClientId     = !string.IsNullOrEmpty(_creds.GetPassword("cereal", "igdb_client_id"));
-        HasIgdbClientSecret = !string.IsNullOrEmpty(_creds.GetPassword("cereal", "igdb_client_secret"));
-    }
-
-    [RelayCommand]
-    private void SaveIgdbKeys()
-    {
-        if (string.IsNullOrWhiteSpace(IgdbClientId) || string.IsNullOrWhiteSpace(IgdbClientSecret))
-        {
-            StatusMessage = "Enter both Client ID and Client Secret from the Twitch developer console.";
-            return;
-        }
-        _creds.SetPassword("cereal", "igdb_client_id", IgdbClientId!.Trim());
-        _creds.SetPassword("cereal", "igdb_client_secret", IgdbClientSecret!.Trim());
-        IgdbClientId = null;
-        IgdbClientSecret = null;
-        RefreshIgdbUi();
-        StatusMessage = "IGDB (Twitch) credentials saved.";
-    }
-
-    [RelayCommand]
-    private void DeleteIgdbKeys()
-    {
-        _creds.DeletePassword("cereal", "igdb_client_id");
-        _creds.DeletePassword("cereal", "igdb_client_secret");
-        IgdbClientId = null;
-        IgdbClientSecret = null;
-        RefreshIgdbUi();
-        StatusMessage = "IGDB credentials removed.";
-    }
-
-    [RelayCommand]
-    private void OpenIgdbDevPortal()
-    {
-        try
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-                "https://dev.twitch.tv/console/apps")
-            { UseShellExecute = true });
-        }
-        catch (Exception ex) { StatusMessage = "Couldn't open browser: " + ex.Message; }
-    }
 
     private void RefreshSteamGridDbUi()
     {
@@ -744,7 +693,7 @@ public partial class SettingsViewModel : ObservableObject
         MarkPendingChange();
     }
 
-    private void LoadFromModel(Settings s)
+    private void LoadFromModel(AppSettings s)
     {
         _loadingFromModel = true;
         try
@@ -770,7 +719,6 @@ public partial class SettingsViewModel : ObservableObject
         NavPosition = s.NavPosition;
         StarDensity = s.StarDensity;
         UiScale = NormalizeUiScale(s.UiScale);
-        RefreshIgdbUi();
         }
         finally { _loadingFromModel = false; }
         AccentColorValid = string.IsNullOrWhiteSpace(AccentColor) || Color.TryParse(AccentColor, out _);

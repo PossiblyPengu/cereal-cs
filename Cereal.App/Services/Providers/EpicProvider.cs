@@ -140,13 +140,28 @@ public class EpicProvider(DatabaseService db, AuthService auth) : IImportProvide
 
             if (keys.ValueKind == JsonValueKind.Array)
             {
-                foreach (var k in keys.EnumerateArray())
+                var images = keys.EnumerateArray().ToList();
+
+                // Prefer portrait/tall types (portrait box covers, 3:4 aspect ratio).
+                // Epic's type names: DieselGameBoxTall, OfferImageTall, Thumbnail
+                // Fall back to any "offer" or "key" image, then first available.
+                var tall = images.FirstOrDefault(k =>
                 {
-                    var type = (k.TryGetProperty("type", out var t) ? t.GetString() : null)?.ToLowerInvariant() ?? "";
-                    if (type.Contains("key") || type.Contains("offer") || type.Contains("hero"))
-                        return k.TryGetProperty("url", out var u) ? u.GetString() : null;
-                }
-                var first = keys.EnumerateArray().FirstOrDefault();
+                    var t = (k.TryGetProperty("type", out var tv) ? tv.GetString() : null)?.ToLowerInvariant() ?? "";
+                    return t.Contains("tall") || t == "thumbnail";
+                });
+                if (tall.ValueKind != JsonValueKind.Undefined)
+                    return tall.TryGetProperty("url", out var u) ? u.GetString() : null;
+
+                var any = images.FirstOrDefault(k =>
+                {
+                    var t = (k.TryGetProperty("type", out var tv) ? tv.GetString() : null)?.ToLowerInvariant() ?? "";
+                    return t.Contains("key") || t.Contains("offer") || t.Contains("hero");
+                });
+                if (any.ValueKind != JsonValueKind.Undefined)
+                    return any.TryGetProperty("url", out var u) ? u.GetString() : null;
+
+                var first = images.FirstOrDefault();
                 if (first.ValueKind != JsonValueKind.Undefined)
                     return first.TryGetProperty("url", out var u) ? u.GetString() : null;
             }

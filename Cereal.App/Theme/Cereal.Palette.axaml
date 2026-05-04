@@ -5,24 +5,24 @@
   <Color x:Key="ThemeSurfaceColor">#06071e</Color>
   <Color x:Key="ThemeCardColor">#0b0d26</Color>
   <Color x:Key="ThemeCardUpColor">#101428</Color>
-  <Color x:Key="ThemeAccentColor">#d4a853</Color>
+  <Color x:Key="ThemeAccentColor">#93b4f0</Color>
   <Color x:Key="ThemeTextColor">#dce4f8</Color>
   <Color x:Key="ThemeText2Color">#8898be</Color>
   <Color x:Key="ThemeText3Color">#465074</Color>
   <Color x:Key="ThemeText4Color">#252840</Color>
   <Color x:Key="ThemeBodyBgColor">#02020c</Color>
-  <Color x:Key="ThemeAccentHoverColor">#e8b85e</Color>
-  <Color x:Key="ThemeAccentPressedColor">#b99245</Color>
+  <Color x:Key="ThemeAccentHoverColor">#a9c8f4</Color>
+  <Color x:Key="ThemeAccentPressedColor">#829fd4</Color>
   <Color x:Key="ThemeOnAccentColor">#02020c</Color>
-  <Color x:Key="ThemeFocusRingColor">#4dd4a853</Color>
-  <Color x:Key="ThemeAccentSoftColor">#1fd4a853</Color>
+  <Color x:Key="ThemeFocusRingColor">#6493b4f0</Color>
+  <Color x:Key="ThemeAccentSoftColor">#1f93b4f0</Color>
   <Color x:Key="ThemeScrollThumbColor">#30465074</Color>
   <Color x:Key="ThemeScrollThumbHoverColor">#50465074</Color>
-  <x:String x:Key="ThemeFocusRingBoxShadow">0 0 0 2 #64d4a853</x:String>
-  <x:String x:Key="ThemeFocusRingBoxShadowInset">inset 0 0 0 1 #4dd4a853</x:String>
-  <x:String x:Key="ThemeGlass">rgba(212,168,83,0.04)</x:String>
-  <x:String x:Key="ThemeGlassBorder">rgba(212,168,83,0.08)</x:String>
-  <x:String x:Key="ThemeGlow">rgba(212,168,83,0.10)</x:String>
+  <x:String x:Key="ThemeFocusRingBoxShadow">0 0 0 2 #6493b4f0</x:String>
+  <x:String x:Key="ThemeFocusRingBoxShadowInset">inset 0 0 0 1 #4d93b4f0</x:String>
+  <x:String x:Key="ThemeGlass">rgba(147,180,240,0.04)</x:String>
+  <x:String x:Key="ThemeGlassBorder">rgba(147,180,240,0.08)</x:String>
+  <x:String x:Key="ThemeGlow">rgba(147,180,240,0.12)</x:String>
 
   <SolidColorBrush x:Key="ThemeVoid"    Color="{DynamicResource ThemeVoidColor}"/>
   <SolidColorBrush x:Key="ThemeSurface" Color="{DynamicResource ThemeSurfaceColor}"/>

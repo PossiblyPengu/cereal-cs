@@ -374,29 +374,7 @@
                           SelectedItem="{Binding MetadataSource}"
                           MinWidth="130"/>
               </Grid>
-              <TextBlock Text="Steam: store + search. Wikipedia: free text. IGDB: structured data via Twitch API."
-                         FontSize="10" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
-              <!-- IGDB sub-section -->
-              <Border Height="1" Background="#0affffff"/>
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" Text="IGDB (Twitch API)" FontSize="11" FontWeight="SemiBold"
-                           Foreground="{DynamicResource ThemeText}" VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Content="Open Twitch dev console" Classes="ghost" Padding="10,5"
-                        Command="{Binding OpenIgdbDevPortalCommand}"/>
-              </Grid>
-              <TextBlock Text="Create an app in the Twitch console, copy Client ID + Client Secret, and enable IGDB access."
-                         FontSize="10" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
-              <TextBox Classes="field" Text="{Binding IgdbClientId}" Watermark="Client ID"/>
-              <TextBox Classes="field" Text="{Binding IgdbClientSecret}" Watermark="Client secret" PasswordChar="•"/>
-              <WrapPanel Orientation="Horizontal" ItemHeight="30">
-                <Button Content="Save IGDB keys" Classes="action" FontSize="11" Padding="10,5"
-                        Command="{Binding SaveIgdbKeysCommand}"/>
-                <Button Content="Remove" Classes="ghost" FontSize="11" Padding="10,5"
-                        Foreground="#ff7070"
-                        Command="{Binding DeleteIgdbKeysCommand}"
-                        IsVisible="{Binding HasIgdbClientId}"/>
-              </WrapPanel>
-              <TextBlock Text="Keys stored locally (encrypted on Windows). Falls back to Steam + Wikipedia without keys."
+              <TextBlock Text="Steam: store + search. Wikipedia: free encyclopedia search."
                          FontSize="10" Foreground="{DynamicResource ThemeText3}" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>

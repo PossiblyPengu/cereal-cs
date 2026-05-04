@@ -1542,25 +1542,39 @@ public partial class MainViewModel : ObservableObject
     private int _coverInitialRemaining;
     private void OnCoverProgress(object? sender, CoverProgressArgs e)
     {
-        if (e.Downloaded > 0)
-            foreach (var card in VisibleGames) card.Refresh();
-
-        if (e.Done)
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            _coverInitialRemaining = 0;
-            SetProgress("Artwork downloaded", 1.0, done: true);
-            StatusMessage = null;
-            return;
-        }
+            // Targeted refresh: only the card whose cover just arrived.
+            if (e.GameId is { } id)
+            {
+                (_libraryCardsFull?.Find(c => c.Id == id)
+                    ?? _searchLibraryCards.FirstOrDefault(c => c.Id == id))
+                    ?.Refresh();
+            }
 
-        // Capture the initial total so we can show a proper percent bar.
-        if (e.Remaining > _coverInitialRemaining) _coverInitialRemaining = e.Remaining;
-        var pct = _coverInitialRemaining > 0
-            ? 1.0 - (double)e.Remaining / _coverInitialRemaining
-            : 0;
-        SetProgress($"Syncing artwork · {e.Remaining} left", pct, done: false);
-        StatusMessage = null;
+            if (e.Done)
+            {
+                // Final sweep for cards that were constructed during the batch.
+                foreach (var card in _libraryCardsFull ?? []) card.Refresh();
+                _coverInitialRemaining = 0;
+                SetProgress("Artwork downloaded", 1.0, done: true);
+                StatusMessage = null;
+                CoversDownloaded?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            // Progress bar: e.Total is fixed per batch, e.Remaining counts down.
+            if (e.Total > _coverInitialRemaining) _coverInitialRemaining = e.Total;
+            var pct = _coverInitialRemaining > 0
+                ? 1.0 - (double)e.Remaining / _coverInitialRemaining
+                : 0;
+            SetProgress($"Syncing artwork · {e.Remaining} left", pct, done: false);
+            StatusMessage = null;
+        });
     }
+
+    /// <summary>Fired on the UI thread when a cover download batch completes. Views use this to refresh artwork (e.g. orbit orbs).</summary>
+    public event EventHandler? CoversDownloaded;
 
     private void OnChiakiEvent(object? sender, ChiakiEventArgs e)
     {

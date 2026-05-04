@@ -22,14 +22,34 @@ C:\Users\andre\.nuget\packages\avalonia\11.3.9\ref\net8.0\Avalonia.Vulkan.dll
 C:\Users\andre\.nuget\packages\avalonia.win32\11.3.9\lib\net8.0\Avalonia.Win32.Automation.dll
 C:\Users\andre\.nuget\packages\avalonia.win32\11.3.9\lib\net8.0\Avalonia.Win32.dll
 C:\Users\andre\.nuget\packages\avalonia.x11\11.3.9\lib\net8.0\Avalonia.X11.dll
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\ref\Cereal.Core.dll
+E:\CODE\FUN\cereal-cs\Cereal.Infrastructure\obj\Debug\net8.0\ref\Cereal.Infrastructure.dll
 C:\Users\andre\.nuget\packages\communitytoolkit.mvvm\8.3.2\lib\net8.0\CommunityToolkit.Mvvm.dll
+C:\Users\andre\.nuget\packages\dapper\2.1.35\lib\net7.0\Dapper.dll
 C:\Users\andre\.nuget\packages\discordrichpresence\1.6.1.70\lib\netstandard2.0\DiscordRPC.dll
 C:\Users\andre\.nuget\packages\harfbuzzsharp\8.3.1.1\lib\net8.0\HarfBuzzSharp.dll
 C:\Users\andre\.nuget\packages\microcom.runtime\0.11.0\lib\net5.0\MicroCom.Runtime.dll
 C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.19\ref\net8.0\Microsoft.CSharp.dll
 C:\Users\andre\.nuget\packages\microsoft.data.sqlite.core\10.0.7\lib\net8.0\Microsoft.Data.Sqlite.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.configuration.abstractions\8.0.0\lib\net8.0\Microsoft.Extensions.Configuration.Abstractions.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.configuration.binder\8.0.2\lib\net8.0\Microsoft.Extensions.Configuration.Binder.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.configuration\8.0.0\lib\net8.0\Microsoft.Extensions.Configuration.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.configuration.environmentvariables\8.0.0\lib\net8.0\Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.configuration.fileextensions\8.0.0\lib\net8.0\Microsoft.Extensions.Configuration.FileExtensions.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.configuration.json\8.0.0\lib\net8.0\Microsoft.Extensions.Configuration.Json.dll
 C:\Users\andre\.nuget\packages\microsoft.extensions.dependencyinjection.abstractions\8.0.2\lib\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
 C:\Users\andre\.nuget\packages\microsoft.extensions.dependencyinjection\8.0.1\lib\net8.0\Microsoft.Extensions.DependencyInjection.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.diagnostics.abstractions\8.0.1\lib\net8.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.diagnostics\8.0.1\lib\net8.0\Microsoft.Extensions.Diagnostics.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.fileproviders.abstractions\8.0.0\lib\net8.0\Microsoft.Extensions.FileProviders.Abstractions.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.fileproviders.physical\8.0.0\lib\net8.0\Microsoft.Extensions.FileProviders.Physical.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.filesystemglobbing\8.0.0\lib\net8.0\Microsoft.Extensions.FileSystemGlobbing.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.http\8.0.1\lib\net8.0\Microsoft.Extensions.Http.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.logging.abstractions\8.0.2\lib\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.logging\8.0.1\lib\net8.0\Microsoft.Extensions.Logging.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.options.configurationextensions\8.0.0\lib\net8.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.options\8.0.2\lib\net8.0\Microsoft.Extensions.Options.dll
+C:\Users\andre\.nuget\packages\microsoft.extensions.primitives\8.0.0\lib\net8.0\Microsoft.Extensions.Primitives.dll
 C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.19\ref\net8.0\Microsoft.VisualBasic.Core.dll
 C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.19\ref\net8.0\Microsoft.VisualBasic.dll
 C:\Users\andre\.nuget\packages\microsoft.web.webview2\1.0.3912.50\lib_manual\netcoreapp3.0\Microsoft.Web.WebView2.Core.dll

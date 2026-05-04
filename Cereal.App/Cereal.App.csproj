@@ -30,6 +30,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cereal.Core\Cereal.Core.csproj" />
+    <ProjectReference Include="..\Cereal.Infrastructure\Cereal.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Assets\icon.ico" CopyToOutputDirectory="PreserveNewest"/>
     <AvaloniaResource Include="Assets\icon.png"/>
     <AvaloniaResource Include="Assets\icon.svg"/>

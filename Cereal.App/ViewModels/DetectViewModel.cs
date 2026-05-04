@@ -1,223 +1,173 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Cereal.App.Models;
-using Cereal.App.Services;
-using Cereal.App.Services.Providers;
+using CommunityToolkit.Mvvm.Messaging;
+using Cereal.Core.Messaging;
+using Cereal.Core.Providers;
+using Cereal.Core.Services;
+using Serilog;
 
 namespace Cereal.App.ViewModels;
 
-public partial class DetectViewModel : ObservableObject
+// ── AXAML compat stubs (legacy types referenced by DetectPanel.axaml) ────────
+/// <summary>AXAML compatibility stub replacing the old ProviderToggle class.</summary>
+public sealed partial class ProviderToggle : ObservableObject
 {
-    private readonly GameService _games;
-    private readonly DatabaseService _db;
-    private readonly IEnumerable<IProvider> _allProviders;
-    private readonly IEnumerable<IImportProvider> _importProviders;
+    public string PlatformId { get; init; } = string.Empty;
+    public string Label      { get; init; } = string.Empty;
+    [ObservableProperty] private bool _isEnabled = true;
+    public bool Enabled { get => IsEnabled; set => IsEnabled = value; }
+}
 
-    [ObservableProperty] private bool _isScanning;
-    [ObservableProperty] private string? _statusMessage;
-    [ObservableProperty] private int _foundCount;
-    [ObservableProperty] private int _addedCount;
+/// <summary>AXAML compatibility stub replacing the old DetectedGameRow class.</summary>
+public sealed partial class DetectedGameRow : ObservableObject
+{
+    public string Name       { get; init; } = string.Empty;
+    public string Platform   { get; init; } = string.Empty;
+    [ObservableProperty] private bool _isSelected = true;
+    [ObservableProperty] private bool _isImported;
+}
 
+/// <summary>
+/// Row representing a single provider's scan result in the Detect view.
+/// </summary>
+public sealed partial class ProviderScanRow : ObservableObject
+{
+    public string PlatformId    { get; }
+    public string Label         { get; }
+
+    // AXAML compatibility aliases
+    public string Name      => Label;
+    public string Platform  => PlatformId;
+
+    [ObservableProperty] private bool    _isScanning;
+    [ObservableProperty] private bool    _isSelected;
+    [ObservableProperty] private bool    _isImported;
+    [ObservableProperty] private int     _gamesFound;
+    [ObservableProperty] private bool    _isDone;
+    [ObservableProperty] private string? _error;
+
+    public ProviderScanRow(string platformId, string label)
+    {
+        PlatformId = platformId;
+        Label      = label;
+    }
+}
+
+/// <summary>
+/// Drives the "Detect installed games" scan view.
+/// Replaces the old DetectViewModel that used old Cereal.App.Services.Providers.
+/// Iterates all registered IProvider instances in parallel and reports
+/// scan results through ProviderScanRow entries.
+/// </summary>
+public sealed partial class DetectViewModel : ObservableObject
+{
+    private readonly IEnumerable<IProvider> _providers;
+    private readonly IGameService _games;
+    private readonly IMessenger _messenger;
+
+    public ObservableCollection<ProviderScanRow> Rows { get; } = [];
+
+    // AXAML compat: old view used Providers collection of ProviderToggle
     public ObservableCollection<ProviderToggle> Providers { get; } = [];
-    public ObservableCollection<DetectedGameRow> Results { get; } = [];
+
+    [ObservableProperty] private bool    _isRunning;
+    [ObservableProperty] private int     _totalFound;
+    [ObservableProperty] private string? _statusMessage;
+
+    // AXAML compatibility aliases
+    public bool IsScanning => IsRunning;
+    public int  FoundCount => TotalFound;
+    public int  AddedCount => 0; // deprecated — kept for AXAML compat
+    public System.Collections.ObjectModel.ObservableCollection<ProviderScanRow> Results => Rows;
 
     public DetectViewModel(
-        GameService games,
-        DatabaseService db,
-        IEnumerable<IProvider> allProviders,
-        IEnumerable<IImportProvider> importProviders)
+        IEnumerable<IProvider> providers,
+        IGameService games,
+        IMessenger messenger)
     {
-        _games = games;
-        _db = db;
-        _allProviders = allProviders;
-        _importProviders = importProviders;
+        _providers = providers;
+        _games     = games;
+        _messenger = messenger;
 
-        foreach (var p in allProviders)
-            Providers.Add(new ProviderToggle(p.PlatformId, true));
+        foreach (var p in providers)
+            Rows.Add(new ProviderScanRow(p.PlatformId, Utilities.PlatformInfo.GetLabel(p.PlatformId)));
     }
 
-    // ─── Detect (local scan) ──────────────────────────────────────────────────
-
-    [RelayCommand(CanExecute = nameof(CanScan))]
-    private async Task Scan()
+    [RelayCommand]
+    private async Task RunAsync()
     {
-        IsScanning = true;
-        StatusMessage = "Scanning installed games…";
-        Results.Clear();
-        FoundCount = 0;
-        AddedCount = 0;
+        await ScanAsync();
+    }
+
+    // Aliases so old AXAML bindings still compile during migration
+    [RelayCommand] private Task ScanAsync() => RunInternalAsync();
+    [RelayCommand] private void ImportSelected() { /* Phase G */ }
+    [RelayCommand] private void ImportAll() { /* Phase G */ }
+    [RelayCommand] private void ImportNewOnly() { /* Phase G */ }
+    [RelayCommand] private void SelectNone() { foreach (var r in Rows) r.IsDone = false; }
+    [RelayCommand] private void ClearResults() { Rows.Clear(); TotalFound = 0; StatusMessage = null; }
+
+    private async Task RunInternalAsync()
+    {
+        if (IsRunning) return;
+        IsRunning     = true;
+        TotalFound    = 0;
+        StatusMessage = "Scanning...";
+
+        foreach (var row in Rows)
+        {
+            row.IsScanning = true;
+            row.GamesFound = 0;
+            row.IsDone     = false;
+            row.Error      = null;
+        }
 
         try
         {
-            var enabledIds = Providers.Where(p => p.Enabled).Select(p => p.PlatformId).ToHashSet();
-
-            foreach (var provider in _allProviders.Where(p => enabledIds.Contains(p.PlatformId)))
+            var tasks = _providers.Select(async p =>
             {
-                StatusMessage = $"Scanning {provider.PlatformId}…";
+                var row = Rows.FirstOrDefault(r => r.PlatformId == p.PlatformId);
+                if (row is null) return;
+
                 try
                 {
-                    var result = await provider.DetectInstalled();
-                    foreach (var game in result.Games)
+                    var result = await p.DetectInstalledAsync();
+                    if (!string.IsNullOrEmpty(result.Error))
                     {
-                        Results.Add(new DetectedGameRow(game, provider.PlatformId));
-                        FoundCount++;
+                        row.Error = result.Error;
                     }
-                    if (result.Error is not null)
-                        Results.Add(new DetectedGameRow(null, provider.PlatformId) { Error = result.Error });
+                    else if (result.Games.Count > 0)
+                    {
+                        await _games.UpsertRangeAsync(result.Games);
+                        row.GamesFound = result.Games.Count;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Results.Add(new DetectedGameRow(null, provider.PlatformId) { Error = ex.Message });
+                    row.Error = ex.Message;
+                    Log.Warning(ex, "[Detect] Provider {Platform} failed", p.PlatformId);
                 }
-            }
-
-            StatusMessage = $"Scan complete — {FoundCount} games found.";
-        }
-        finally
-        {
-            IsScanning = false;
-        }
-    }
-
-    private bool CanScan() => !IsScanning;
-    partial void OnIsScanningChanged(bool value)
-    {
-        ScanCommand.NotifyCanExecuteChanged();
-        ImportFromApiCommand.NotifyCanExecuteChanged();
-        ImportAllCommand.NotifyCanExecuteChanged();
-        ImportNewOnlyCommand.NotifyCanExecuteChanged();
-        ImportSelectedCommand.NotifyCanExecuteChanged();
-        SelectNoneCommand.NotifyCanExecuteChanged();
-        ClearResultsCommand.NotifyCanExecuteChanged();
-    }
-
-    // ─── Import selected ─────────────────────────────────────────────────────
-
-    [RelayCommand(CanExecute = nameof(CanImportAny))]
-    private void ImportSelected()
-    {
-        var selected = Results.Where(r => r.IsSelected && r.Game is not null).ToList();
-        AddedCount = 0;
-        if (selected.Count > 0)
-        {
-            var (processed, newRows) = _games.AddRange(selected.Select(r => r.Game!));
-            foreach (var row in selected)
-                row.IsImported = true;
-            AddedCount = processed;
-            StatusMessage = newRows < processed
-                ? $"Imported {newRows} new, merged {processed - newRows} with existing."
-                : $"Imported {newRows} game(s).";
-        }
-        else
-            StatusMessage = "Nothing new to import.";
-        ImportSelectedCommand.NotifyCanExecuteChanged();
-        ImportAllCommand.NotifyCanExecuteChanged();
-        ImportNewOnlyCommand.NotifyCanExecuteChanged();
-        SelectNoneCommand.NotifyCanExecuteChanged();
-        ClearResultsCommand.NotifyCanExecuteChanged();
-    }
-
-    [RelayCommand(CanExecute = nameof(CanImportAny))]
-    private void ImportAll()
-    {
-        foreach (var r in Results.Where(r => r.Game is not null)) r.IsSelected = true;
-        ImportSelected();
-    }
-
-    [RelayCommand(CanExecute = nameof(CanImportAny))]
-    private void ImportNewOnly()
-    {
-        foreach (var r in Results.Where(r => r.Game is not null))
-            r.IsSelected = !r.IsImported;
-        ImportSelected();
-    }
-
-    [RelayCommand(CanExecute = nameof(CanImportAny))]
-    private void SelectNone()
-    {
-        foreach (var r in Results)
-            r.IsSelected = false;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanImportAny))]
-    private void ClearResults()
-    {
-        Results.Clear();
-        FoundCount = 0;
-        AddedCount = 0;
-        StatusMessage = "Cleared scan results.";
-        ImportSelectedCommand.NotifyCanExecuteChanged();
-        ImportAllCommand.NotifyCanExecuteChanged();
-        ImportNewOnlyCommand.NotifyCanExecuteChanged();
-        SelectNoneCommand.NotifyCanExecuteChanged();
-        ClearResultsCommand.NotifyCanExecuteChanged();
-    }
-
-    // ─── Full API import ──────────────────────────────────────────────────────
-
-    [RelayCommand(CanExecute = nameof(CanScan))]
-    private async Task ImportFromApi(string platformId)
-    {
-        var provider = _importProviders.FirstOrDefault(p => p.PlatformId == platformId);
-        if (provider is null) return;
-
-        IsScanning = true;
-        StatusMessage = $"Importing library from {platformId}…";
-        AddedCount = 0;
-
-        try
-        {
-            using var http = new System.Net.Http.HttpClient();
-            var ctx = new ImportContext
-            {
-                Db   = _db,
-                Http = http,
-                Notify = p =>
+                finally
                 {
-                    StatusMessage = $"[{platformId}] {p.Name ?? p.Status} ({p.Processed}/{p.Total})";
-                },
-            };
+                    row.IsScanning = false;
+                    row.IsDone     = true;
+                }
+            });
 
-            var result = await provider.ImportLibrary(ctx);
-            AddedCount = result.Imported.Count;
-            StatusMessage = $"Imported {result.Imported.Count} game(s) from {platformId}.";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Import failed: {ex.Message}";
+            await Task.WhenAll(tasks);
+
+            TotalFound = Rows.Sum(r => r.GamesFound);
+            StatusMessage = TotalFound > 0
+                ? $"Found {TotalFound} installed games."
+                : "No games detected.";
+
+            if (TotalFound > 0)
+                _messenger.Send(new LibraryRefreshedMessage(TotalFound));
         }
         finally
         {
-            IsScanning = false;
+            IsRunning = false;
         }
-    }
-
-    private bool CanImportAny() => !IsScanning && Results.Any(r => r.Game is not null);
-}
-
-// ─── Supporting types ──────────────────────────────────────────────────────────
-
-public partial class ProviderToggle(string platformId, bool enabled) : ObservableObject
-{
-    public string PlatformId { get; } = platformId;
-    [ObservableProperty] private bool _enabled = enabled;
-}
-
-public partial class DetectedGameRow : ObservableObject
-{
-    public Game? Game { get; }
-    public string PlatformId { get; }
-    public string? Error { get; set; }
-    [ObservableProperty] private bool _isSelected = true;
-    [ObservableProperty] private bool _isImported;
-
-    public string Name => Game?.Name ?? (Error is not null ? $"[{PlatformId}] {Error}" : $"[{PlatformId} error]");
-    public string Platform => Game?.Platform ?? PlatformId;
-
-    public DetectedGameRow(Game? game, string platformId)
-    {
-        Game = game;
-        PlatformId = platformId;
     }
 }

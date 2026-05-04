@@ -268,4 +268,28 @@ public class GameOrb : Border
 
     private static string ToHex(Color c) =>
         $"#{c.A:X2}{c.R:X2}{c.G:X2}{c.B:X2}";
+
+    public string GameId => _gameId;
+
+    /// <summary>
+    /// Swaps the orb's child to a loaded cover image if it is still showing the fallback letter.
+    /// Safe to call on the UI thread after a cover file has been downloaded.
+    /// </summary>
+    public void UpdateCover(string path)
+    {
+        if (Child is Image) return; // already showing a real image
+        if (!File.Exists(path)) return;
+        try
+        {
+            var bmp = new Bitmap(path);
+            Child = new Image
+            {
+                Source = bmp,
+                Stretch = Stretch.UniformToFill,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+            };
+        }
+        catch { /* leave fallback intact */ }
+    }
 }

@@ -72,6 +72,7 @@ public partial class MainView : UserControl
             _vm.PropertyChanged -= OnVmPropertyChanged;
             _vm.AddGameRequested -= OnAddGameRequested;
             _vm.EditGameRequested -= OnEditGameRequested;
+            _vm.CoversDownloaded -= OnCoversDownloaded;
         }
 
         _vm = DataContext as MainViewModel;
@@ -81,6 +82,7 @@ public partial class MainView : UserControl
             _vm.PropertyChanged += OnVmPropertyChanged;
             _vm.AddGameRequested += OnAddGameRequested;
             _vm.EditGameRequested += OnEditGameRequested;
+            _vm.CoversDownloaded += OnCoversDownloaded;
             UpdateLibraryColumnCount();
             AttachGameLibraryListener();
         }
@@ -110,6 +112,12 @@ public partial class MainView : UserControl
         if (_vm?.ViewMode != "orbit") return;
         if (this.FindControl<OrbitView>("OrbitViewControl") is { } orbit)
             _ = orbit.RefreshGamesAsync();
+    }
+
+    private void OnCoversDownloaded(object? sender, EventArgs e)
+    {
+        if (this.FindControl<OrbitView>("OrbitViewControl") is { } orbit)
+            orbit.RefreshCovers();
     }
 
     private void AttachToolbarScaleWatcher()

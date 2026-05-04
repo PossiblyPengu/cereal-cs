@@ -3,10 +3,8 @@
 // Default sources require ZERO accounts or API keys:
 //   - Steam Store: searches Steam's entire catalog for any game
 //   - Wikipedia: free encyclopedia API for descriptions + info
-// Optional: SteamGridDB (requires free API key) for high-quality game art
 
 using System.Collections.Concurrent;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Cereal.App.Models;
@@ -22,7 +20,6 @@ public sealed class FetchedMetadata
     public string? ReleaseDate { get; init; }
     public List<string> Genres { get; init; } = [];
     public string? CoverUrl { get; init; }
-    public string? SgdbCoverUrl { get; init; }
     public string? HeaderUrl { get; init; }
     public List<string> Screenshots { get; init; } = [];
     public int? Metacritic { get; init; }
@@ -67,16 +64,12 @@ public sealed partial class MetadataService
         _http.Timeout = TimeSpan.FromSeconds(20);
     }
 
-    private string? SteamGridDbKey =>
-        _creds.GetPassword("cereal", "steamgriddb_key");
-
-    /// <summary>Valid values: <c>steam</c>, <c>wikipedia</c>, <c>igdb</c> (requires Twitch/IGDB API keys).
+    /// <summary>Valid values: <c>steam</c>, <c>wikipedia</c>.
     /// Legacy or invalid values are treated as <c>steam</c>.</summary>
     private string MetadataMode =>
         _settings.Get().MetadataSource?.ToLowerInvariant() switch
         {
             "wikipedia" => "wikipedia",
-            "igdb"      => "igdb",
             _           => "steam",
         };
 
@@ -96,15 +89,6 @@ public sealed partial class MetadataService
 
         FetchedMetadata? meta = null;
         var mode   = MetadataMode;
-        var hasIgdb = HasIgdbCredentials;
-        if (mode == "igdb" && !hasIgdb)
-            mode = "steam"; // IGDB selected but not configured — behave like Steam
-
-        // IGDB-first (Twitch API) when user chose it and keys are set
-        if (mode == "igdb" && hasIgdb)
-        {
-            meta = await FetchIgdbForGameAsync(game, ct);
-        }
 
         // Steam games: try Steam appId first, then search fallback
         if (meta is null && game.Platform == "steam")
@@ -129,40 +113,6 @@ public sealed partial class MetadataService
             }
         }
 
-        // Enhance with SteamGridDB art if a key is available
-        var sgdbKey = SteamGridDbKey;
-        if (meta is not null && !string.IsNullOrEmpty(sgdbKey))
-        {
-            try
-            {
-                var art = await FetchSteamGridDbArtAsync(game.Name, sgdbKey!, ct);
-                if (art is not null)
-                {
-                    meta = new FetchedMetadata
-                    {
-                        Description = meta.Description,
-                        Developer = meta.Developer,
-                        Publisher = meta.Publisher,
-                        ReleaseDate = meta.ReleaseDate,
-                        Genres = meta.Genres,
-                        // Official Steam portrait wins; SGDB fills the gap as sgdbCoverUrl fallback
-                        CoverUrl = string.IsNullOrEmpty(meta.CoverUrl) ? art.Value.CoverUrl : meta.CoverUrl,
-                        SgdbCoverUrl = !string.IsNullOrEmpty(meta.CoverUrl) ? art.Value.CoverUrl : null,
-                        HeaderUrl = !string.IsNullOrEmpty(art.Value.HeaderUrl) ? art.Value.HeaderUrl : meta.HeaderUrl,
-                        Screenshots = meta.Screenshots,
-                        Metacritic = meta.Metacritic,
-                        Website = meta.Website,
-                        Source = meta.Source,
-                        IsSoftware = meta.IsSoftware,
-                    };
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "[metadata] SGDB art fetch failed, continuing without");
-            }
-        }
-
         if (meta is not null)
             _cache[cacheKey] = new CacheEntry(meta, DateTime.UtcNow);
 
@@ -177,8 +127,6 @@ public sealed partial class MetadataService
         // Only fill missing — never overwrite user customisations
         if (string.IsNullOrEmpty(game.CoverUrl) && !string.IsNullOrEmpty(meta.CoverUrl))
         { game.CoverUrl = meta.CoverUrl; changed = true; }
-        if (string.IsNullOrEmpty(game.SgdbCoverUrl) && !string.IsNullOrEmpty(meta.SgdbCoverUrl))
-        { game.SgdbCoverUrl = meta.SgdbCoverUrl; changed = true; }
         if (string.IsNullOrEmpty(game.Description) && !string.IsNullOrEmpty(meta.Description))
         { game.Description = meta.Description; changed = true; }
         if (string.IsNullOrEmpty(game.Developer) && !string.IsNullOrEmpty(meta.Developer))
@@ -274,9 +222,6 @@ public sealed partial class MetadataService
         game.CoverUrl = !string.IsNullOrWhiteSpace(meta.CoverUrl)
             ? meta.CoverUrl
             : game.CoverUrl;
-        game.SgdbCoverUrl = !string.IsNullOrWhiteSpace(meta.SgdbCoverUrl)
-            ? meta.SgdbCoverUrl
-            : game.SgdbCoverUrl;
         game.Description = !string.IsNullOrWhiteSpace(meta.Description) ? meta.Description : game.Description;
         game.Developer = !string.IsNullOrWhiteSpace(meta.Developer) ? meta.Developer : game.Developer;
         game.Publisher = !string.IsNullOrWhiteSpace(meta.Publisher) ? meta.Publisher : game.Publisher;
@@ -395,17 +340,8 @@ public sealed partial class MetadataService
                 }
             }
 
-            // Validate the portrait library capsule exists (HEAD 2x then 1x)
-            string? coverUrl = null;
-            var capsules = new[]
-            {
-                $"https://shared.steamstatic.com/store_item_assets/steam/apps/{appId}/library_600x900_2x.jpg",
-                $"https://shared.steamstatic.com/store_item_assets/steam/apps/{appId}/library_600x900.jpg",
-            };
-            foreach (var url in capsules)
-            {
-                if (await HeadOkAsync(url, ct)) { coverUrl = url; break; }
-            }
+            // Portrait capsule: 2x preferred; CoverService will fall back to 1x Steam CDN via BuildCoverCandidates.
+            var coverUrl   = $"https://shared.steamstatic.com/store_item_assets/steam/apps/{appId}/library_600x900_2x.jpg";
 
             // Header: header_image from appdetails, else library_hero
             var headerUrl = info.TryGetProperty("header_image", out var hdr) ? hdr.GetString() : null;
@@ -597,46 +533,6 @@ public sealed partial class MetadataService
         }
     }
 
-    // ─── SteamGridDB art enhancement ──────────────────────────────────────────
-
-    private async Task<(string? CoverUrl, string? HeaderUrl)?> FetchSteamGridDbArtAsync(
-        string name, string apiKey, CancellationToken ct)
-    {
-        try
-        {
-            var search = await SgdbGetAsync(
-                $"https://www.steamgriddb.com/api/v2/search/autocomplete/{Uri.EscapeDataString(name)}",
-                apiKey, ct);
-            if (search is null) return null;
-            if (!search.Value.TryGetProperty("success", out var ok) || !ok.GetBoolean()) return null;
-            if (!search.Value.TryGetProperty("data", out var data) ||
-                data.ValueKind != JsonValueKind.Array || data.GetArrayLength() == 0) return null;
-
-            var gameId = data[0].GetProperty("id").GetInt64();
-
-            var covers = await SgdbGetAsync(
-                $"https://www.steamgriddb.com/api/v2/grids/game/{gameId}?dimensions=600x900&limit=1", apiKey, ct);
-            var heroes = await SgdbGetAsync(
-                $"https://www.steamgriddb.com/api/v2/heroes/game/{gameId}?limit=1", apiKey, ct);
-
-            string? coverUrl = null, headerUrl = null;
-            if (covers?.TryGetProperty("data", out var cd) == true && cd.ValueKind == JsonValueKind.Array &&
-                cd.GetArrayLength() > 0 && cd[0].TryGetProperty("url", out var cu))
-                coverUrl = cu.GetString();
-            if (heroes?.TryGetProperty("data", out var hd) == true && hd.ValueKind == JsonValueKind.Array &&
-                hd.GetArrayLength() > 0 && hd[0].TryGetProperty("url", out var hu))
-                headerUrl = hu.GetString();
-
-            if (string.IsNullOrEmpty(coverUrl) && string.IsNullOrEmpty(headerUrl)) return null;
-            return (coverUrl, headerUrl);
-        }
-        catch (Exception ex)
-        {
-            Log.Debug("[metadata] SteamGridDB art fetch failed for {Name}: {Error}", name, ex.Message);
-            return null;
-        }
-    }
-
     // ─── HTTP helpers ─────────────────────────────────────────────────────────
 
     private async Task<JsonElement?> HttpGetJsonAsync(string url, CancellationToken ct)
@@ -652,36 +548,6 @@ public sealed partial class MetadataService
         catch (Exception ex)
         {
             Log.Debug(ex, "[metadata] Failed to parse JSON response from {Url}", url);
-            return null;
-        }
-    }
-
-    private async Task<bool> HeadOkAsync(string url, CancellationToken ct)
-    {
-        try
-        {
-            using var req = new HttpRequestMessage(HttpMethod.Head, url);
-            using var resp = await _http.SendAsync(req, ct);
-            return resp.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            Log.Debug(ex, "[metadata] HEAD request failed for {Url}", url);
-            return false;
-        }
-    }
-
-    private async Task<JsonElement?> SgdbGetAsync(string url, string apiKey, CancellationToken ct)
-    {
-        using var req = new HttpRequestMessage(HttpMethod.Get, url);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        using var resp = await _http.SendAsync(req, ct);
-        if (!resp.IsSuccessStatusCode) return null;
-        var text = await resp.Content.ReadAsStringAsync(ct);
-        try { return JsonDocument.Parse(text).RootElement.Clone(); }
-        catch (Exception ex)
-        {
-            Log.Debug(ex, "[metadata] SGDB JSON parse failed for {Url}", url);
             return null;
         }
     }

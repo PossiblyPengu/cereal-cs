@@ -1,0 +1,13 @@
+E:\CODE\FUN\cereal-cs\Cereal.Core\bin\Debug\net8.0\Cereal.Core.deps.json
+E:\CODE\FUN\cereal-cs\Cereal.Core\bin\Debug\net8.0\Cereal.Core.dll
+E:\CODE\FUN\cereal-cs\Cereal.Core\bin\Debug\net8.0\Cereal.Core.pdb
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.csproj.AssemblyReference.cache
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.GeneratedMSBuildEditorConfig.editorconfig
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.AssemblyInfoInputs.cache
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.AssemblyInfo.cs
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.csproj.CoreCompileInputs.cache
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.sourcelink.json
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.dll
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\refint\Cereal.Core.dll
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\Cereal.Core.pdb
+E:\CODE\FUN\cereal-cs\Cereal.Core\obj\Debug\net8.0\ref\Cereal.Core.dll

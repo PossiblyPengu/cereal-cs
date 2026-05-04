@@ -1,0 +1,10 @@
+global using System.Data;
+global using CommunityToolkit.Mvvm.Messaging;
+global using Dapper;
+global using Microsoft.Data.Sqlite;
+global using Serilog;
+global using System.Text.Json;
+global using Cereal.Core.Models;
+global using Cereal.Core.Repositories;
+global using Cereal.Core.Services;
+global using Cereal.Core.Messaging;

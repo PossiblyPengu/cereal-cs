@@ -1,21 +1,26 @@
 // ─── Cover image download queue & SteamGridDB client ─────────────────────────
-// Downloads portrait covers and wide headers for games, caching them locally.
-// Uses a background Channel<string> queue with up to 2 retries per game.
-// SteamGridDB API key is loaded from CredentialService.
+// Downloads portrait covers and wide headers for games in parallel (up to 4 at once).
+// Fires ProgressChanged with GameId+LocalPath per download, Done=true when the batch
+// completes. SteamGridDB API key is loaded from CredentialService.
 
-using System.Collections.Concurrent;
-using System.Net;
-using System.Threading.Channels;
 using Cereal.App.Models;
+using Cereal.App.Services.Metadata;
 using Serilog;
 
 namespace Cereal.App.Services.Integrations;
 
 public sealed class CoverProgressArgs : EventArgs
 {
+    /// <summary>Game whose cover was just saved. Null on Done events.</summary>
+    public string? GameId { get; init; }
+    /// <summary>Local file path of the newly downloaded cover.</summary>
+    public string? LocalPath { get; init; }
+    /// <summary>Games still pending in this batch.</summary>
     public int Remaining { get; init; }
+    /// <summary>Total games in this batch (for progress-bar math).</summary>
+    public int Total { get; init; }
+    /// <summary>True when the batch is finished.</summary>
     public bool Done { get; init; }
-    public int Downloaded { get; init; }
 }
 
 public sealed class CoverService : IDisposable
@@ -23,167 +28,237 @@ public sealed class CoverService : IDisposable
     private readonly PathService _paths;
     private readonly DatabaseService _db;
     private readonly CredentialService _creds;
+    private readonly MetadataService _metadata;
     private readonly HttpClient _http;
+    private readonly CancellationTokenSource _cts = new();
 
-    private readonly Channel<string> _queue = Channel.CreateUnbounded<string>(
-        new UnboundedChannelOptions { SingleReader = true });
-    private readonly ConcurrentDictionary<string, int> _retries = new();
-    private const int MaxRetries = 2;
-    private Task? _workerTask;
-    private readonly CancellationTokenSource _workerCts = new();
+    private const int MaxParallel = 4;
 
     public event EventHandler<CoverProgressArgs>? ProgressChanged;
 
-    public CoverService(PathService paths, DatabaseService db, CredentialService creds)
+    public CoverService(PathService paths, DatabaseService db, CredentialService creds, MetadataService metadata)
     {
         _paths = paths;
         _db = db;
         _creds = creds;
+        _metadata = metadata;
         _http = new HttpClient();
         _http.DefaultRequestHeaders.Add("User-Agent", "cereal-launcher/1.0");
         _http.Timeout = TimeSpan.FromSeconds(30);
     }
 
-    // ─── Queue management ────────────────────────────────────────────────────
+    // ─── Public API ──────────────────────────────────────────────────────────
 
+    /// <summary>Queues a cover download for a single game (e.g. after adding it).</summary>
     public void EnqueueGame(string gameId)
     {
-        if (string.IsNullOrEmpty(gameId)) return;
-        _queue.Writer.TryWrite(gameId);
-        _workerTask ??= Task.Run(() => RunWorkerAsync(_workerCts.Token));
+        if (!string.IsNullOrEmpty(gameId))
+            _ = RunBatchAsync([gameId], _cts.Token);
     }
 
+    /// <summary>Downloads covers for all games that don't already have one.</summary>
     public void EnqueueAll()
     {
-        foreach (var g in _db.Db.Games)
-            EnqueueGame(g.Id);
+        var ids = _db.Db.Games.Select(g => g.Id).ToList();
+        _ = RunBatchAsync(ids, _cts.Token);
     }
 
-    // ─── Worker loop ─────────────────────────────────────────────────────────
+    // ─── Batch runner ─────────────────────────────────────────────────────────
 
-    private async Task RunWorkerAsync(CancellationToken ct)
+    private async Task RunBatchAsync(IReadOnlyList<string> gameIds, CancellationToken ct)
     {
+        // Skip games that already have a valid cached cover.
+        var toProcess = gameIds
+            .Select(id => _db.Db.Games.Find(g => g.Id == id))
+            .OfType<Game>()
+            .Where(g => !IsValidLocalFile(g.LocalCoverPath))
+            .Select(g => g.Id)
+            .ToList();
+
+        if (toProcess.Count == 0)
+        {
+            ProgressChanged?.Invoke(this, new CoverProgressArgs { Done = true });
+            return;
+        }
+
+        var total = toProcess.Count;
+        var remaining = total;
+        var sem = new SemaphoreSlim(MaxParallel, MaxParallel);
         try
         {
-            while (await _queue.Reader.WaitToReadAsync(ct))
+            var tasks = toProcess.Select(async id =>
             {
-                var batch = new List<string>();
-                while (batch.Count < 5 && _queue.Reader.TryRead(out var id))
-                    batch.Add(id);
-
-                var downloaded = 0;
-                await Task.WhenAll(batch.Select(async gid =>
+                await sem.WaitAsync(ct);
+                string? localPath = null;
+                try
                 {
-                    try
-                    {
-                        var changed = await ProcessGameAsync(gid, ct);
-                        if (changed) Interlocked.Increment(ref downloaded);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning("[covers] Download failed for {GameId}: {Error}", gid, ex.Message);
-                        var retries = _retries.AddOrUpdate(gid, 1, (_, r) => r + 1);
-                        if (retries <= MaxRetries)
-                        {
-                            _queue.Writer.TryWrite(gid);
-                        }
-                        else
-                        {
-                            _retries.TryRemove(gid, out _);
-                        }
-                    }
-                }));
-
-                if (downloaded > 0)
-                {
-                    _db.Save();
-                    ProgressChanged?.Invoke(this, new CoverProgressArgs
-                    {
-                        Remaining = _queue.Reader.Count,
-                        Downloaded = downloaded,
-                    });
+                    localPath = await ProcessGameAsync(id, ct);
                 }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    Log.Warning("[covers] {Id}: {Error}", id, ex.Message);
+                }
+                finally
+                {
+                    sem.Release();
+                    var rem = Interlocked.Decrement(ref remaining);
+                    if (localPath is not null)
+                    {
+                        ProgressChanged?.Invoke(this, new CoverProgressArgs
+                        {
+                            GameId = id,
+                            LocalPath = localPath,
+                            Remaining = rem,
+                            Total = total,
+                        });
+                    }
+                }
+            }).ToList();
 
-                if (_queue.Reader.Count > 0)
-                    await Task.Delay(150, ct);
-            }
+            try { await Task.WhenAll(tasks); }
+            catch (OperationCanceledException) { return; }
         }
-        catch (OperationCanceledException) { /* shutting down */ }
         finally
         {
-            ProgressChanged?.Invoke(this, new CoverProgressArgs { Remaining = 0, Done = true });
+            sem.Dispose();
         }
+
+        _db.Save();
+        ProgressChanged?.Invoke(this, new CoverProgressArgs { Done = true, Total = total });
     }
 
-    private async Task<bool> ProcessGameAsync(string gameId, CancellationToken ct)
+    // ─── Per-game processing ──────────────────────────────────────────────────
+
+    /// <summary>Downloads cover and header for one game. Returns the cover path if newly downloaded, null otherwise.</summary>
+    private async Task<string?> ProcessGameAsync(string gameId, CancellationToken ct)
     {
         var game = _db.Db.Games.Find(g => g.Id == gameId);
-        if (game is null) return false;
+        if (game is null) return null;
 
-        var changed = false;
+        string? newCoverPath = null;
 
-        // Cover (portrait)
         if (!IsValidLocalFile(game.LocalCoverPath))
         {
             CleanupFile(game.LocalCoverPath);
             game.LocalCoverPath = null;
-
-            var candidates = new[] { game.CoverUrl, game.SgdbCoverUrl }.OfType<string>().ToList();
-
-            // If no candidates and no header yet, try SteamGridDB lookup
-            if (candidates.Count == 0 && string.IsNullOrEmpty(game.HeaderUrl))
+            newCoverPath = await DownloadCoverAsync(game, gameId, ct);
+            if (newCoverPath is not null)
             {
-                var meta = await TryFetchSteamGridDbAsync(game, ct);
-                if (meta is not null)
-                {
-                    if (!string.IsNullOrEmpty(meta.Value.CoverUrl))  game.CoverUrl  = meta.Value.CoverUrl;
-                    if (!string.IsNullOrEmpty(meta.Value.HeaderUrl)) game.HeaderUrl = meta.Value.HeaderUrl;
-                    changed = true;
-                    if (!string.IsNullOrEmpty(game.CoverUrl)) candidates.Add(game.CoverUrl);
-                }
-            }
-
-            foreach (var url in candidates)
-            {
-                try
-                {
-                    var ext = GetUrlExtension(url);
-                    var dest = Path.Combine(_paths.CoversDir, $"cover_{SanitizeId(gameId)}{ext}");
-                    await DownloadFileAsync(url, dest, ct);
-                    game.LocalCoverPath = dest;
-                    game.ImgStamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    _retries.TryRemove(gameId, out _);
-                    changed = true;
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "[covers] Failed candidate cover URL for {GameId}: {Url}", gameId, url);
-                }
-            }
-
-            if (string.IsNullOrEmpty(game.LocalCoverPath))
-            {
-                var total = candidates.Count;
-                if (total > 0) throw new Exception($"All {total} cover URL(s) failed");
+                game.LocalCoverPath = newCoverPath;
+                game.ImgStamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
         }
 
-        // Header (wide)
         if (!IsValidLocalFile(game.LocalHeaderPath) && !string.IsNullOrEmpty(game.HeaderUrl))
         {
             CleanupFile(game.LocalHeaderPath);
             game.LocalHeaderPath = null;
-
             var ext = GetUrlExtension(game.HeaderUrl);
             var dest = Path.Combine(_paths.HeadersDir, $"header_{SanitizeId(gameId)}{ext}");
-            await DownloadFileAsync(game.HeaderUrl, dest, ct);
-            game.LocalHeaderPath = dest;
-            game.ImgStamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            changed = true;
+            try
+            {
+                await DownloadFileAsync(game.HeaderUrl, dest, ct);
+                game.LocalHeaderPath = dest;
+                game.ImgStamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[covers] Header failed for {GameId}", gameId);
+            }
         }
 
-        return changed;
+        return newCoverPath;
+    }
+
+    /// <summary>Resolves the best available cover URL, downloads it, and returns the local path.</summary>
+    private async Task<string?> DownloadCoverAsync(Game game, string gameId, CancellationToken ct)
+    {
+        var candidates = BuildCoverCandidates(game);
+
+        // No stored URLs → try SteamGridDB (requires API key) first
+        if (candidates.Count == 0)
+        {
+            var sgdb = await TryFetchSteamGridDbAsync(game, ct);
+            if (sgdb is not null)
+            {
+                if (!string.IsNullOrEmpty(sgdb.Value.CoverUrl))
+                {
+                    game.CoverUrl = sgdb.Value.CoverUrl;
+                    candidates.Add(sgdb.Value.CoverUrl);
+                }
+                if (!string.IsNullOrEmpty(sgdb.Value.HeaderUrl) && string.IsNullOrEmpty(game.HeaderUrl))
+                    game.HeaderUrl = sgdb.Value.HeaderUrl;
+            }
+        }
+
+        foreach (var url in candidates)
+        {
+            var ext = GetUrlExtension(url);
+            var dest = Path.Combine(_paths.CoversDir, $"cover_{SanitizeId(gameId)}{ext}");
+            try
+            {
+                await DownloadFileAsync(url, dest, ct);
+                return dest;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "[covers] URL failed for {GameId}: {Url}", gameId, url);
+            }
+        }
+
+        // All known URLs failed or none existed. Search Steam store by game name —
+        // this works for any platform (GOG, Epic, custom) and requires no API key.
+        return await TryMetadataFallbackAsync(game, gameId, ct);
+    }
+
+    /// <summary>
+    /// Last-resort fallback: asks MetadataService to search Steam by name.
+    /// Works for any platform. Results are cached in MetadataService for 7 days.
+    /// </summary>
+    private async Task<string?> TryMetadataFallbackAsync(Game game, string gameId, CancellationToken ct)
+    {
+        try
+        {
+            var meta = await _metadata.FetchAsync(game, ct);
+            var url = meta?.CoverUrl;
+            if (string.IsNullOrEmpty(url)) return null;
+
+            // Persist the URL so future restarts don't need to search again.
+            if (string.IsNullOrEmpty(game.CoverUrl))
+                game.CoverUrl = url;
+
+            var ext = GetUrlExtension(url);
+            var dest = Path.Combine(_paths.CoversDir, $"cover_{SanitizeId(gameId)}{ext}");
+            await DownloadFileAsync(url, dest, ct);
+            return dest;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "[covers] Metadata fallback failed for {GameId}", gameId);
+            return null;
+        }
+    }
+
+    /// <summary>Builds an ordered list of cover URL candidates from stored game data.</summary>
+    private static List<string> BuildCoverCandidates(Game game)
+    {
+        var candidates = new List<string>();
+
+        if (!string.IsNullOrEmpty(game.CoverUrl))     candidates.Add(game.CoverUrl);
+        if (!string.IsNullOrEmpty(game.SgdbCoverUrl)) candidates.Add(game.SgdbCoverUrl);
+
+        // Steam CDN fallback for games whose CoverUrl wasn't stored at scan time.
+        if (candidates.Count == 0
+            && string.Equals(game.Platform, "steam", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(game.PlatformId))
+        {
+            var sid = game.PlatformId;
+            candidates.Add($"https://shared.steamstatic.com/store_item_assets/steam/apps/{sid}/library_600x900_2x.jpg");
+            candidates.Add($"https://shared.steamstatic.com/store_item_assets/steam/apps/{sid}/library_600x900.jpg");
+        }
+
+        return candidates;
     }
 
     // ─── SteamGridDB ─────────────────────────────────────────────────────────
@@ -325,9 +400,8 @@ public sealed class CoverService : IDisposable
 
     public void Dispose()
     {
-        _workerCts.Cancel();
-        _queue.Writer.Complete();
+        _cts.Cancel();
         _http.Dispose();
-        _workerCts.Dispose();
+        _cts.Dispose();
     }
 }
