@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Cereal.Core.Repositories;
 using Cereal.Core.Services;
 
 namespace Cereal.Infrastructure.Services;
@@ -10,10 +9,10 @@ namespace Cereal.Infrastructure.Services;
 /// </summary>
 public sealed partial class PlaytimeSyncService : IDisposable
 {
-    private readonly IGameRepository _games;
+    private readonly IGameService _games;
     private readonly Timer _timer;
 
-    public PlaytimeSyncService(IGameRepository games)
+    public PlaytimeSyncService(IGameService games)
     {
         _games = games;
         _timer = new Timer(_ => _ = SyncAsync(), null,
@@ -59,7 +58,7 @@ public sealed partial class PlaytimeSyncService : IDisposable
                 if (!playtime.TryGetValue(game.PlatformId!, out var mins)) continue;
                 if (mins <= game.PlaytimeMinutes) continue;
 
-                await _games.UpdatePlaytimeAsync(game.Id, mins - game.PlaytimeMinutes,
+                await _games.AddPlaytimeAsync(game.Id, mins - game.PlaytimeMinutes,
                     DateTimeOffset.UtcNow, ct);
                 updated++;
             }

@@ -108,7 +108,6 @@ public sealed class GameService(
             if (match is not null)
             {
                 var merged = MergeInto(match, g);
-                await games.SaveAsync(merged, ct);
                 // Keep the index up-to-date for subsequent iterations.
                 byPlatformId[$"{merged.Platform}\0{merged.PlatformId}"] = merged;
                 if (!string.IsNullOrWhiteSpace(merged.Name))
@@ -120,7 +119,6 @@ public sealed class GameService(
                 var newGame = string.IsNullOrEmpty(g.Id)
                     ? g with { Id = Guid.NewGuid().ToString("N") }
                     : g;
-                await games.SaveAsync(newGame, ct);
                 if (!string.IsNullOrEmpty(newGame.PlatformId))
                     byPlatformId[$"{newGame.Platform}\0{newGame.PlatformId}"] = newGame;
                 if (!string.IsNullOrWhiteSpace(newGame.Name))
@@ -128,6 +126,9 @@ public sealed class GameService(
                 survivors.Add(newGame);
             }
         }
+
+        // Persist all survivors in a single transaction via SaveRangeAsync.
+        await games.SaveRangeAsync(survivors, ct);
 
         var after = before + survivors.Count(s => !existingIdSet.Contains(s.Id));
         messenger.Send(new LibraryRefreshedMessage(after));
@@ -197,6 +198,13 @@ public sealed class GameService(
         }, ct);
     }
 
+    public async Task AddPlaytimeAsync(string id, int additionalMinutes, DateTimeOffset lastPlayedAt,
+        CancellationToken ct = default)
+    {
+        await games.UpdatePlaytimeAsync(id, additionalMinutes, lastPlayedAt, ct);
+        await NotifyUpdatedAsync(id, ct);
+    }
+
     public Task SetCategoriesAsync(string id, IEnumerable<string> cats, CancellationToken ct = default) =>
         games.SetCategoriesAsync(id, cats, ct);
 
@@ -229,8 +237,10 @@ public sealed class GameService(
     }
 
     private static string Canonicalize(string name) =>
-        System.Text.RegularExpressions.Regex
-            .Replace(name.ToLowerInvariant(), @"[^a-z0-9]", "");
+        s_nonAlphanumeric.Replace(name.ToLowerInvariant(), "");
+
+    private static readonly System.Text.RegularExpressions.Regex s_nonAlphanumeric =
+        new(@"[^a-z0-9]", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static Game MergeInto(Game target, Game incoming)
     {

@@ -236,8 +236,10 @@ public sealed class GameRepository(CerealDb db, IMessenger messenger) : IGameRep
     }
 
     private static string Canonicalize(string name) =>
-        System.Text.RegularExpressions.Regex
-            .Replace(name.ToLowerInvariant(), @"[^a-z0-9]", "");
+        s_nonAlphanumeric.Replace(name.ToLowerInvariant(), "");
+
+    private static readonly System.Text.RegularExpressions.Regex s_nonAlphanumeric =
+        new(@"[^a-z0-9]", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static async Task UpsertGameAsync(IDbConnection conn, Game g, IDbTransaction tx)
     {
@@ -276,16 +278,10 @@ public sealed class GameRepository(CerealDb db, IMessenger messenger) : IGameRep
     {
         if (games.Count == 0) return;
 
-        var ids = games.Select(g => g.Id).ToList();
+        var ids = games.Select(g => g.Id).ToArray();
         var rows = await conn.QueryAsync<CategoryRow>(
-            $"""
-            SELECT gc.GameId, gc.CategoryName
-            FROM GameCategories gc
-            WHERE gc.GameId IN ({string.Join(',', ids.Select((_, i) => $"@id{i}"))})
-            """,
-            ids.Select((id, i) => new { Key = $"id{i}", Value = id })
-               .Aggregate(new DynamicParameters(),
-                   (p, x) => { p.Add(x.Key, x.Value); return p; }));
+            "SELECT GameId, CategoryName FROM GameCategories WHERE GameId IN @ids",
+            new { ids });
 
         var map = rows.GroupBy(r => r.GameId)
                       .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(r => r.CategoryName).ToList());

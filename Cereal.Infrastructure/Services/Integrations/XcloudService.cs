@@ -15,12 +15,12 @@ public sealed class XcloudService : IXcloudService
 
     public bool IsAuthenticated => _auth.IsAuthenticated("xbox");
 
-    public async Task LaunchAsync(string titleId, CancellationToken ct = default)
+    public Task LaunchAsync(string titleId, CancellationToken ct = default)
     {
         if (!IsAuthenticated)
         {
             Log.Warning("[xcloud] Cannot launch — Xbox not authenticated");
-            return;
+            return Task.CompletedTask;
         }
 
         // Xbox Cloud Gaming uses the ms-xgpuweb:// URI scheme
@@ -39,6 +39,6 @@ public sealed class XcloudService : IXcloudService
             Log.Warning(ex, "[xcloud] LaunchAsync failed for {TitleId}", titleId);
         }
 
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 }

@@ -57,6 +57,13 @@ public interface IGameService
     Task UpdatePlaytimeAsync(string id, int totalMinutes, DateTimeOffset lastPlayedAt,
         CancellationToken ct = default);
 
+    /// <summary>
+    /// Adds <paramref name="additionalMinutes"/> to the stored playtime total.
+    /// Use this for session-end recording where only the delta is known.
+    /// </summary>
+    Task AddPlaytimeAsync(string id, int additionalMinutes, DateTimeOffset lastPlayedAt,
+        CancellationToken ct = default);
+
     Task SetCategoriesAsync(string id, IEnumerable<string> categories, CancellationToken ct = default);
 
     // ── Category management ───────────────────────────────────────────────────

@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Cereal.Core.Messaging;
 using Cereal.Core.Models;
-using Cereal.Core.Repositories;
 using Cereal.Core.Services;
 
 namespace Cereal.Infrastructure.Services;
@@ -12,7 +11,7 @@ namespace Cereal.Infrastructure.Services;
 /// window-minimize requests via the messaging bus.
 /// </summary>
 public sealed class LaunchService(
-    IGameRepository games,
+    IGameService games,
     ISettingsService settings,
     IMessenger messenger) : ILaunchService
 {
@@ -60,7 +59,7 @@ public sealed class LaunchService(
         var elapsed = (int)(DateTimeOffset.UtcNow - s.Start).TotalMinutes;
         if (elapsed <= 0) return;
 
-        await games.UpdatePlaytimeAsync(gameId, elapsed, DateTimeOffset.UtcNow, ct);
+        await games.AddPlaytimeAsync(gameId, elapsed, DateTimeOffset.UtcNow, ct);
         Log.Information("[launch] Recorded {Minutes}m playtime for {Id}", elapsed, gameId);
     }
 
