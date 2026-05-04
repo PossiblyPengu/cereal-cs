@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Cereal.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d2c1b87208afbae1ff69256aeed34d82fa5d8b6c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1319a0a76da673c7fa0d68d740e960852edc0258")]
 [assembly: System.Reflection.AssemblyProductAttribute("Cereal.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Cereal.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
